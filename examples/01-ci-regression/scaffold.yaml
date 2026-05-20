@@ -1,0 +1,22 @@
+version: 1
+
+target:
+  command: "python3 run_prompt.py --input {input_file} --output {output_file}"
+
+evals:
+  - name: ticket-classification
+    level: prompt
+    dataset: ./evals/tickets.jsonl
+    judge: exact_match
+    metrics:
+      - name: accuracy
+        threshold: 0.90
+        mode: absolute
+      - name: f1_macro
+        threshold: 0.85
+        mode: absolute
+
+settings:
+  parallelism: 5
+  timeout_per_call: 10
+  retries: 1

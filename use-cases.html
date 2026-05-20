@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Use Cases — Scaffold</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #ffffff;
+      --bg-alt: #fafbfc;
+      --bg-code: #111827;
+      --border: #e5e7eb;
+      --border-light: #f0f1f3;
+      --text: #111827;
+      --text-secondary: #4b5563;
+      --text-tertiary: #9ca3af;
+      --accent: #059669;
+      --accent-hover: #047857;
+      --accent-bg: rgba(5, 150, 105, 0.06);
+      --accent-border: rgba(5, 150, 105, 0.15);
+      --red: #dc2626;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.06);
+      --shadow-lg: 0 8px 40px rgba(0,0,0,0.08);
+      --radius: 12px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      background-image: radial-gradient(circle, #d1d5db 1px, transparent 1px);
+      background-size: 24px 24px;
+      opacity: 0.45;
+      pointer-events: none;
+    }
+
+    .container {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    nav .container {
+      max-width: 1120px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 56px;
+    }
+
+    .logo {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+
+    .logo-mark {
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo-mark svg { width: 26px; height: 26px; }
+
+    .nav-links { display: flex; gap: 28px; align-items: center; }
+    .nav-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      transition: color 0.15s;
+    }
+    .nav-links a:hover { color: var(--text); }
+
+    .btn-nav {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-alt);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 6px 14px;
+      font-size: 0.8125rem;
+      border-radius: 8px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+    .btn-nav:hover { background: #f0f1f3; }
+
+    /* PAGE HEADER */
+    .page-header {
+      padding: 120px 0 60px;
+      text-align: center;
+    }
+
+    .page-header h1 {
+      font-size: clamp(2rem, 4vw, 2.75rem);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+
+    .page-header p {
+      font-size: 1.0625rem;
+      color: var(--text-secondary);
+      max-width: 540px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    /* USE CASE TOC */
+    .toc {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 32px;
+    }
+
+    .toc a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: all 0.15s;
+      background: var(--bg);
+    }
+
+    .toc a:hover {
+      border-color: var(--accent-border);
+      color: var(--accent);
+      background: var(--accent-bg);
+    }
+
+    /* USE CASE SECTION */
+    .use-case {
+      padding: 80px 0;
+      border-top: 1px solid var(--border-light);
+    }
+
+    .use-case:first-of-type {
+      border-top: none;
+    }
+
+    .uc-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 12px;
+    }
+
+    .use-case h2 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      margin-bottom: 16px;
+    }
+
+    .use-case > .container > p {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      margin-bottom: 20px;
+      max-width: 640px;
+    }
+
+    .use-case h3 {
+      font-size: 1.0625rem;
+      font-weight: 700;
+      margin-top: 40px;
+      margin-bottom: 12px;
+    }
+
+    .use-case h4 {
+      font-size: 0.9375rem;
+      font-weight: 700;
+      margin-top: 28px;
+      margin-bottom: 8px;
+    }
+
+    .use-case ul, .use-case ol {
+      padding-left: 20px;
+      margin-bottom: 16px;
+    }
+
+    .use-case li {
+      font-size: 0.9375rem;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      margin-bottom: 6px;
+    }
+
+    .use-case li strong {
+      color: var(--text);
+    }
+
+    /* CODE BLOCKS */
+    .code-frame {
+      border-radius: var(--radius);
+      border: 1px solid #374151;
+      overflow: hidden;
+      background: var(--bg-code);
+      margin: 20px 0 28px;
+    }
+
+    .code-tab {
+      padding: 8px 14px;
+      background: #1f2937;
+      border-bottom: 1px solid #374151;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: #9ca3af;
+    }
+
+    .code-tab .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      border: 1.5px solid #4b5563;
+    }
+
+    .code-body {
+      padding: 16px 18px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      line-height: 1.7;
+      color: #d1d5db;
+      overflow-x: auto;
+      white-space: pre;
+    }
+
+    .code-body .k { color: #818cf8; }
+    .code-body .s { color: #34d399; }
+    .code-body .n { color: #fbbf24; }
+    .code-body .c { color: #6b7280; }
+    .code-body .p { color: #6b7280; }
+    .code-body .w { color: #f9fafb; font-weight: 600; }
+    .code-body .f { color: #67e8f9; }
+    .code-body .g { color: #34d399; font-weight: 600; }
+
+    /* SCENARIO CARDS */
+    .scenario {
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin: 20px 0;
+    }
+
+    .scenario h4 {
+      margin-top: 0;
+      font-size: 0.875rem;
+    }
+
+    .scenario p {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* KEY POINTS */
+    .key-points {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .key-point {
+      padding: 20px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--bg);
+    }
+
+    .key-point h4 {
+      font-size: 0.8125rem;
+      margin-top: 0;
+      margin-bottom: 4px;
+    }
+
+    .key-point p {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* INLINE TABLE */
+    .uc-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.84rem;
+      margin: 16px 0 28px;
+    }
+
+    .uc-table th {
+      text-align: left;
+      font-weight: 600;
+      padding: 8px 12px;
+      border-bottom: 2px solid var(--border);
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+    }
+
+    .uc-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border-light);
+      color: var(--text-secondary);
+    }
+
+    .uc-table td:first-child {
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    /* CTA */
+    .cta-section {
+      text-align: center;
+      padding: 100px 0;
+      border-top: 1px solid var(--border-light);
+    }
+
+    .cta-section h2 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+
+    .cta-section p {
+      color: var(--text-secondary);
+      font-size: 1rem;
+      margin-bottom: 32px;
+    }
+
+    .cta-section .btns {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      border-radius: 8px;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      text-decoration: none;
+      background: var(--accent);
+      color: #fff;
+      transition: all 0.15s ease;
+    }
+    .btn-primary:hover { background: var(--accent-hover); }
+
+    .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      border-radius: 8px;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      text-decoration: none;
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+      transition: all 0.15s ease;
+    }
+    .btn-ghost:hover { background: var(--bg-alt); }
+
+    /* FOOTER */
+    footer {
+      padding: 32px 0;
+      border-top: 1px solid var(--border-light);
+      font-size: 0.78rem;
+      color: var(--text-tertiary);
+    }
+
+    footer .container {
+      max-width: 1120px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    footer a {
+      color: var(--text-tertiary);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    footer a:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="container">
+      <a href="index.html" class="logo">
+        <div class="logo-mark">
+          <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="1" y="1" width="26" height="26" rx="6" fill="var(--accent)"/>
+            <rect x="7" y="6" width="3" height="16" rx="1.5" fill="#fff"/>
+            <rect x="18" y="6" width="3" height="16" rx="1.5" fill="#fff"/>
+            <rect x="7" y="12.5" width="14" height="3" rx="1.5" fill="#fff"/>
+          </svg>
+        </div>
+        Scaffold
+      </a>
+      <div class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="use-cases.html" style="color: var(--text); font-weight: 600;">Use Cases</a>
+        <a href="index.html#compare">Compare</a>
+        <a href="https://github.com/scaffold-ai/scaffold" class="btn-nav">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 4px;"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="page-header">
+    <div class="container">
+      <h1>Use Cases</h1>
+      <p>Detailed walkthroughs for the most common ways teams use Scaffold, with config examples and realistic scenarios.</p>
+      <div class="toc">
+        <a href="#ci-regression">CI Regression Testing</a>
+        <a href="#model-migration">Model Migration</a>
+        <a href="#agent-testing">Agent Testing</a>
+        <a href="#dataset-creation">Dataset Creation</a>
+        <a href="#promptfoo-migration">Migrating from Promptfoo</a>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- USE CASE 1: CI REGRESSION TESTING -->
+  <section class="use-case" id="ci-regression">
+    <div class="container">
+      <div class="uc-label">Use Case 01</div>
+      <h2>CI Regression Testing</h2>
+      <p>Gate every pull request with automated eval checks. When someone changes a prompt, model, model parameters, or any upstream code that affects LLM output, Scaffold detects quality drops before the change reaches production.</p>
+
+      <h3>The problem</h3>
+      <p>Someone on your team updates a prompt. The change looks fine in manual testing. The PR gets approved and merged. A week later, customer support tickets spike &mdash; the model is misclassifying 8% of inputs that it used to handle correctly. Nobody connected the dots until real users were affected.</p>
+      <p>This happens because there's no automated check that runs the full eval dataset against the change. Manual spot-checks miss edge cases. Without a regression gate, quality drift is invisible until production breaks.</p>
+
+      <h3>How Scaffold solves it</h3>
+      <p>Add a <code>scaffold.yaml</code> to your repo. Point it at your eval dataset. Scaffold runs on every PR and compares results against the main branch baseline. If quality drops beyond your thresholds, the PR is blocked with a detailed report showing exactly which examples regressed.</p>
+
+      <div class="code-frame">
+        <div class="code-tab">
+          <span class="dot"></span>
+          <span>scaffold.yaml</span>
+        </div>
+        <div class="code-body"><span class="k">version</span>: <span class="n">1</span>
+
+<span class="k">target</span>:
+  <span class="k">command</span>: <span class="s">"python run_prompt.py --input {input_file} --output {output_file}"</span>
+
+<span class="k">evals</span>:
+  - <span class="k">name</span>: <span class="s">ticket-classification</span>
+    <span class="k">level</span>: <span class="s">pipeline</span>
+    <span class="k">dataset</span>: <span class="s">./evals/ticket_classification.jsonl</span>
+    <span class="k">judge</span>: <span class="s">exact_match</span>
+    <span class="k">metrics</span>:
+      - <span class="k">name</span>: <span class="s">f1_macro</span>
+        <span class="k">threshold</span>: <span class="n">0.93</span>
+        <span class="k">mode</span>: <span class="s">absolute</span>
+      - <span class="k">name</span>: <span class="s">accuracy</span>
+        <span class="k">threshold</span>: <span class="n">0.02</span>
+        <span class="k">mode</span>: <span class="s">max_regression</span></div>
+      </div>
+
+      <h3>Two testing levels</h3>
+      <p>Scaffold supports both prompt-level and pipeline-level testing:</p>
+
+      <table class="uc-table">
+        <thead>
+          <tr><th>Level</th><th>Tests</th><th>Catches</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Prompt-level</td><td>Prompt + model in isolation</td><td>Prompt edits, model changes, parameter changes</td></tr>
+          <tr><td>Pipeline-level</td><td>Full system (RAG, preprocessing, prompt, model)</td><td>Everything, including upstream code changes that alter what the model sees</td></tr>
+        </tbody>
+      </table>
+
+      <p>Pipeline-level is the default. It catches the sneaky case where the prompt is unchanged but someone refactored the retrieval logic, changed a preprocessing step, or modified the data that feeds into the prompt.</p>
+
+      <h3>Available judges and metrics</h3>
+      <p>Scaffold ships with judges for common evaluation patterns:</p>
+
+      <table class="uc-table">
+        <thead>
+          <tr><th>Judge</th><th>Metrics</th><th>Best for</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Exact match</td><td>Accuracy, F1 (macro/micro/weighted), precision, recall</td><td>Classification, extraction, routing</td></tr>
+          <tr><td>LLM-as-judge</td><td>Rubric pass rate (per-criterion or aggregate)</td><td>Summarization, conversation, creative writing</td></tr>
+          <tr><td>Custom (Python)</td><td>Any metric you define</td><td>JSON schema validation, business rules, regex, multi-field checks</td></tr>
+        </tbody>
+      </table>
+
+      <h4>Custom judges</h4>
+      <p>For domain-specific evaluation logic that built-in judges can't cover, write a Python function:</p>
+
+      <div class="code-frame">
+        <div class="code-tab">
+          <span class="dot"></span>
+          <span>judges/schema_judge.py</span>
+        </div>
+        <div class="code-body"><span class="k">import</span> json
+
+<span class="k">def</span> <span class="w">evaluate</span>(input: str, expected: str, actual: str) -> dict:
+    <span class="k">try</span>:
+        parsed = json.loads(actual)
+        valid = <span class="k">all</span>(k <span class="k">in</span> parsed <span class="k">for</span> k <span class="k">in</span> [<span class="s">"category"</span>, <span class="s">"confidence"</span>])
+        <span class="k">return</span> {<span class="s">"score"</span>: <span class="n">1.0</span> <span class="k">if</span> valid <span class="k">else</span> <span class="n">0.0</span>}
+    <span class="k">except</span> json.JSONDecodeError:
+        <span class="k">return</span> {<span class="s">"score"</span>: <span class="n">0.0</span>, <span class="s">"reason"</span>: <span class="s">"Invalid JSON"</span>}</div>
+      </div>
+
+      <div class="code-frame">
+        <div class="code-tab">
+          <span class="dot"></span>
+          <span>scaffold.yaml</span>
+        </div>
+        <div class="code-body"><span class="k">evals</span>:
+  - <span class="k">name</span>: <span class="s">schema-validation</span>
+    <span class="k">judge</span>:
+      <span class="k">type</span>: <span class="s">custom</span>
+      <span class="k">module</span>: <span class="s">./judges/schema_judge.py</span>
+      <span class="k">function</span>: <span class="s">evaluate</span></div>
+      </div>
+
+      <p>Custom judges run locally &mdash; no LLM calls, no latency, no cost. Use them for JSON schema validation, business rule checks, regex patterns, or any evaluation logic specific to your domain.</p>
+
+      <h3>Two threshold modes</h3>
+
+      <div class="key-points">
+        <div class="key-point">
+          <h4>Absolute threshold</h4>
+          <p>"F1 must be above 0.93, period." A quality floor that every PR must meet regardless of the baseline.</p>
+        </div>
+        <div class="key-point">
+          <h4>Relative threshold</h4>
+          <p>"Score must not drop more than 5% from main branch." Answers the real question: did this PR make things worse?</p>
+        </div>
+      </div>
+
+      <h3>GitHub Actions setup</h3>
+      <p>One step in your workflow file. Scaffold exits 0 (pass) or 1 (fail), so it works as a CI gate without any special integration.</p>
+
+      <div class="code-frame">
+        <div class="code-tab">
+          <span class="dot"></span>
+          <span>.github/workflows/scaffold.yml</span>
+        </div>
+        <div class="code-body"><span class="k">name</span>: <span class="s">LLM Content Tests</span>
+<span class="k">on</span>: [<span class="s">pull_request</span>]
+
+<span class="k">jobs</span>:
+  <span class="k">eval</span>:
+    <span class="k">runs-on</span>: <span class="s">ubuntu-latest</span>
+    <span class="k">steps</span>:
+      - <span class="k">uses</span>: <span class="s">actions/checkout@v4</span>
+      - <span class="k">uses</span>: <span class="s">scaffold-ai/setup@v1</span>
+      - <span class="k">run</span>: <span class="s">scaffold run --compare-to=origin/main</span>
+        <span class="k">env</span>:
+          <span class="k">OPENAI_API_KEY</span>: <span class="s">${{ secrets.OPENAI_API_KEY }}</span>
+      - <span class="k">uses</span>: <span class="s">scaffold-ai/report@v1</span>
+        <span class="k">if</span>: <span class="s">always()</span>
+        <span class="k">with</span>:
+          <span class="k">github-token</span>: <span class="s">${{ secrets.GITHUB_TOKEN }}</span></div>
+      </div>
+
+      <div class="scenario">
+        <h4>Real-world scenario</h4>
+        <p>Your team runs a support ticket classifier. A developer updates the system prompt to improve handling of billing questions. The PR passes code review. Scaffold runs 243 eval examples and finds that while billing accuracy improved by 4%, hardware classification accuracy dropped 8%. The PR is blocked with a report showing the 7 specific examples that regressed, so the developer can fix the prompt before merging.</p>
+      </div>
+
+      <!-- TODO: Uncomment when examples are built
+      <p style="margin-top: 24px;"><strong>Try it yourself:</strong> <a href="https://github.com/scaffold-ai/scaffold/tree/main/examples/01-ci-regression" style="color: var(--accent); font-weight: 600;">examples/01-ci-regression</a> — a runnable ticket classification example with eval dataset, config, and prompt.</p>
+      -->
+    </div>
+  </section>
+
+
+  <!-- USE CASE 2: MODEL MIGRATION -->
+  <section class="use-case" id="model-migration">
+    <div class="container">
+      <div class="uc-label">Use Case 02</div>
+      <h2>Model Migration</h2>
+      <p>When you need to upgrade a model or switch providers, Scaffold automatically tunes your prompt to achieve parity on the new model. No manual prompt engineering. No guesswork. No fire drill.</p>
+
+      <h3>The problem</h3>
+      <p>Your model is being deprecated. Or a newer model offers better price/performance. You swap the model name in your config, run your evals, and scores drop 6%. Now you're in a multi-day prompt engineering cycle: tweak the prompt, re-run evals, check if you fixed one thing but broke another. Multiply this by every prompt in your system.</p>
+
+      <h3>How Scaffold solves it</h3>
+      <p>One command. Scaffold runs an iterative optimization loop &mdash; analogous to gradient descent &mdash; that makes small, targeted edits to your prompt until it achieves parity on the new model. It uses holdout validation and early stopping to prevent overfitting.</p>
+
+      <div class="code-frame">
+        <div class="code-tab">
+          <span class="dot"></span>
+          <span>Terminal</span>
+        </div>
+        <div class="code-body"><span class="p">$ </span><span class="w">scaffold migrate</span> <span class="f">--from</span> gpt-4o <span class="f">--to</span> gpt-4.5 <span class="f">--eval</span> ticket-classification
+
+<span class="c">Running baseline on gpt-4o...          0.952</span>
+<span class="c">Running on gpt-4.5 (current prompt)...  0.891</span>
+
+<span class="c">Optimizing prompt...</span>
+  <span class="c">Iteration 1:  train 0.912  val 0.908</span>
+  <span class="c">Iteration 2:  train 0.931  val 0.925</span>
+  <span class="c">Iteration 3:  train 0.944  val 0.939</span>
+  <span class="c">Iteration 4:  train 0.949  val 0.941</span>
+  <span class="c">Iteration 5:  train 0.950  val 0.942  (early stop)</span>
+
+<span class="g">&#10003; Migration complete</span>
+  <span class="c">Holdout score:  0.938  (baseline: 0.952)</span>
+  <span class="c">Prompt diff written to ./prompts/classify.txt.migrated</span></div>
+      </div>
+
+      <h3>How the optimization works</h3>
+      <p>The algorithm is modeled on gradient descent, with controls borrowed from ML training:</p>
+
+      <table class="uc-table">
+        <thead>
+          <tr><th>ML Concept</th><th>Scaffold Equivalent</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Step size / learning rate</td><td>How many changes per iteration. Small steps aid debuggability.</td></tr>
+          <tr><td>Training set (70%)</td><td>Examples the optimizer uses to score each iteration</td></tr>
+          <tr><td>Validation set (15%)</td><td>Separate examples checked each iteration for early stopping</td></tr>
+          <tr><td>Holdout set (15%)</td><td>Only evaluated at the end &mdash; the honest final score</td></tr>
+          <tr><td>Early stopping</td><td>Halt when improvement plateaus for N iterations</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Step size control</h3>
+      <p>The optimizer LLM is constrained to make minimal changes per iteration. It's instructed to prefer rewording existing instructions over adding new ones, and to never rewrite from scratch. This makes each iteration's contribution clear and debuggable.</p>
+
+      <h3>What you get</h3>
+      <p>A migration report with the optimized prompt diff, per-iteration scores, holdout validation results, and a breakdown of any remaining regressions with failure pattern analysis. You review the diff, commit it, and your CI evals confirm the migration is clean.</p>
+
+      <div class="scenario">
+        <h4>Real-world scenario</h4>
+        <p>Your company uses GPT-4o across 12 classification prompts. OpenAI announces GPT-4o is being retired in 60 days. Instead of a month of manual prompt engineering, you run <code>scaffold migrate</code> for each prompt. 10 of 12 converge to within 1% of the original baseline. The remaining 2 require minor manual adjustments flagged in the migration report. The entire migration takes 2 days instead of 4 weeks.</p>
+      </div>
+
+      <!-- TODO: Uncomment when examples are built
+      <p style="margin-top: 24px;"><strong>Try it yourself:</strong> <a href="https://github.com/scaffold-ai/scaffold/tree/main/examples/02-model-migration" style="color: var(--accent); font-weight: 600;">examples/02-model-migration</a> — migrate a ticket classifier from GPT-4o to GPT-4.5.</p>
+      -->
+    </div>
+  </section>
+
+
+  <!-- USE CASE 3: AGENT TESTING -->
+  <section class="use-case" id="agent-testing">
+    <div class="container">
+      <div class="uc-label">Use Case 03</div>
+      <h2>Agent Testing</h2>
+      <p>Agents make sequences of decisions &mdash; tool calls, routing, branching &mdash; often across multi-turn conversations. Scaffold evaluates the full trajectory, not just the final output.</p>
+
+      <h3>The problem</h3>
+      <p>Your support agent handles subscription cancellations. Someone updates the refund tool's API response format. The agent's prompts haven't changed. But now it misinterprets the refund confirmation at step 3, tells the customer their refund failed when it actually succeeded, and tries the refund again. The duplicate refund costs you real money. An output-only test would have missed this &mdash; the final output was still "refund processed."</p>
+
+      <h3>How Scaffold solves it</h3>
+      <p>Scaffold evaluates agents with a composite judge that checks four dimensions:</p>
+
+      <div class="key-points">
+        <div class="key-point">
+          <h4>Outcome correctness</h4>
+          <p>LLM-as-judge: did the agent achieve the correct final result?</p>
+        </div>
+        <div class="key-point">
+          <h4>Trajectory efficiency</h4>
+          <p>LLM-as-judge: was the execution path logical and efficient?</p>
+        </div>
+        <div class="key-point">
+          <h4>Constraint enforcement</h4>
+          <p>Deterministic: tool call budgets, token budgets, required/forbidden tools.</p>
+        </div>
+        <div class="key-point">
+          <h4>Cost accounting</h4>
+          <p>Deterministic: total tokens, latency. Did the agent stay within budget?</p>
+        </div>
+      </div>
+
+      <h3>Multi-turn conversation testing</h3>
+      <p>Many agent interactions are multi-turn. Scaffold supports conversation scenarios where each turn has its own expected outcome and constraints, plus conversation-level budgets across all turns.</p>
+
+      <div class="code-frame">
+        <div class="code-tab">
+          <span class="dot"></span>
+          <span>evals/support_conversations.jsonl</span>
+        </div>
+        <div class="code-body"><span class="c">// Each scenario is a multi-turn conversation</span>
+{
+  <span class="s">"turns"</span>: [
+    {
+      <span class="s">"user_message"</span>: <span class="s">"Cancel my subscription"</span>,
+      <span class="s">"expected"</span>: {
+        <span class="s">"outcome"</span>: <span class="s">"Subscription cancelled, confirmation provided"</span>,
+        <span class="s">"constraints"</span>: {<span class="s">"max_tool_calls"</span>: <span class="n">3</span>}
+      }
+    },
+    {
+      <span class="s">"user_message"</span>: <span class="s">"Do I get a refund for the remaining days?"</span>,
+      <span class="s">"expected"</span>: {
+        <span class="s">"outcome"</span>: <span class="s">"Prorated refund calculated and communicated"</span>,
+        <span class="s">"constraints"</span>: {<span class="s">"required_tools"</span>: [<span class="s">"calculate_prorated_refund"</span>]}
+      }
+    }
+  ],
+  <span class="s">"conversation_constraints"</span>: {<span class="s">"max_total_tool_calls"</span>: <span class="n">12</span>}
+}</div>
+      </div>
+
+      <h3>Two testing levels for agents</h3>
+
+      <table class="uc-table">
+        <thead>
+          <tr><th>Level</th><th>How</th><th>Catches</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Agent-level (unit)</td><td>Your command runs the agent with mocked tools</td><td>Prompt changes, model changes, routing logic changes</td></tr>
+          <tr><td>Pipeline-level (integration)</td><td>Your command runs the agent with real tools</td><td>Everything, including tool API changes, database schema changes</td></tr>
+        </tbody>
+      </table>
+
+      <p>Scaffold doesn't need to know the difference &mdash; it just evaluates the output trace. The mocked-vs-real distinction lives in your command, not in Scaffold's config.</p>
+
+      <h3>Framework adapters</h3>
+      <p>Test-time wrappers that capture execution traces automatically during eval runs. One line to integrate, no production instrumentation required.</p>
+
+      <div class="code-frame">
+        <div class="code-tab">
+          <span class="dot"></span>
+          <span>Python</span>
+        </div>
+        <div class="code-body"><span class="k">from</span> scaffold.integrations.openai_agents <span class="k">import</span> traced_agent
+
+<span class="c"># Wrap your agent for eval. Test-time only, never in production.</span>
+agent = traced_agent(existing_agent, trace_output=<span class="s">"./traces/"</span>)</div>
+      </div>
+
+      <p>Supported frameworks: OpenAI Agent SDK, Claude Agent SDK, PydanticAI.</p>
+
+      <div class="scenario">
+        <h4>Real-world scenario</h4>
+        <p>Your team deploys a customer support agent built on the OpenAI Agent SDK. A developer updates the system prompt to be more concise. The change looks clean in testing. But on multi-turn conversations where the customer changes their mind mid-conversation ("actually, re-subscribe me on the basic plan"), the shorter prompt loses context and the agent re-creates the premium subscription instead. Scaffold's multi-turn eval catches this: turn 3's outcome judge fails, and the trajectory judge flags the incorrect tool call.</p>
+      </div>
+
+      <!-- TODO: Uncomment when examples are built
+      <p style="margin-top: 24px;"><strong>Try it yourself:</strong> <a href="https://github.com/scaffold-ai/scaffold/tree/main/examples/05-agent-single-turn" style="color: var(--accent); font-weight: 600;">examples/05-agent-single-turn</a> and <a href="https://github.com/scaffold-ai/scaffold/tree/main/examples/06-agent-multi-turn" style="color: var(--accent); font-weight: 600;">examples/06-agent-multi-turn</a></p>
+      -->
+    </div>
+  </section>
+
+
+  <!-- USE CASE 4: DATASET CREATION -->
+  <section class="use-case" id="dataset-creation">
+    <div class="container">
+      <div class="uc-label">Use Case 04</div>
+      <h2>Dataset Creation</h2>
+      <p>Building eval datasets is the biggest adoption barrier. But these are CI gates, not training sets. 200 carefully chosen examples beat 2,000 auto-generated ones. Scaffold makes dataset creation a guided process, not a guessing game.</p>
+
+      <h3>Start with manual curation</h3>
+      <p>The default and often best approach. A domain expert writes input/expected pairs focusing on coverage of important cases. You need breadth (cover the categories, edge cases, failure modes), not depth.</p>
+
+      <div class="code-frame">
+        <div class="code-tab">
+          <span class="dot"></span>
+          <span>Terminal</span>
+        </div>
+        <div class="code-body"><span class="p">$ </span><span class="w">scaffold dataset init</span> <span class="f">--name</span> ticket-classification <span class="f">--type</span> deterministic
+<span class="g">&#10003; Created ./evals/ticket_classification.jsonl</span>
+
+<span class="p">$ </span><span class="w">scaffold dataset add</span> <span class="f">--name</span> ticket-classification
+<span class="c">Input: "My printer won't connect to wifi"</span>
+<span class="c">Expected: "hardware"</span>
+<span class="g">&#10003; Added. (47 examples, 6 categories covered)</span>
+
+<span class="p">$ </span><span class="w">scaffold dataset check</span> <span class="f">--name</span> ticket-classification
+<span class="c">203 examples across 8 categories</span>
+<span class="c">&#x26A0; "returns" has only 4 examples (min recommended: 15)</span>
+<span class="c">&#x26A0; No multilingual examples detected</span>
+<span class="g">&#10003; All other categories well-covered</span></div>
+      </div>
+
+      <p>The <code>scaffold dataset check</code> command is key. It analyzes coverage gaps and tells you exactly where to add more examples. This turns "write until you feel done" into a guided process with a clear finish line.</p>
+
+      <h3>Then expand with automated generation</h3>
+      <p>Once you have a solid manual core, Scaffold offers three strategies to expand:</p>
+
+      <h4>Import production logs</h4>
+      <p>Export logs from Langfuse, Arize, or your own system. Scaffold identifies successful runs, selects diverse examples, and converts them into eval scenarios. Scaffold never touches production &mdash; it only consumes what you export.</p>
+      <div class="code-frame">
+        <div class="code-tab"><span class="dot"></span><span>Terminal</span></div>
+        <div class="code-body"><span class="g">$</span> scaffold generate --from-logs ./exported-logs/ --output evals/data/dataset.jsonl</div>
+      </div>
+
+      <h4>Generate from specs</h4>
+      <p>Provide tool definitions and a system prompt. Scaffold generates realistic scenarios that exercise your full tool surface, with coverage targets to ensure edge cases are included.</p>
+      <div class="code-frame">
+        <div class="code-tab"><span class="dot"></span><span>Terminal</span></div>
+        <div class="code-body"><span class="g">$</span> scaffold generate --from-spec agent_config.yaml --output evals/data/agent_scenarios.jsonl</div>
+      </div>
+
+      <h4>Augment existing examples</h4>
+      <p>Start with 20&ndash;30 hand-curated examples. Scaffold generates perturbations &mdash; rephrased inputs, changed parameters, combined intents, edge cases &mdash; to expand to a statistically meaningful dataset.</p>
+      <div class="code-frame">
+        <div class="code-tab"><span class="dot"></span><span>Terminal</span></div>
+        <div class="code-body"><span class="g">$</span> scaffold generate --augment evals/data/seed.jsonl --output evals/data/expanded.jsonl --target-size 200</div>
+      </div>
+
+      <div class="scenario">
+        <h4>Real-world scenario</h4>
+        <p>Your team is launching a new feature that uses an LLM to classify customer feedback. You have no eval dataset. On Monday, a product manager spends 2 hours writing 80 examples across the 6 feedback categories, focusing on edge cases they know are tricky. <code>scaffold dataset check</code> flags that the "feature request" and "bug report" categories are underrepresented. They add 30 more targeted examples. By Tuesday afternoon, you have a 200-example dataset with solid coverage, and your CI pipeline is gated.</p>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- USE CASE 5: PROMPTFOO MIGRATION -->
+  <section class="use-case" id="promptfoo-migration">
+    <div class="container">
+      <div class="uc-label">Use Case 05</div>
+      <h2>Migrating from Promptfoo</h2>
+      <p>After OpenAI acquired Promptfoo in March 2026, teams using multiple model providers need a neutral eval tool they can trust. Scaffold is provider-neutral, community-owned, and offers capabilities Promptfoo never had.</p>
+
+      <h3>Why teams are migrating</h3>
+      <ul>
+        <li><strong>Provider neutrality.</strong> Promptfoo is now owned by OpenAI. Teams using Anthropic, Google, Mistral, or open-source models may not trust an OpenAI-owned eval tool to remain unbiased.</li>
+        <li><strong>Strategic direction.</strong> OpenAI likely acquired Promptfoo for red-teaming/security capabilities. General eval and CI gating may be deprioritized.</li>
+        <li><strong>Feature gaps.</strong> Promptfoo never offered automated model migration, agentic trajectory evaluation, or eval dataset generation.</li>
+      </ul>
+
+      <h3>Config import</h3>
+      <p>Scaffold can import your existing Promptfoo configuration:</p>
+
+      <div class="code-frame">
+        <div class="code-tab">
+          <span class="dot"></span>
+          <span>Terminal</span>
+        </div>
+        <div class="code-body"><span class="p">$ </span><span class="w">scaffold import-promptfoo</span> promptfooconfig.yaml
+
+<span class="c">Detected 3 test suites</span>
+<span class="c">Converted 2 deterministic evals (exact match + F1)</span>
+<span class="c">Converted 1 LLM-as-judge eval (rubric-based)</span>
+<span class="c">Migrated 847 test cases across all suites</span>
+
+<span class="g">&#10003; Written to ./scaffold.yaml</span>
+  <span class="c">Review the config and run: scaffold run</span></div>
+      </div>
+
+      <h3>What you gain</h3>
+
+      <table class="uc-table">
+        <thead>
+          <tr><th>Capability</th><th>Promptfoo</th><th>Scaffold</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>CI gating</td><td>Supported, but designed for comparison</td><td>Native &mdash; designed for pass/fail gating</td></tr>
+          <tr><td>Model migration</td><td>Not available</td><td>Automated with holdout validation</td></tr>
+          <tr><td>Pipeline-level testing</td><td>Primarily prompt-level</td><td>Full pipeline (catches upstream changes)</td></tr>
+          <tr><td>Agent evaluation</td><td>Not available</td><td>Trajectory + constraints + multi-turn</td></tr>
+          <tr><td>Dataset creation</td><td>Not available</td><td>Manual curation + automated generation</td></tr>
+          <tr><td>Relative thresholds</td><td>Limited</td><td>Configurable max-regression from baseline</td></tr>
+          <tr><td>Provider neutral</td><td>Owned by OpenAI</td><td>Community-owned, works with every provider</td></tr>
+        </tbody>
+      </table>
+
+      <div class="scenario">
+        <h4>Real-world scenario</h4>
+        <p>Your team has been using Promptfoo for 8 months with 5 eval suites across 3 repos. After the OpenAI acquisition, your platform team decides to migrate. They run <code>scaffold import-promptfoo</code> on each repo, review the generated configs, and switch the CI workflows to use Scaffold. The migration takes half a day per repo. By the end of the week, all 3 repos are running on Scaffold with the same eval coverage they had before &mdash; plus model migration and pipeline-level testing they didn't have before.</p>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <div class="container">
+      <h2>Ready to get started?</h2>
+      <p>Five-minute setup. Open source. Provider neutral.</p>
+      <div class="btns">
+        <a href="https://github.com/scaffold-ai/scaffold" class="btn-primary">Get Started</a>
+        <a href="index.html" class="btn-ghost">Back to Home</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 Scaffold</p>
+      <div style="display: flex; gap: 24px;">
+        <a href="https://github.com/scaffold-ai/scaffold">GitHub</a>
+        <a href="#">Docs</a>
+        <a href="#">Discord</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

@@ -1,0 +1,20 @@
+{"input": "My printer won't connect to wifi", "expected": "hardware"}
+{"input": "I need a refund for order #882", "expected": "billing"}
+{"input": "How do I reset my password?", "expected": "account"}
+{"input": "The app crashes when I open settings", "expected": "software"}
+{"input": "Can I upgrade my subscription plan?", "expected": "billing"}
+{"input": "My monitor has dead pixels", "expected": "hardware"}
+{"input": "I was charged twice for the same order", "expected": "billing"}
+{"input": "How do I export my data?", "expected": "account"}
+{"input": "The website is loading very slowly", "expected": "software"}
+{"input": "I can't find the unsubscribe button", "expected": "account"}
+{"input": "My keyboard stopped working after the update", "expected": "hardware"}
+{"input": "I want to cancel my subscription", "expected": "billing"}
+{"input": "The search feature returns wrong results", "expected": "software"}
+{"input": "My external hard drive isn't recognized", "expected": "hardware"}
+{"input": "Where can I download my invoice?", "expected": "billing"}
+{"input": "How do I enable two-factor authentication?", "expected": "account"}
+{"input": "The mobile app won't send notifications", "expected": "software"}
+{"input": "My webcam image is upside down", "expected": "hardware"}
+{"input": "I need to change my email address on file", "expected": "account"}
+{"input": "The checkout page shows an error 500", "expected": "software"}

@@ -1,0 +1,42 @@
+name: "Scaffold Eval"
+description: "Run Scaffold LLM evals and post results as a PR comment"
+inputs:
+  compare-to:
+    description: "Branch to compare baselines against"
+    default: "origin/main"
+  github-token:
+    description: "Token for posting PR comments"
+    default: ${{ github.token }}
+  smoke:
+    description: "Run on a subset of the dataset"
+    default: "false"
+  output:
+    description: "Write report to this file path"
+    default: ""
+  working-directory:
+    description: "Directory containing scaffold.yaml"
+    default: "."
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    - name: Install Scaffold
+      shell: bash
+      run: pip install scaffold-ai
+    - name: Run evals
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        ARGS="--compare-to=${{ inputs.compare-to }}"
+        if [ "${{ inputs.smoke }}" = "true" ]; then
+          ARGS="$ARGS --smoke"
+        fi
+        if [ -n "${{ inputs.output }}" ]; then
+          ARGS="$ARGS --output=${{ inputs.output }}"
+        fi
+        scaffold run $ARGS
