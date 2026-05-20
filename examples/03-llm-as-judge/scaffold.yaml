@@ -1,0 +1,28 @@
+version: 1
+
+target:
+  command: "python3 run_summarizer.py --input {input_file} --output {output_file}"
+
+evals:
+  - name: summary-quality
+    level: prompt
+    dataset: ./evals/summaries.jsonl
+    judge:
+      type: llm
+      model: openai/gpt-4o-mini
+      rubric:
+        - id: factual_accuracy
+          prompt: "The summary contains only facts present in the original text. No hallucinated information."
+        - id: key_info
+          prompt: "The summary captures the most important information from the original text."
+        - id: conciseness
+          prompt: "The summary is concise — significantly shorter than the original without unnecessary repetition."
+    metrics:
+      - name: pass_rate
+        threshold: 0.70
+        mode: absolute
+
+settings:
+  parallelism: 3
+  timeout_per_call: 30
+  retries: 1

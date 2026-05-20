@@ -31,7 +31,7 @@ jobs:
     needs: [lint, test]
     strategy:
       matrix:
-        example: [01-ci-regression]
+        example: [01-ci-regression, 04-custom-judge]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

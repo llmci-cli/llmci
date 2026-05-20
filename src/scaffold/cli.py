@@ -131,7 +131,74 @@ def migrate(
     max_edit_distance: int | None,
 ) -> None:
     """Run prompt migration optimization."""
-    click.echo("scaffold migrate: not yet implemented (Phase 5)")
+    from scaffold.config import find_eval, load_config
+    from scaffold.dataset.loader import load_dataset
+    from scaffold.migrate.optimizer import optimize_prompt
+    from scaffold.migrate.report import format_migration_report
+    from scaffold.migrate.splitter import split_dataset
+
+    try:
+        config = load_config()
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+    eval_cfg = find_eval(config, eval_name)
+
+    if not config.target.prompt_file:
+        click.echo(
+            "Error: Migration requires a prompt file. "
+            "Set target.prompt_file in scaffold.yaml.",
+            err=True,
+        )
+        sys.exit(1)
+
+    original_prompt = Path(config.target.prompt_file).read_text()
+    dataset_path = eval_cfg.dataset
+    if not isinstance(dataset_path, str):
+        click.echo("Error: Remote datasets not supported for migration.", err=True)
+        sys.exit(1)
+
+    examples = load_dataset(dataset_path)
+    split = split_dataset(examples)
+    primary_metric = eval_cfg.metrics[0].name if eval_cfg.metrics else "accuracy"
+
+    verbose = ctx.obj.get("verbose", False)
+    if verbose:
+        click.echo(
+            f"Migrating {from_model} → {to_model}\n"
+            f"Eval: {eval_name} (metric: {primary_metric})\n"
+            f"Split: {len(split.train)} train / {len(split.validation)} val / "
+            f"{len(split.holdout)} holdout\n"
+            f"Optimizer: {optimizer_model}\n"
+        )
+
+    try:
+        result = asyncio.run(optimize_prompt(
+            original_prompt=original_prompt,
+            from_model=from_model,
+            to_model=to_model,
+            optimizer_model=optimizer_model,
+            eval_config=eval_cfg,
+            split=split,
+            primary_metric=primary_metric,
+            patience=patience,
+            min_improvement=min_improvement,
+            max_iterations=max_iterations,
+            max_edit_distance=max_edit_distance,
+            base_url=config.target.base_url,
+        ))
+    except Exception as e:
+        click.echo(f"Error during migration: {e}", err=True)
+        sys.exit(1)
+
+    click.echo(format_migration_report(result))
+
+    prompt_path = Path(config.target.prompt_file)
+    if result.best_prompt != original_prompt:
+        if click.confirm("\nWrite optimized prompt to disk?"):
+            prompt_path.write_text(result.best_prompt)
+            click.echo(f"Prompt written to {prompt_path}")
 
 
 @cli.group()
@@ -218,23 +285,54 @@ def dataset_add(name: str) -> None:
 
 @dataset.command("check")
 @click.option("--name", required=True, help="Name of the eval dataset.")
-def dataset_check(name: str) -> None:
+@click.option(
+    "--min-per-category",
+    default=5,
+    type=int,
+    help="Minimum examples per category before warning.",
+)
+def dataset_check(name: str, min_per_category: int) -> None:
     """Analyze dataset coverage and quality."""
-    click.echo("scaffold dataset check: not yet implemented (Phase 4)")
+    from scaffold.dataset.check import check_dataset, format_coverage_report
+
+    filepath = Path("evals") / f"{name}.jsonl"
+    if not filepath.exists():
+        click.echo(f"Dataset not found: {filepath}")
+        sys.exit(1)
+
+    report = check_dataset(filepath, min_per_category=min_per_category)
+    click.echo(format_coverage_report(report))
 
 
 @dataset.command("import")
 @click.option("--name", required=True, help="Name of the eval dataset.")
 @click.option("--from", "source", required=True, help="Path to CSV or JSON file.")
-def dataset_import(name: str, source: str) -> None:
+@click.option("--input-column", default="input", help="Column name for input.")
+@click.option("--expected-column", default="expected", help="Column name for expected.")
+def dataset_import(
+    name: str, source: str, input_column: str, expected_column: str
+) -> None:
     """Import examples from CSV or JSON."""
-    click.echo("scaffold dataset import: not yet implemented (Phase 4)")
+    from scaffold.dataset.import_data import import_dataset
+
+    try:
+        imported, skipped = import_dataset(
+            name, source, input_column=input_column, expected_column=expected_column
+        )
+        click.echo(f"Imported {imported} examples to evals/{name}.jsonl")
+        if skipped:
+            click.echo(f"Skipped {skipped} rows (missing input or expected)")
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
 
 
 @cli.command()
 def init() -> None:
     """Initialize a new scaffold.yaml interactively."""
-    click.echo("scaffold init: not yet implemented (Phase 7)")
+    from scaffold.init import run_init
+
+    run_init()
 
 
 @cli.command("import-promptfoo")
@@ -242,4 +340,11 @@ def init() -> None:
 @click.option("--output", default="scaffold.yaml", help="Output path for converted config.")
 def import_promptfoo(source: str, output: str) -> None:
     """Convert a Promptfoo config to scaffold.yaml."""
-    click.echo("scaffold import-promptfoo: not yet implemented (Phase 7)")
+    from scaffold.import_promptfoo import import_promptfoo_config
+
+    try:
+        import_promptfoo_config(Path(source), Path(output))
+        click.echo(f"Converted {source} → {output}")
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)

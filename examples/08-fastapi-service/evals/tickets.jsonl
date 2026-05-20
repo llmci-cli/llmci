@@ -1,0 +1,24 @@
+{"input": "My printer keeps jamming every time I try to print more than 5 pages. I've cleaned the rollers but it still happens.", "expected": "hardware"}
+{"input": "I was charged $49.99 twice for the same subscription renewal this month. Please refund the duplicate charge.", "expected": "billing"}
+{"input": "I can't log into my account. I've tried resetting my password three times but the reset email never arrives.", "expected": "account"}
+{"input": "The mobile app crashes immediately after the latest update. I'm on iOS 17.4.", "expected": "software"}
+{"input": "My bluetooth keyboard disconnects randomly during video calls. Battery is full, firmware is up to date.", "expected": "hardware"}
+{"input": "I want to cancel my subscription and get a prorated refund for the remaining 2 months on my annual plan.", "expected": "billing"}
+{"input": "How do I enable two-factor authentication? I want to add a hardware security key to my account.", "expected": "account"}
+{"input": "The search feature on your website returns completely irrelevant results. Searching for 'billing' shows hardware articles.", "expected": "software"}
+{"input": "My monitor has a dead pixel cluster in the upper right corner. It appeared after the latest HDMI firmware update.", "expected": "hardware"}
+{"input": "I received an invoice for $299 but my plan is supposed to be $199. The discount coupon I applied at checkout isn't reflected.", "expected": "billing"}
+{"input": "I need to export all my data before I deactivate my account. Where is the data export tool?", "expected": "account"}
+{"input": "Dark mode is broken — text is invisible on several screens because both the background and text turned dark.", "expected": "software"}
+{"input": "My USB dock stopped recognizing external monitors after the OS update. Tried different cables and ports.", "expected": "hardware"}
+{"input": "I signed up for a free trial but was charged on day 1. My card ending in 4242 shows a $29.99 charge.", "expected": "billing"}
+{"input": "I'm locked out of my account and the SSO redirect just loops back to the login page endlessly.", "expected": "account"}
+{"input": "The notification system is sending me alerts for things I've already read. The sync seems broken between mobile and desktop.", "expected": "software"}
+{"input": "My laptop charger cable is fraying near the connector and sparking. This seems like a safety issue.", "expected": "hardware"}
+{"input": "Can I upgrade from the Basic to Pro plan mid-cycle? Will I be charged the full price or prorated?", "expected": "billing"}
+{"input": "I need to change the email address associated with my account but the profile settings page gives a 403 error.", "expected": "account"}
+{"input": "The application takes over 30 seconds to load on my desktop. It used to open in under 5 seconds before the last update.", "expected": "software"}
+{"input": "My webcam feed is showing a green tint during all video calls. Reinstalling drivers didn't fix it.", "expected": "hardware"}
+{"input": "I was given a 20% discount code but it says 'expired' even though customer support emailed it to me yesterday.", "expected": "billing"}
+{"input": "Someone changed my account password and email. I think my account was compromised. Please help me recover it.", "expected": "account"}
+{"input": "The auto-save feature lost my last hour of work. The app froze and when I restarted, the recovery file was empty.", "expected": "software"}

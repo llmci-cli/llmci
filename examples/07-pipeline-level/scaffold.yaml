@@ -1,0 +1,22 @@
+version: 1
+
+target:
+  command: "python3 run_pipeline.py --input {input_file} --output {output_file}"
+
+evals:
+  - name: qa-pipeline
+    level: pipeline
+    dataset: ./evals/qa.jsonl
+    judge:
+      type: custom
+      module: ./pipeline_judge.py
+      function: evaluate
+    metrics:
+      - name: pass_rate
+        threshold: 0.80
+        mode: absolute
+
+settings:
+  parallelism: 5
+  timeout_per_call: 10
+  retries: 1

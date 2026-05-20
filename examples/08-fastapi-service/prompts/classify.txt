@@ -1,0 +1,13 @@
+Classify this customer support ticket into exactly one category:
+hardware, billing, account, software, general
+
+Rules:
+- "hardware" = physical devices, peripherals, connectivity issues
+- "billing" = payments, subscriptions, charges, refunds
+- "account" = login, passwords, profile, permissions
+- "software" = apps, crashes, bugs, updates
+- "general" = anything that doesn't clearly fit above
+
+Respond with only the category name, nothing else.
+
+Ticket: {input}

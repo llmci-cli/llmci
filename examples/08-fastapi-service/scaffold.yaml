@@ -1,0 +1,32 @@
+version: 1
+
+# Service-level eval: tests the full pre-processing → classify → post-processing pipeline.
+# Catches regressions from PII redaction changes, confidence thresholds, prompt edits, etc.
+target:
+  command: "python3 eval_service.py --input {input_file} --output {output_file}"
+
+evals:
+  # Prompt-level: tests classification logic only (swap target.command to run_prompt.py)
+  # Service-level: tests the full pipeline including pre/post processing
+  - name: service-classification
+    level: pipeline
+    dataset: ./evals/tickets.jsonl
+    judge: exact_match
+    metrics:
+      - name: accuracy
+        threshold: 0.75
+        mode: absolute
+      - name: f1_weighted
+        threshold: 0.70
+        mode: absolute
+      - name: precision_macro
+        threshold: 0.65
+        mode: absolute
+      - name: recall_macro
+        threshold: 0.60
+        mode: absolute
+
+settings:
+  parallelism: 5
+  timeout_per_call: 10
+  retries: 1

@@ -1,0 +1,5 @@
+Classify the following support ticket into exactly one category: hardware, billing, account, or software.
+
+Respond with only the category name, nothing else.
+
+Ticket: {input}

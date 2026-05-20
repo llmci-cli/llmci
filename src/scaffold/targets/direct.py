@@ -18,6 +18,7 @@ async def run_direct_target(
     parallelism: int = 10,
     timeout: int = 30,
     retries: int = 2,
+    base_url: str | None = None,
 ) -> list[TargetResult]:
     """Run a direct API target on all examples with bounded concurrency."""
     semaphore = asyncio.Semaphore(parallelism)
@@ -26,7 +27,8 @@ async def run_direct_target(
     async def run_one(example: EvalExample) -> TargetResult:
         async with semaphore:
             return await _run_single_direct(
-                model_str, prompt_template, example, timeout, retries
+                model_str, prompt_template, example, timeout, retries,
+                base_url=base_url,
             )
 
     return await asyncio.gather(*[run_one(ex) for ex in examples])
@@ -38,6 +40,7 @@ async def _run_single_direct(
     example: EvalExample,
     timeout: int,
     retries: int,
+    base_url: str | None = None,
 ) -> TargetResult:
     """Run a single example through litellm with retries."""
     last_error: str | None = None
@@ -48,11 +51,15 @@ async def _run_single_direct(
 
             start = time.monotonic()
 
-            response = await litellm.acompletion(
-                model=model_str,
-                messages=[{"role": "user", "content": prompt}],
-                timeout=timeout,
-            )
+            kwargs: dict = {
+                "model": model_str,
+                "messages": [{"role": "user", "content": prompt}],
+                "timeout": timeout,
+            }
+            if base_url:
+                kwargs["api_base"] = base_url
+
+            response = await litellm.acompletion(**kwargs)
 
             elapsed_ms = (time.monotonic() - start) * 1000
             content = response.choices[0].message.content or ""

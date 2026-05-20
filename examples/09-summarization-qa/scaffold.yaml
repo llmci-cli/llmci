@@ -1,0 +1,55 @@
+version: 1
+
+target:
+  command: "python3 run_summarizer.py --input {input_file} --output {output_file}"
+
+evals:
+  # With reference summaries — judge compares generated vs expected
+  - name: summary-with-refs
+    dataset: ./evals/articles_with_refs.jsonl
+    judge:
+      type: llm
+      model: openai/gpt-4o-mini
+      rubric:
+        - id: faithfulness
+          prompt: "Does the summary only contain claims supported by the source article? Penalize any hallucinated facts or unsupported conclusions."
+        - id: completeness
+          prompt: "Does the summary cover the main points of the article? Key findings, numbers, and conclusions should be present."
+        - id: conciseness
+          prompt: "Is the summary free of filler, redundancy, and unnecessary detail? It should be tight and to the point."
+    metrics:
+      - name: mean_score
+        threshold: 0.70
+        mode: absolute
+      - name: min_score
+        threshold: 0.40
+        mode: absolute
+      - name: cosine_similarity
+        threshold: 0.30
+        mode: absolute
+
+  # Reference-free — judge evaluates summary against the input only
+  - name: summary-no-refs
+    dataset: ./evals/articles_no_refs.jsonl
+    judge:
+      type: llm
+      model: openai/gpt-4o-mini
+      rubric:
+        - id: faithfulness
+          prompt: "Does the summary only contain claims supported by the source article? Penalize any hallucinated facts or unsupported conclusions."
+        - id: completeness
+          prompt: "Does the summary cover the main points of the article? Key findings, numbers, and conclusions should be present."
+        - id: conciseness
+          prompt: "Is the summary free of filler, redundancy, and unnecessary detail? It should be tight and to the point."
+    metrics:
+      - name: mean_score
+        threshold: 0.65
+        mode: absolute
+      - name: pass_rate
+        threshold: 0.70
+        mode: absolute
+
+settings:
+  parallelism: 3
+  timeout_per_call: 30
+  retries: 2

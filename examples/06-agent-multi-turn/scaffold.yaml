@@ -1,0 +1,24 @@
+version: 1
+
+target:
+  command: "python3 run_agent.py --input {input_file} --output {output_file}"
+
+evals:
+  - name: customer-support-conversation
+    level: agent
+    mode: full_replay
+    dataset: ./evals/conversations.jsonl
+    judge:
+      type: composite
+      criteria:
+        - name: constraints
+          type: constraint
+          weight: 1.0
+    metrics:
+      - name: mean_score
+        threshold: 0.70
+        mode: absolute
+
+settings:
+  parallelism: 2
+  timeout_per_call: 15

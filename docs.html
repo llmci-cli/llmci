@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Docs — Scaffold</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #ffffff;
+      --bg-alt: #fafbfc;
+      --bg-code: #111827;
+      --border: #e5e7eb;
+      --border-light: #f0f1f3;
+      --text: #111827;
+      --text-secondary: #4b5563;
+      --text-tertiary: #9ca3af;
+      --accent: #059669;
+      --accent-hover: #047857;
+      --accent-bg: rgba(5, 150, 105, 0.06);
+      --accent-border: rgba(5, 150, 105, 0.15);
+      --red: #dc2626;
+      --yellow: #d97706;
+      --blue: #2563eb;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.06);
+      --radius: 12px;
+      --sidebar-w: 260px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* TOP NAV */
+    .top-nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 200;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border-bottom: 1px solid var(--border-light);
+      height: 56px;
+    }
+
+    .top-nav-inner {
+      margin: 0;
+      padding: 0 32px 0 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 100%;
+    }
+
+    .top-nav .logo {
+      width: calc(var(--sidebar-w) - 20px);
+    }
+
+    .logo {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+
+    .logo-mark { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; }
+    .logo-mark svg { width: 26px; height: 26px; }
+
+    .nav-links { display: flex; gap: 24px; align-items: center; }
+    .nav-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      transition: color 0.15s;
+    }
+    .nav-links a:hover { color: var(--text); }
+    .nav-links a.active { color: var(--accent); font-weight: 600; }
+
+    .btn-nav {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-alt);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 6px 14px;
+      font-size: 0.8125rem;
+      border-radius: 8px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+    .btn-nav:hover { background: #f0f1f3; }
+
+    /* LAYOUT */
+    .docs-layout {
+      display: flex;
+      margin-top: 56px;
+      min-height: calc(100vh - 56px);
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      position: fixed;
+      top: 56px;
+      left: 0;
+      bottom: 0;
+      width: var(--sidebar-w);
+      border-right: 1px solid var(--border-light);
+      background: var(--bg-alt);
+      overflow-y: auto;
+      padding: 24px 0;
+      z-index: 100;
+    }
+
+    .sidebar-section {
+      margin-bottom: 24px;
+    }
+
+    .sidebar-heading {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-tertiary);
+      padding: 0 20px;
+      margin-bottom: 6px;
+    }
+
+    .sidebar a {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 20px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.825rem;
+      font-weight: 450;
+      transition: all 0.12s;
+      border-left: 2px solid transparent;
+    }
+
+    .sidebar a:hover {
+      color: var(--text);
+      background: rgba(0,0,0,0.03);
+    }
+
+    .sidebar a.active {
+      color: var(--accent);
+      font-weight: 600;
+      background: var(--accent-bg);
+      border-left-color: var(--accent);
+    }
+
+    .sidebar-icon {
+      width: 16px;
+      height: 16px;
+      opacity: 0.5;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+    }
+
+    /* MAIN CONTENT */
+    .docs-main {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      max-width: 820px;
+      padding: 48px 64px 120px;
+    }
+
+    /* CONTENT STYLES */
+    .doc-section {
+      margin-bottom: 64px;
+      scroll-margin-top: 80px;
+    }
+
+    .doc-section h2 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+      line-height: 1.2;
+    }
+
+    .doc-section h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-top: 40px;
+      margin-bottom: 12px;
+    }
+
+    .doc-section h4 {
+      font-size: 0.95rem;
+      font-weight: 650;
+      margin-top: 28px;
+      margin-bottom: 8px;
+    }
+
+    .doc-section p {
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+      font-size: 0.9375rem;
+    }
+
+    .doc-section ul, .doc-section ol {
+      margin-bottom: 16px;
+      padding-left: 24px;
+    }
+
+    .doc-section li {
+      color: var(--text-secondary);
+      font-size: 0.9375rem;
+      margin-bottom: 6px;
+    }
+
+    .doc-section li code {
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8em;
+    }
+
+    .section-lead {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+      line-height: 1.7;
+    }
+
+    /* CODE BLOCKS */
+    pre {
+      background: var(--bg-code);
+      color: #e5e7eb;
+      border-radius: 10px;
+      padding: 20px 24px;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      line-height: 1.7;
+      margin-bottom: 20px;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    pre .comment { color: #6b7280; }
+    pre .key { color: #34d399; }
+    pre .string { color: #fbbf24; }
+    pre .flag { color: #60a5fa; }
+    pre .cmd { color: #f9fafb; }
+
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85em;
+    }
+
+    p code, li code {
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+
+    /* TABLES */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      font-size: 0.875rem;
+    }
+
+    th {
+      text-align: left;
+      padding: 10px 14px;
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-tertiary);
+      border-bottom: 2px solid var(--border);
+    }
+
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-light);
+      color: var(--text-secondary);
+    }
+
+    td code {
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 0.8em;
+    }
+
+    /* CALLOUTS */
+    .callout {
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      font-size: 0.875rem;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .callout-icon {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      margin-top: 1px;
+    }
+
+    .callout-tip {
+      background: var(--accent-bg);
+      border: 1px solid var(--accent-border);
+      color: var(--accent);
+    }
+
+    .callout-warn {
+      background: rgba(217, 119, 6, 0.06);
+      border: 1px solid rgba(217, 119, 6, 0.15);
+      color: var(--yellow);
+    }
+
+    .callout-info {
+      background: rgba(37, 99, 235, 0.06);
+      border: 1px solid rgba(37, 99, 235, 0.12);
+      color: var(--blue);
+    }
+
+    .callout p { color: inherit; margin: 0; }
+
+    /* DIVIDER */
+    hr {
+      border: none;
+      border-top: 1px solid var(--border-light);
+      margin: 48px 0;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .docs-main { margin-left: 0; padding: 32px 20px 80px; }
+      .top-nav-inner { padding: 0 20px; }
+      .top-nav .logo { width: auto; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP NAV -->
+  <header class="top-nav">
+    <div class="top-nav-inner">
+      <a href="index.html" class="logo">
+        <div class="logo-mark">
+          <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="10" y="70" width="80" height="10" rx="3" fill="#059669"/>
+            <rect x="20" y="50" width="60" height="10" rx="3" fill="#059669" opacity="0.7"/>
+            <rect x="30" y="30" width="40" height="10" rx="3" fill="#059669" opacity="0.45"/>
+          </svg>
+        </div>
+        Scaffold
+      </a>
+      <div class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="use-cases.html">Use Cases</a>
+        <a href="docs.html" class="active">Docs</a>
+        <a href="https://github.com/alexminnaar/scaffold" class="btn-nav">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <div class="docs-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+      <div class="sidebar-section">
+        <div class="sidebar-heading">Getting Started</div>
+        <a href="#installation"><span class="sidebar-icon">&#x2193;</span> Installation</a>
+        <a href="#quickstart" class="active"><span class="sidebar-icon">&#x26A1;</span> Quickstart</a>
+        <a href="#concepts"><span class="sidebar-icon">&#x1F4A1;</span> Core Concepts</a>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-heading">Configuration</div>
+        <a href="#config-file"><span class="sidebar-icon">&#x2699;</span> scaffold.yaml</a>
+        <a href="#targets"><span class="sidebar-icon">&#x25B6;</span> Targets</a>
+        <a href="#judges"><span class="sidebar-icon">&#x2696;</span> Judges</a>
+        <a href="#metrics"><span class="sidebar-icon">&#x1F4CA;</span> Metrics</a>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-heading">Features</div>
+        <a href="#baselines"><span class="sidebar-icon">&#x1F4C9;</span> Baselines &amp; CI</a>
+        <a href="#migration"><span class="sidebar-icon">&#x21C4;</span> Model Migration</a>
+        <a href="#agents"><span class="sidebar-icon">&#x1F916;</span> Agent Evaluation</a>
+        <a href="#datasets"><span class="sidebar-icon">&#x1F4C1;</span> Dataset Tools</a>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-heading">Case Studies</div>
+        <a href="#cs-fastapi"><span class="sidebar-icon">&#x26A1;</span> FastAPI Service</a>
+        <a href="#cs-rag"><span class="sidebar-icon">&#x1F50D;</span> RAG Pipeline</a>
+        <a href="#cs-migration"><span class="sidebar-icon">&#x21C4;</span> Multi-Model Migration</a>
+        <a href="#cs-agent"><span class="sidebar-icon">&#x1F916;</span> Support Agent</a>
+        <a href="#cs-summarization"><span class="sidebar-icon">&#x1F4DD;</span> Summarization QA</a>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-heading">Reference</div>
+        <a href="#cli-ref"><span class="sidebar-icon">&#x276F;</span> CLI Reference</a>
+        <a href="#github-action"><span class="sidebar-icon">&#x2693;</span> GitHub Action</a>
+        <a href="#promptfoo"><span class="sidebar-icon">&#x27A1;</span> Promptfoo Migration</a>
+        <a href="#examples"><span class="sidebar-icon">&#x1F4C2;</span> Examples</a>
+      </div>
+
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="docs-main">
+
+      <!-- INSTALLATION -->
+      <section class="doc-section" id="installation">
+        <h2>Installation</h2>
+        <p class="section-lead">Install Scaffold from PyPI. Requires Python 3.11 or later.</p>
+
+<pre><span class="cmd">pip install scaffold-ai</span></pre>
+
+        <p>For development, install from source:</p>
+
+<pre><span class="cmd">git clone https://github.com/alexminnaar/scaffold.git</span>
+<span class="cmd">cd scaffold</span>
+<span class="cmd">pip install -e ".[dev]"</span></pre>
+
+        <p>Verify your installation:</p>
+
+<pre><span class="cmd">scaffold --version</span></pre>
+      </section>
+
+      <hr>
+
+      <!-- QUICKSTART -->
+      <section class="doc-section" id="quickstart">
+        <h2>Quickstart</h2>
+        <p class="section-lead">Get up and running in under 5 minutes.</p>
+
+        <h3>1. Initialize</h3>
+        <p>Run <code>scaffold init</code> to generate a config and starter dataset interactively:</p>
+
+<pre><span class="cmd">scaffold init</span>
+
+<span class="comment"># Prompts you for:</span>
+<span class="comment">#   Target mode:  command / direct</span>
+<span class="comment">#   Task type:    classification / open_ended / agent</span>
+<span class="comment">#   Eval name:    my-eval</span></pre>
+
+        <p>This creates <code>scaffold.yaml</code> and <code>evals/my-eval.jsonl</code> with starter examples.</p>
+
+        <h3>2. Add your eval data</h3>
+        <p>Edit the generated JSONL file. Each line is one test case:</p>
+
+<pre><span class="string">{"input": "My printer won't connect to wifi", "expected": "hardware"}</span>
+<span class="string">{"input": "I need a refund for order #882", "expected": "billing"}</span>
+<span class="string">{"input": "How do I reset my password?", "expected": "account"}</span></pre>
+
+        <p>Or add examples interactively:</p>
+
+<pre><span class="cmd">scaffold dataset add --name my-eval</span></pre>
+
+        <h3>3. Run evals</h3>
+
+<pre><span class="cmd">scaffold run</span></pre>
+
+        <p>You'll see a report like this:</p>
+
+<pre><span class="comment">## Scaffold Eval Report</span>
+
+<span class="comment">| Eval   | Metric   | Score | Threshold | Status |</span>
+<span class="comment">|--------|----------|-------|-----------|--------|</span>
+<span class="comment">| my-eval| accuracy | 0.950 | ≥ 0.9     | ✅     |</span></pre>
+
+        <p>Exit code 0 means all thresholds passed. Exit code 1 means a regression was detected — perfect for CI gates.</p>
+      </section>
+
+      <hr>
+
+      <!-- CORE CONCEPTS -->
+      <section class="doc-section" id="concepts">
+        <h2>Core Concepts</h2>
+        <p class="section-lead">The mental model behind Scaffold.</p>
+
+        <h3>Eval = Unit Test for LLMs</h3>
+        <p>An <strong>eval</strong> is like a test suite. It has a dataset of input/expected pairs, a target (the thing you're testing), a judge (how to score), and metric thresholds (pass/fail criteria).</p>
+
+        <h3>Targets</h3>
+        <p>The <strong>target</strong> is whatever you're testing — a prompt, a script, a full pipeline. Scaffold sends each input to your target and collects the output. Two modes:</p>
+        <ul>
+          <li><strong>Command mode</strong> — run any executable. Language-agnostic.</li>
+          <li><strong>Direct mode</strong> — call an LLM API directly via litellm.</li>
+        </ul>
+
+        <h3>Judges</h3>
+        <p>A <strong>judge</strong> scores each output. Scaffold includes exact match, LLM-as-judge, custom Python functions, and composite judges for agents.</p>
+
+        <h3>Thresholds</h3>
+        <p>Each metric has a threshold. Two modes:</p>
+        <ul>
+          <li><code>absolute</code> — the score must be at least X (e.g., accuracy ≥ 0.90)</li>
+          <li><code>max_regression</code> — the drop from baseline must be at most X% (e.g., ≤ 5% drop)</li>
+        </ul>
+
+        <h3>Baselines</h3>
+        <p>A <strong>baseline</strong> is a snapshot of metric scores on the main branch. PRs are compared against baselines to detect regressions.</p>
+      </section>
+
+      <hr>
+
+      <!-- SCAFFOLD.YAML -->
+      <section class="doc-section" id="config-file">
+        <h2>scaffold.yaml</h2>
+        <p class="section-lead">The config file defines your target, evals, and settings.</p>
+
+<pre><span class="key">version</span>: <span class="string">1</span>
+
+<span class="key">target</span>:
+  <span class="key">command</span>: <span class="string">"python3 run.py --input {input_file} --output {output_file}"</span>
+
+<span class="key">evals</span>:
+  - <span class="key">name</span>: <span class="string">ticket-classification</span>
+    <span class="key">dataset</span>: <span class="string">./evals/tickets.jsonl</span>
+    <span class="key">judge</span>: <span class="string">exact_match</span>
+    <span class="key">metrics</span>:
+      - <span class="key">name</span>: <span class="string">accuracy</span>
+        <span class="key">threshold</span>: <span class="string">0.90</span>
+        <span class="key">mode</span>: <span class="string">absolute</span>
+
+<span class="key">settings</span>:
+  <span class="key">parallelism</span>: <span class="string">5</span>
+  <span class="key">timeout_per_call</span>: <span class="string">30</span>
+  <span class="key">retries</span>: <span class="string">1</span></pre>
+
+        <table>
+          <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+          <tr><td><code>version</code></td><td>int</td><td>Config version. Always <code>1</code>.</td></tr>
+          <tr><td><code>target</code></td><td>object</td><td>What to test. See <a href="#targets">Targets</a>.</td></tr>
+          <tr><td><code>evals</code></td><td>list</td><td>One or more eval definitions.</td></tr>
+          <tr><td><code>settings</code></td><td>object</td><td>Parallelism, timeouts, retries.</td></tr>
+        </table>
+      </section>
+
+      <hr>
+
+      <!-- TARGETS -->
+      <section class="doc-section" id="targets">
+        <h2>Targets</h2>
+        <p class="section-lead">Define what Scaffold tests — a script, a service, or a direct LLM call.</p>
+
+        <h3>Command Mode</h3>
+        <p>Wrap any executable. Your script receives a JSON input file and writes a JSON output file:</p>
+
+<pre><span class="key">target</span>:
+  <span class="key">command</span>: <span class="string">"python3 my_script.py --input {input_file} --output {output_file}"</span></pre>
+
+        <p>Input file format:</p>
+<pre><span class="string">{"input": "user question here", "expected": "correct answer"}</span></pre>
+
+        <p>Output file format:</p>
+<pre><span class="string">{"output": "model response here"}</span></pre>
+
+        <div class="callout callout-tip">
+          <div class="callout-icon">&#x2713;</div>
+          <p>Command mode is language-agnostic. Your script can be Python, Node.js, Go, a Docker container — anything that reads/writes JSON files.</p>
+        </div>
+
+        <h3>Direct API Mode</h3>
+        <p>Call an LLM provider directly via <a href="https://github.com/BerriAI/litellm">litellm</a>:</p>
+
+<pre><span class="key">target</span>:
+  <span class="key">direct</span>:
+    <span class="key">provider</span>: <span class="string">openai</span>
+    <span class="key">model</span>: <span class="string">gpt-4o-mini</span>
+  <span class="key">prompt_file</span>: <span class="string">prompt.txt</span></pre>
+
+        <p>The prompt file uses <code>{input}</code> as a placeholder:</p>
+
+<pre>Classify this ticket into: hardware, billing, account, software.
+
+Respond with only the category name.
+
+Ticket: <span class="string">{input}</span></pre>
+
+        <p>Set API credentials via environment variables (e.g., <code>OPENAI_API_KEY</code>). All litellm-supported providers work: OpenAI, Anthropic, Azure, Bedrock, Vertex, Ollama, etc.</p>
+
+        <h4>Custom Base URL / Proxy</h4>
+        <p>If your organization uses an internal LLM proxy or gateway, set <code>base_url</code> to route requests through it:</p>
+
+<pre><span class="key">target</span>:
+  <span class="key">direct</span>:
+    <span class="key">provider</span>: <span class="string">openai</span>
+    <span class="key">model</span>: <span class="string">gpt-4o</span>
+    <span class="key">base_url</span>: <span class="string">https://llm-proxy.internal.company.com/v1</span>
+  <span class="key">prompt_file</span>: <span class="string">prompt.txt</span></pre>
+
+        <p>Alternatively, you can set the base URL via environment variables (e.g., <code>OPENAI_API_BASE</code>).</p>
+      </section>
+
+      <hr>
+
+      <!-- JUDGES -->
+      <section class="doc-section" id="judges">
+        <h2>Judges</h2>
+        <p class="section-lead">Judges score each example by comparing the target's output against the expected value.</p>
+
+        <h3>Exact Match</h3>
+        <p>For classification and deterministic tasks:</p>
+<pre><span class="key">judge</span>: <span class="string">exact_match</span></pre>
+        <p>Strips whitespace and compares strings. Score is 1.0 for match, 0.0 for mismatch.</p>
+
+        <h3>LLM-as-Judge</h3>
+        <p>For open-ended tasks where there's no single correct answer:</p>
+
+<pre><span class="key">judge</span>:
+  <span class="key">type</span>: <span class="string">llm</span>
+  <span class="key">model</span>: <span class="string">gpt-4o</span>
+  <span class="key">rubric</span>:
+    - <span class="key">id</span>: <span class="string">accuracy</span>
+      <span class="key">prompt</span>: <span class="string">"Is the response factually correct?"</span>
+    - <span class="key">id</span>: <span class="string">completeness</span>
+      <span class="key">prompt</span>: <span class="string">"Does the response fully address the question?"</span></pre>
+
+        <p>The judge LLM evaluates each criterion independently (pass/fail), and the final score is the fraction of criteria passed. Responses are cached to avoid redundant API calls.</p>
+
+        <p>You can also use a single-string rubric for simpler setups:</p>
+<pre><span class="key">judge</span>:
+  <span class="key">type</span>: <span class="string">llm</span>
+  <span class="key">model</span>: <span class="string">gpt-4o-mini</span>
+  <span class="key">rubric</span>: <span class="string">"Is the response accurate, complete, and well-written?"</span></pre>
+
+        <h4>Reference-free evaluation</h4>
+        <p>LLM judges don't require a reference answer. If your dataset only has <code>input</code> fields (no <code>expected</code>), the judge evaluates the output purely against the input and rubric. This is useful for:</p>
+        <ul>
+          <li>Tone and style checking ("Is the response professional and empathetic?")</li>
+          <li>Safety evaluation ("Does the response contain harmful content?")</li>
+          <li>Format validation ("Is the response valid JSON with the required fields?")</li>
+          <li>Relevance checking ("Does the response address the user's question?")</li>
+        </ul>
+
+<pre><span class="comment"># Dataset without expected — just inputs</span>
+<span class="string">{"input": "Write me a professional email declining a meeting"}</span>
+<span class="string">{"input": "Explain quantum computing to a 10 year old"}</span></pre>
+
+<pre><span class="key">judge</span>:
+  <span class="key">type</span>: <span class="string">llm</span>
+  <span class="key">model</span>: <span class="string">gpt-4o-mini</span>
+  <span class="key">rubric</span>:
+    - <span class="key">id</span>: <span class="string">tone</span>
+      <span class="key">prompt</span>: <span class="string">"Is the response appropriately professional?"</span>
+    - <span class="key">id</span>: <span class="string">relevance</span>
+      <span class="key">prompt</span>: <span class="string">"Does the response directly address what the user asked for?"</span></pre>
+
+        <p>When a reference answer is provided, the judge sees both the expected and actual outputs for comparison. When it's omitted, the judge evaluates the output on its own merits against the rubric criteria.</p>
+
+        <h3>Custom Judge</h3>
+        <p>Write your own scoring logic in Python:</p>
+
+<pre><span class="key">judge</span>:
+  <span class="key">type</span>: <span class="string">custom</span>
+  <span class="key">module</span>: <span class="string">./my_judge.py</span>
+  <span class="key">function</span>: <span class="string">evaluate</span></pre>
+
+        <p>Your function signature:</p>
+
+<pre><span class="key">def</span> <span class="cmd">evaluate</span>(input: str, expected: str, actual: str) -> dict:
+    <span class="comment"># Your logic here</span>
+    <span class="key">return</span> {<span class="string">"score"</span>: 1.0, <span class="string">"reason"</span>: <span class="string">"Looks good"</span>}</pre>
+
+        <p>Return a dict with <code>score</code> (0.0–1.0) and optionally <code>reason</code>.</p>
+
+        <h3>Composite Judge (Agents)</h3>
+        <p>Combine multiple evaluation criteria for agent workflows:</p>
+
+<pre><span class="key">judge</span>:
+  <span class="key">type</span>: <span class="string">composite</span>
+  <span class="key">criteria</span>:
+    - <span class="key">name</span>: <span class="string">constraints</span>
+      <span class="key">type</span>: <span class="string">constraint</span>
+      <span class="key">weight</span>: <span class="string">1.0</span>
+    - <span class="key">name</span>: <span class="string">outcome</span>
+      <span class="key">type</span>: <span class="string">outcome</span>
+      <span class="key">weight</span>: <span class="string">2.0</span>
+    - <span class="key">name</span>: <span class="string">trajectory</span>
+      <span class="key">type</span>: <span class="string">trajectory</span>
+      <span class="key">weight</span>: <span class="string">1.0</span>
+      <span class="key">rubric</span>: <span class="string">"Did the agent use tools efficiently?"</span></pre>
+
+        <p>See <a href="#agents">Agent Evaluation</a> for details.</p>
+      </section>
+
+      <hr>
+
+      <!-- METRICS -->
+      <section class="doc-section" id="metrics">
+        <h2>Metrics</h2>
+        <p class="section-lead">Metrics aggregate per-example judge scores into a single number.</p>
+
+        <h3>Score-Based</h3>
+        <table>
+          <tr><th>Metric</th><th>Description</th><th>Best for</th></tr>
+          <tr><td><code>accuracy</code></td><td>Fraction of examples with score = 1.0</td><td>Classification</td></tr>
+          <tr><td><code>pass_rate</code></td><td>Fraction of examples with score ≥ 0.5</td><td>Open-ended tasks</td></tr>
+          <tr><td><code>mean_score</code></td><td>Average judge score across all examples</td><td>Rubric-based evaluation</td></tr>
+          <tr><td><code>median_score</code></td><td>Median judge score (robust to outliers)</td><td>Rubric-based evaluation</td></tr>
+          <tr><td><code>min_score</code></td><td>Lowest score in the dataset</td><td>Worst-case analysis</td></tr>
+          <tr><td><code>max_score</code></td><td>Highest score in the dataset</td><td>Sanity checks</td></tr>
+          <tr><td><code>error_rate</code></td><td>Fraction of examples that errored (timeout, API failure)</td><td>Reliability monitoring</td></tr>
+        </table>
+
+        <h3>Classification</h3>
+        <table>
+          <tr><th>Metric</th><th>Description</th><th>Best for</th></tr>
+          <tr><td><code>f1_macro</code></td><td>Macro-averaged F1 across categories</td><td>Balanced multi-class</td></tr>
+          <tr><td><code>f1_micro</code></td><td>Micro-averaged F1 (global TP/FP/FN)</td><td>Imbalanced datasets</td></tr>
+          <tr><td><code>f1_weighted</code></td><td>Weighted F1 by class support</td><td>Imbalanced datasets</td></tr>
+          <tr><td><code>precision_macro</code></td><td>Macro-averaged precision</td><td>When false positives are costly</td></tr>
+          <tr><td><code>precision_micro</code></td><td>Micro-averaged precision</td><td>Imbalanced datasets</td></tr>
+          <tr><td><code>precision_weighted</code></td><td>Weighted precision by class support</td><td>Imbalanced datasets</td></tr>
+          <tr><td><code>recall_macro</code></td><td>Macro-averaged recall</td><td>When false negatives are costly</td></tr>
+          <tr><td><code>recall_micro</code></td><td>Micro-averaged recall</td><td>Imbalanced datasets</td></tr>
+          <tr><td><code>recall_weighted</code></td><td>Weighted recall by class support</td><td>Imbalanced datasets</td></tr>
+        </table>
+
+        <h3>Similarity</h3>
+        <table>
+          <tr><th>Metric</th><th>Description</th><th>Best for</th></tr>
+          <tr><td><code>cosine_similarity</code></td><td>Token-overlap cosine similarity (bag-of-words)</td><td>Text generation, translation</td></tr>
+        </table>
+
+        <h3>Latency</h3>
+        <table>
+          <tr><th>Metric</th><th>Description</th><th>Best for</th></tr>
+          <tr><td><code>latency_mean</code></td><td>Average response time (ms)</td><td>Performance budgets</td></tr>
+          <tr><td><code>latency_p50</code></td><td>Median response time (ms)</td><td>Typical performance</td></tr>
+          <tr><td><code>latency_p90</code></td><td>90th percentile response time (ms)</td><td>Tail latency</td></tr>
+          <tr><td><code>latency_p99</code></td><td>99th percentile response time (ms)</td><td>Worst-case latency</td></tr>
+        </table>
+
+        <h3>Threshold Modes</h3>
+
+        <h4>Absolute</h4>
+        <p>The metric must meet a fixed threshold:</p>
+<pre>- <span class="key">name</span>: <span class="string">accuracy</span>
+  <span class="key">threshold</span>: <span class="string">0.90</span>
+  <span class="key">mode</span>: <span class="string">absolute</span>   <span class="comment"># accuracy must be ≥ 0.90</span></pre>
+
+        <h4>Max Regression</h4>
+        <p>The drop from the baseline must not exceed a percentage:</p>
+<pre>- <span class="key">name</span>: <span class="string">accuracy</span>
+  <span class="key">threshold</span>: <span class="string">0.05</span>
+  <span class="key">mode</span>: <span class="string">max_regression</span>   <span class="comment"># at most 5% drop from baseline</span></pre>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">&#x2139;</div>
+          <p><code>max_regression</code> thresholds require a stored baseline. Run <code>scaffold run --update-baseline</code> on your main branch first.</p>
+        </div>
+      </section>
+
+      <hr>
+
+      <!-- BASELINES & CI -->
+      <section class="doc-section" id="baselines">
+        <h2>Baselines &amp; CI</h2>
+        <p class="section-lead">Store baseline scores and detect regressions in pull requests.</p>
+
+        <h3>Storing baselines</h3>
+        <p>On your main branch, save the current metric scores:</p>
+<pre><span class="cmd">scaffold run --update-baseline</span></pre>
+        <p>This writes JSON files to <code>.scaffold/baselines/</code>. Commit them to your repo.</p>
+
+        <h3>Comparing against baselines</h3>
+        <p>On a PR branch, compare against the main branch:</p>
+<pre><span class="cmd">scaffold run --compare-to=main</span></pre>
+
+        <h3>GitHub Actions</h3>
+        <p>Scaffold auto-detects GitHub Actions and posts eval results as a PR comment:</p>
+
+<pre><span class="comment"># .github/workflows/scaffold.yml</span>
+<span class="key">name</span>: <span class="string">Scaffold Evals</span>
+<span class="key">on</span>: [<span class="string">pull_request</span>]
+<span class="key">jobs</span>:
+  <span class="key">eval</span>:
+    <span class="key">runs-on</span>: <span class="string">ubuntu-latest</span>
+    <span class="key">steps</span>:
+      - <span class="key">uses</span>: <span class="string">actions/checkout@v4</span>
+      - <span class="key">uses</span>: <span class="string">alexminnaar/scaffold@main</span>
+        <span class="key">with</span>:
+          <span class="key">compare-to</span>: <span class="string">origin/main</span>
+        <span class="key">env</span>:
+          <span class="key">OPENAI_API_KEY</span>: <span class="string">${{ secrets.OPENAI_API_KEY }}</span></pre>
+
+        <div class="callout callout-tip">
+          <div class="callout-icon">&#x2713;</div>
+          <p>Scaffold uses a hidden HTML comment to find its own PR comments. Re-running the action updates the existing comment instead of creating duplicates.</p>
+        </div>
+      </section>
+
+      <hr>
+
+      <!-- MODEL MIGRATION -->
+      <section class="doc-section" id="migration">
+        <h2>Model Migration</h2>
+        <p class="section-lead">Automatically re-tune your prompt when switching LLM models.</p>
+
+        <p>When you upgrade from one model to another, your prompt may need adjustments to maintain quality. Scaffold automates this:</p>
+
+<pre><span class="cmd">scaffold migrate \</span>
+  <span class="flag">--from</span> gpt-4o \
+  <span class="flag">--to</span> gpt-4.5 \
+  <span class="flag">--eval</span> ticket-classification \
+  <span class="flag">--optimizer-model</span> gpt-4o</pre>
+
+        <h3>How it works</h3>
+        <ol>
+          <li><strong>Split</strong> — dataset is split into train (70%), validation (15%), holdout (15%), stratified by category</li>
+          <li><strong>Baseline</strong> — evaluate the original prompt on the holdout set with the <em>old</em> model (this is the quality bar)</li>
+          <li><strong>Optimize</strong> — iteratively ask an optimizer LLM to suggest minimal prompt changes, evaluated on train/validation with the <em>new</em> model</li>
+          <li><strong>Stop</strong> — early stopping when validation score plateaus</li>
+          <li><strong>Report</strong> — evaluate the best prompt on holdout with the new model for an honest final score</li>
+        </ol>
+
+        <h3>Options</h3>
+        <table>
+          <tr><th>Flag</th><th>Default</th><th>Description</th></tr>
+          <tr><td><code>--patience</code></td><td>3</td><td>Iterations without improvement before stopping</td></tr>
+          <tr><td><code>--max-iterations</code></td><td>20</td><td>Maximum optimization iterations</td></tr>
+          <tr><td><code>--min-improvement</code></td><td>0.005</td><td>Minimum score improvement to reset patience</td></tr>
+          <tr><td><code>--max-edit-distance</code></td><td>none</td><td>Reject prompts that change too much</td></tr>
+        </table>
+
+        <div class="callout callout-warn">
+          <div class="callout-icon">&#x26A0;</div>
+          <p>Migration requires <code>target.prompt_file</code> in your config (direct API mode). The optimizer modifies this file.</p>
+        </div>
+      </section>
+
+      <hr>
+
+      <!-- AGENT EVALUATION -->
+      <section class="doc-section" id="agents">
+        <h2>Agent Evaluation</h2>
+        <p class="section-lead">Test tool-using and conversational agents with composite judging.</p>
+
+        <h3>Agent Scenarios</h3>
+        <p>Agent eval datasets use a different format. Single-turn:</p>
+
+<pre><span class="string">{"input": {"query": "What's the weather?"}, "expected": {"outcome": "weather info", "constraints": {"max_tool_calls": 3, "required_tools": ["get_weather"]}}}</span></pre>
+
+        <p>Multi-turn:</p>
+
+<pre><span class="string">{"turns": [{"user_message": "Check my order", "expected": {"outcome": "order status"}}, {"user_message": "Cancel it", "expected": {"outcome": "cancellation confirmation"}}]}</span></pre>
+
+        <h3>Agent Trace Format</h3>
+        <p>Your agent command must output a trace JSON:</p>
+
+<pre>{
+  <span class="key">"final_output"</span>: <span class="string">"Your order has been cancelled."</span>,
+  <span class="key">"trace"</span>: [
+    {<span class="key">"step"</span>: 1, <span class="key">"type"</span>: <span class="string">"tool_call"</span>, <span class="key">"tool"</span>: <span class="string">"cancel_order"</span>, <span class="key">"args"</span>: {<span class="string">"id"</span>: <span class="string">"1234"</span>}},
+    {<span class="key">"step"</span>: 2, <span class="key">"type"</span>: <span class="string">"response"</span>, <span class="key">"content"</span>: <span class="string">"Order cancelled."</span>}
+  ],
+  <span class="key">"total_tool_calls"</span>: 1,
+  <span class="key">"total_tokens"</span>: 150
+}</pre>
+
+        <h3>Composite Judge Criteria</h3>
+        <table>
+          <tr><th>Type</th><th>How it works</th><th>Requires LLM</th></tr>
+          <tr><td><code>constraint</code></td><td>Checks tool call budgets, required/forbidden tools, token limits</td><td>No</td></tr>
+          <tr><td><code>outcome</code></td><td>LLM evaluates if the final output matches the expected outcome</td><td>Yes</td></tr>
+          <tr><td><code>trajectory</code></td><td>LLM evaluates the execution path against a rubric</td><td>Yes</td></tr>
+        </table>
+
+        <h3>Multi-Turn Modes</h3>
+        <ul>
+          <li><code>full_replay</code> — command is invoked once per turn with cumulative conversation history</li>
+          <li><code>history_injection</code> — command is invoked once with all prior turns pre-filled</li>
+        </ul>
+      </section>
+
+      <hr>
+
+      <!-- DATASET TOOLS -->
+      <section class="doc-section" id="datasets">
+        <h2>Dataset Tools</h2>
+        <p class="section-lead">Create, curate, and analyze eval datasets.</p>
+
+        <h3>Initialize a dataset</h3>
+<pre><span class="cmd">scaffold dataset init --name my-eval --type classification</span></pre>
+        <p>Creates an empty <code>evals/my-eval.jsonl</code> file.</p>
+
+        <h3>Add examples interactively</h3>
+<pre><span class="cmd">scaffold dataset add --name my-eval</span></pre>
+        <p>Prompts for input/expected pairs and appends them to the dataset.</p>
+
+        <h3>Check dataset quality</h3>
+<pre><span class="cmd">scaffold dataset check --name my-eval</span></pre>
+        <p>Reports category distribution, underrepresented categories, duplicate inputs, class imbalance, and input length statistics.</p>
+
+        <h3>Import from CSV or JSON</h3>
+<pre><span class="cmd">scaffold dataset import --name my-eval --from data.csv</span>
+<span class="cmd">scaffold dataset import --name my-eval --from data.json --input-column question --expected-column answer</span></pre>
+      </section>
+
+      <hr>
+
+      <!-- CLI REFERENCE -->
+      <section class="doc-section" id="cli-ref">
+        <h2>CLI Reference</h2>
+
+        <table>
+          <tr><th>Command</th><th>Description</th></tr>
+          <tr><td><code>scaffold run</code></td><td>Run evals and report results</td></tr>
+          <tr><td><code>scaffold run --smoke</code></td><td>Run on a subset of the dataset</td></tr>
+          <tr><td><code>scaffold run --update-baseline</code></td><td>Save current scores as baseline</td></tr>
+          <tr><td><code>scaffold run --compare-to=main</code></td><td>Compare against a baseline branch</td></tr>
+          <tr><td><code>scaffold run --output report.md</code></td><td>Write report to a file</td></tr>
+          <tr><td><code>scaffold migrate</code></td><td>Optimize a prompt for a new model</td></tr>
+          <tr><td><code>scaffold init</code></td><td>Generate scaffold.yaml interactively</td></tr>
+          <tr><td><code>scaffold dataset init</code></td><td>Create a new eval dataset</td></tr>
+          <tr><td><code>scaffold dataset add</code></td><td>Add examples interactively</td></tr>
+          <tr><td><code>scaffold dataset check</code></td><td>Analyze dataset coverage</td></tr>
+          <tr><td><code>scaffold dataset import</code></td><td>Import from CSV/JSON</td></tr>
+          <tr><td><code>scaffold import-promptfoo</code></td><td>Convert a Promptfoo config</td></tr>
+        </table>
+
+        <p>Global flags:</p>
+        <ul>
+          <li><code>-v / --verbose</code> — Show progress during runs</li>
+          <li><code>--debug</code> — Full debug logging</li>
+          <li><code>--version</code> — Show version and exit</li>
+        </ul>
+      </section>
+
+      <hr>
+
+      <!-- GITHUB ACTION -->
+      <section class="doc-section" id="github-action">
+        <h2>GitHub Action</h2>
+        <p class="section-lead">Drop Scaffold into any GitHub Actions workflow.</p>
+
+<pre><span class="key">- uses</span>: <span class="string">alexminnaar/scaffold@main</span>
+  <span class="key">with</span>:
+    <span class="key">compare-to</span>: <span class="string">origin/main</span>       <span class="comment"># baseline branch</span>
+    <span class="key">smoke</span>: <span class="string">false</span>                   <span class="comment"># run full dataset</span>
+    <span class="key">working-directory</span>: <span class="string">.</span>           <span class="comment"># dir with scaffold.yaml</span>
+  <span class="key">env</span>:
+    <span class="key">OPENAI_API_KEY</span>: <span class="string">${{ secrets.OPENAI_API_KEY }}</span></pre>
+
+        <table>
+          <tr><th>Input</th><th>Default</th><th>Description</th></tr>
+          <tr><td><code>compare-to</code></td><td><code>origin/main</code></td><td>Branch to load baselines from</td></tr>
+          <tr><td><code>smoke</code></td><td><code>false</code></td><td>Run on a dataset subset</td></tr>
+          <tr><td><code>working-directory</code></td><td><code>.</code></td><td>Directory containing scaffold.yaml</td></tr>
+          <tr><td><code>output</code></td><td>(none)</td><td>Write report to a file path</td></tr>
+          <tr><td><code>github-token</code></td><td><code>github.token</code></td><td>Token for posting PR comments</td></tr>
+        </table>
+      </section>
+
+      <hr>
+
+      <!-- PROMPTFOO MIGRATION -->
+      <section class="doc-section" id="promptfoo">
+        <h2>Migrating from Promptfoo</h2>
+        <p class="section-lead">One command to convert an existing Promptfoo config.</p>
+
+<pre><span class="cmd">scaffold import-promptfoo promptfooconfig.yaml</span></pre>
+
+        <p>This converts:</p>
+        <ul>
+          <li><code>providers</code> → <code>target</code> (direct API mode)</li>
+          <li><code>prompts</code> → <code>prompt_file</code></li>
+          <li><code>tests[].assert</code> → metrics with thresholds</li>
+          <li><code>tests[].vars</code> → JSONL dataset rows</li>
+        </ul>
+
+        <div class="callout callout-warn">
+          <div class="callout-icon">&#x26A0;</div>
+          <p>Some Promptfoo features (red teaming plugins, custom providers, JavaScript assertions) are not supported. Warnings are printed during conversion.</p>
+        </div>
+      </section>
+
+      <hr>
+
+      <!-- CASE STUDY 1 -->
+      <section class="doc-section" id="cs-fastapi">
+        <h2>FastAPI Classification Service</h2>
+        <p>A common pattern: a FastAPI service that classifies customer support tickets using an LLM. The service has pre-processing (text cleaning, PII redaction) and post-processing (confidence thresholds, fallback routing) around the LLM call.</p>
+
+        <h4>The risk</h4>
+        <p>Any change to the service can affect predictions — not just prompt edits. A developer updating the PII redaction regex might accidentally strip keywords the model relies on. A change to the confidence threshold logic could re-route tickets incorrectly. These bugs don't show up in unit tests.</p>
+
+        <h4>Prompt-level gating</h4>
+        <p>Test the LLM call in isolation, verifying that the prompt + model produce correct classifications:</p>
+
+<pre><span class="key">version</span>: <span class="string">1</span>
+
+<span class="key">target</span>:
+  <span class="key">direct</span>:
+    <span class="key">provider</span>: <span class="string">openai</span>
+    <span class="key">model</span>: <span class="string">gpt-4o-mini</span>
+  <span class="key">prompt_file</span>: <span class="string">prompts/classify.txt</span>
+
+<span class="key">evals</span>:
+  - <span class="key">name</span>: <span class="string">prompt-classification</span>
+    <span class="key">level</span>: <span class="string">prompt</span>
+    <span class="key">dataset</span>: <span class="string">./evals/tickets.jsonl</span>
+    <span class="key">judge</span>: <span class="string">exact_match</span>
+    <span class="key">metrics</span>:
+      - <span class="key">name</span>: <span class="string">accuracy</span>
+        <span class="key">threshold</span>: <span class="string">0.95</span>
+        <span class="key">mode</span>: <span class="string">absolute</span></pre>
+
+        <p>This catches prompt regressions fast — no service startup needed, no HTTP overhead. But it misses bugs in the surrounding code.</p>
+
+        <h4>Service-level gating</h4>
+        <p>Test the full pipeline by hitting the actual FastAPI endpoint. A thin wrapper script calls the service and extracts the classification:</p>
+
+<pre><span class="comment"># eval_service.py — Scaffold command-mode wrapper</span>
+<span class="key">import</span> argparse, json, requests
+
+parser = argparse.ArgumentParser()
+parser.add_argument(<span class="string">"--input"</span>, required=True)
+parser.add_argument(<span class="string">"--output"</span>, required=True)
+args = parser.parse_args()
+
+data = json.loads(open(args.input).read())
+resp = requests.post(<span class="string">"http://localhost:8000/classify"</span>, json={<span class="string">"text"</span>: data[<span class="string">"input"</span>]})
+result = resp.json()
+json.dump({<span class="string">"output"</span>: result[<span class="string">"category"</span>]}, open(args.output, <span class="string">"w"</span>))</pre>
+
+<pre><span class="key">version</span>: <span class="string">1</span>
+
+<span class="key">target</span>:
+  <span class="key">command</span>: <span class="string">"python3 eval_service.py --input {input_file} --output {output_file}"</span>
+
+<span class="key">evals</span>:
+  - <span class="key">name</span>: <span class="string">service-classification</span>
+    <span class="key">level</span>: <span class="string">pipeline</span>
+    <span class="key">dataset</span>: <span class="string">./evals/tickets.jsonl</span>
+    <span class="key">judge</span>: <span class="string">exact_match</span>
+    <span class="key">metrics</span>:
+      - <span class="key">name</span>: <span class="string">accuracy</span>
+        <span class="key">threshold</span>: <span class="string">0.92</span>
+        <span class="key">mode</span>: <span class="string">absolute</span>
+      - <span class="key">name</span>: <span class="string">accuracy</span>
+        <span class="key">threshold</span>: <span class="string">0.03</span>
+        <span class="key">mode</span>: <span class="string">max_regression</span></pre>
+
+        <p>Now any change — pre-processing, post-processing, prompt, model config — is caught if it degrades the end-to-end classification quality.</p>
+
+        <div class="callout callout-tip">
+          <div class="callout-icon">&#x2713;</div>
+          <p><strong>Best practice:</strong> Run both levels. The prompt-level eval runs in seconds (no service startup). The service-level eval runs in CI after the service is built. Use <code>max_regression</code> mode on the service-level eval so the pipeline can tolerate minor drops from non-prompt changes while still catching significant regressions. See <code>examples/08-fastapi-service</code> for a runnable version of this pattern.</p>
+        </div>
+
+        <h4>CI workflow</h4>
+<pre><span class="key">jobs</span>:
+  <span class="key">prompt-eval</span>:
+    <span class="key">runs-on</span>: <span class="string">ubuntu-latest</span>
+    <span class="key">steps</span>:
+      - <span class="key">uses</span>: <span class="string">actions/checkout@v4</span>
+      - <span class="key">run</span>: <span class="string">scaffold run</span>              <span class="comment"># prompt-level (fast, no service needed)</span>
+        <span class="key">working-directory</span>: <span class="string">evals/prompt</span>
+
+  <span class="key">service-eval</span>:
+    <span class="key">runs-on</span>: <span class="string">ubuntu-latest</span>
+    <span class="key">steps</span>:
+      - <span class="key">uses</span>: <span class="string">actions/checkout@v4</span>
+      - <span class="key">run</span>: <span class="string">docker compose up -d</span>
+      - <span class="key">run</span>: <span class="string">sleep 5</span>              <span class="comment"># wait for service startup</span>
+      - <span class="key">run</span>: <span class="string">scaffold run --compare-to=main</span>
+        <span class="key">working-directory</span>: <span class="string">evals/service</span></pre>
+
+      </section>
+
+      <hr>
+
+      <!-- CASE STUDY 2 -->
+      <section class="doc-section" id="cs-rag">
+        <h2>RAG Pipeline with Retrieval + Generation</h2>
+        <p>A retrieval-augmented generation pipeline where a user question is embedded, matched against a vector store, and the top documents are fed as context to an LLM for answer generation.</p>
+
+        <h4>The risk</h4>
+        <p>Bugs can appear at any stage: the embedding model could be swapped (changing retrieval quality), the chunking strategy could be adjusted (changing what context the LLM sees), or the generation prompt could be edited. Each affects the final answer differently, and prompt-level testing alone won't catch retrieval-side regressions.</p>
+
+        <h4>Pipeline-level testing with a custom judge</h4>
+        <p>Test the full pipeline end-to-end. Since RAG answers are open-ended, use a custom judge that checks whether key expected information appears in the response:</p>
+
+<pre><span class="key">version</span>: <span class="string">1</span>
+
+<span class="key">target</span>:
+  <span class="key">command</span>: <span class="string">"python3 run_rag.py --input {input_file} --output {output_file}"</span>
+
+<span class="key">evals</span>:
+  - <span class="key">name</span>: <span class="string">rag-qa</span>
+    <span class="key">level</span>: <span class="string">pipeline</span>
+    <span class="key">dataset</span>: <span class="string">./evals/qa_pairs.jsonl</span>
+    <span class="key">judge</span>:
+      <span class="key">type</span>: <span class="string">custom</span>
+      <span class="key">module</span>: <span class="string">./rag_judge.py</span>
+      <span class="key">function</span>: <span class="string">evaluate</span>
+    <span class="key">metrics</span>:
+      - <span class="key">name</span>: <span class="string">pass_rate</span>
+        <span class="key">threshold</span>: <span class="string">0.85</span>
+        <span class="key">mode</span>: <span class="string">absolute</span></pre>
+
+        <p>The custom judge can implement domain-specific logic — checking for factual keywords, verifying citations, or validating that the answer doesn't contradict known facts:</p>
+
+<pre><span class="key">def</span> <span class="cmd">evaluate</span>(input: str, expected: str, actual: str) -> dict:
+    <span class="comment"># Check if key facts from the expected answer appear</span>
+    expected_facts = [f.strip() <span class="key">for</span> f <span class="key">in</span> expected.split(<span class="string">";"</span>)]
+    found = sum(1 <span class="key">for</span> f <span class="key">in</span> expected_facts <span class="key">if</span> f.lower() <span class="key">in</span> actual.lower())
+    score = found / len(expected_facts) <span class="key">if</span> expected_facts <span class="key">else</span> 0
+    <span class="key">return</span> {<span class="string">"score"</span>: score, <span class="string">"reason"</span>: f<span class="string">"{found}/{len(expected_facts)} facts found"</span>}</pre>
+
+      </section>
+
+      <hr>
+
+      <!-- CASE STUDY 3 -->
+      <section class="doc-section" id="cs-migration">
+        <h2>Multi-Model Migration at Scale</h2>
+        <p>An organization running GPT-4o across 12 microservices learns that pricing is changing and decides to migrate to a cheaper model. Each service has its own prompt, dataset, and quality bar.</p>
+
+        <h4>The challenge</h4>
+        <p>Manually tuning 12 prompts is weeks of work. Each service has different tolerance for quality drops — the billing classifier needs 98% accuracy, the FAQ summarizer can tolerate 90%.</p>
+
+        <h4>Automated migration per service</h4>
+        <p>Each service already has a <code>scaffold.yaml</code> with eval datasets from CI. Migration becomes a loop:</p>
+
+<pre><span class="comment">#!/bin/bash</span>
+<span class="key">for</span> service <span class="key">in</span> billing-classifier faq-summarizer ticket-router ...; <span class="key">do</span>
+  <span class="cmd">cd</span> services/$service
+  scaffold migrate \
+    <span class="flag">--from</span> gpt-4o \
+    <span class="flag">--to</span> gpt-4o-mini \
+    <span class="flag">--eval</span> main-eval \
+    <span class="flag">--patience</span> 5 \
+    <span class="flag">--max-iterations</span> 30
+  <span class="cmd">cd</span> ../..
+<span class="key">done</span></pre>
+
+        <p>For each service, Scaffold:</p>
+        <ol>
+          <li>Establishes the quality bar on the old model (holdout score)</li>
+          <li>Iteratively optimizes the prompt for the new model</li>
+          <li>Reports whether parity was achieved or a gap remains</li>
+          <li>Optionally writes the optimized prompt to disk</li>
+        </ol>
+
+        <p>Services where parity is achieved get their prompts committed automatically. Services with remaining gaps get flagged for manual review — typically 1-2 out of 12, not all 12.</p>
+
+      </section>
+
+      <hr>
+
+      <!-- CASE STUDY 4 -->
+      <section class="doc-section" id="cs-agent">
+        <h2>Customer Support Agent with Tool Use</h2>
+        <p>A conversational agent that handles customer support: looks up orders, processes refunds, checks inventory, and escalates to humans. Built with an agent framework (OpenAI Agents, PydanticAI, etc.).</p>
+
+        <h4>The risk</h4>
+        <p>Agent bugs are subtle. The agent might use the wrong tool, make too many API calls (cost), call a destructive tool when it shouldn't (safety), or give correct answers via an inefficient path (latency).</p>
+
+        <h4>Composite evaluation</h4>
+        <p>Use Scaffold's agent evaluation with constraint, outcome, and trajectory judges weighted by importance:</p>
+
+<pre><span class="key">evals</span>:
+  - <span class="key">name</span>: <span class="string">support-agent</span>
+    <span class="key">level</span>: <span class="string">agent</span>
+    <span class="key">mode</span>: <span class="string">full_replay</span>
+    <span class="key">dataset</span>: <span class="string">./evals/conversations.jsonl</span>
+    <span class="key">judge</span>:
+      <span class="key">type</span>: <span class="string">composite</span>
+      <span class="key">model</span>: <span class="string">gpt-4o</span>
+      <span class="key">criteria</span>:
+        - <span class="key">name</span>: <span class="string">safety</span>
+          <span class="key">type</span>: <span class="string">constraint</span>
+          <span class="key">weight</span>: <span class="string">3.0</span>           <span class="comment"># highest weight — safety is non-negotiable</span>
+        - <span class="key">name</span>: <span class="string">correctness</span>
+          <span class="key">type</span>: <span class="string">outcome</span>
+          <span class="key">weight</span>: <span class="string">2.0</span>
+        - <span class="key">name</span>: <span class="string">efficiency</span>
+          <span class="key">type</span>: <span class="string">trajectory</span>
+          <span class="key">weight</span>: <span class="string">1.0</span>
+          <span class="key">rubric</span>: <span class="string">"Did the agent resolve the issue in a reasonable number of steps without redundant tool calls?"</span></pre>
+
+        <p>The eval dataset captures real support conversations with expected outcomes and constraints:</p>
+
+<pre><span class="string">{"turns": [
+  {"user_message": "I want to return order #5678",
+   "expected": {"outcome": "return initiated",
+                "constraints": {"required_tools": ["lookup_order", "initiate_return"],
+                                "forbidden_tools": ["delete_account", "issue_refund"],
+                                "max_tool_calls": 4}}},
+  {"user_message": "Actually, can I get a refund instead?",
+   "expected": {"outcome": "refund processed",
+                "constraints": {"required_tools": ["issue_refund"]}}}
+]}</span></pre>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">&#x2139;</div>
+          <p><strong>Weight strategy:</strong> Safety constraints get the highest weight (3.0) because a tool-use violation is worse than a suboptimal trajectory. Correctness (2.0) matters more than efficiency (1.0) because a correct-but-slow answer is better than a fast-but-wrong one.</p>
+        </div>
+      </section>
+
+      <hr>
+
+      <!-- CASE STUDY 5 -->
+      <section class="doc-section" id="cs-summarization">
+        <h2>Summarization Quality Assurance</h2>
+        <p>A content platform generates article summaries for newsletters, social cards, and search snippets. The summaries are produced by an LLM given the full article text. There are no "correct" summaries — quality is subjective and multi-dimensional.</p>
+
+        <h4>The challenge</h4>
+        <p>Exact-match judging doesn't work here. Two perfectly good summaries of the same article can share zero words. What matters is whether the summary is <em>faithful</em> to the source, <em>concise</em>, and <em>complete</em> in covering key points. These qualities require LLM-as-Judge evaluation with clearly defined rubrics.</p>
+
+        <h4>Multi-criteria rubric</h4>
+        <p>Define an LLM-as-Judge eval with criteria that capture what "good" means for your summaries:</p>
+
+<pre><span class="key">evals</span>:
+  - <span class="key">name</span>: <span class="string">summary-quality</span>
+    <span class="key">dataset</span>: <span class="string">./evals/summaries.jsonl</span>
+    <span class="key">judge</span>:
+      <span class="key">type</span>: <span class="string">llm</span>
+      <span class="key">model</span>: <span class="string">gpt-4o</span>
+      <span class="key">criteria</span>:
+        - <span class="key">name</span>: <span class="string">faithfulness</span>
+          <span class="key">rubric</span>: <span class="string">"Does the summary only contain claims supported by the source article? Penalize any hallucinated facts or unsupported conclusions."</span>
+        - <span class="key">name</span>: <span class="string">completeness</span>
+          <span class="key">rubric</span>: <span class="string">"Does the summary cover the main points of the article? Key findings, conclusions, and context should be present."</span>
+        - <span class="key">name</span>: <span class="string">conciseness</span>
+          <span class="key">rubric</span>: <span class="string">"Is the summary free of filler, redundancy, and unnecessary detail? It should be tight and to the point."</span>
+    <span class="key">metrics</span>:
+      - <span class="key">name</span>: <span class="string">mean_score</span>
+        <span class="key">threshold</span>: <span class="string">0.75</span>
+        <span class="key">mode</span>: <span class="string">absolute</span></pre>
+
+        <h4>Reference-free evaluation</h4>
+        <p>Summaries are a natural fit for <strong>reference-free</strong> judging — there's no single correct answer to compare against. The dataset only needs an <code>input</code> field (the article text). The judge evaluates the generated summary against the input directly:</p>
+
+<pre><span class="string">{"input": "Full article text about Q3 earnings..."}</span>
+<span class="string">{"input": "Breaking: new climate report released..."}</span>
+<span class="string">{"input": "A retrospective on the 2024 developer survey..."}</span></pre>
+
+        <p>No <code>expected</code> field needed. The LLM judge compares the generated summary to the original article, checking faithfulness against the source rather than against a gold reference.</p>
+
+        <h4>When you do have references</h4>
+        <p>If your team has human-written reference summaries, include them as <code>expected</code>. The judge will use them as an additional signal:</p>
+
+<pre><span class="string">{"input": "Full article about Q3 earnings...", "expected": "Company X reported 15% revenue growth in Q3, driven by..."}</span></pre>
+
+        <h4>What this catches</h4>
+        <ul>
+          <li><strong>Prompt drift</strong> — someone tweaks the summarization prompt and faithfulness drops because the model starts embellishing</li>
+          <li><strong>Model regression</strong> — a model upgrade produces verbose summaries that fail the conciseness criterion</li>
+          <li><strong>Pipeline changes</strong> — a preprocessing step is modified (e.g., article truncation for context window limits) and completeness suffers because key paragraphs are cut</li>
+        </ul>
+
+        <div class="callout callout-tip">
+          <div class="callout-icon">&#x2713;</div>
+          <p><strong>Rubric design tip:</strong> Write rubrics that describe failure modes, not just ideals. "Penalize any hallucinated facts" is more actionable for the judge LLM than "the summary should be accurate." See <code>examples/03-llm-as-judge</code> for a runnable version of this pattern.</p>
+        </div>
+      </section>
+
+      <hr>
+
+      <!-- EXAMPLES -->
+      <section class="doc-section" id="examples">
+        <h2>Examples</h2>
+        <p class="section-lead">Runnable examples in the <code>examples/</code> directory.</p>
+
+        <table>
+          <tr><th>Example</th><th>Demonstrates</th><th>Case Study</th></tr>
+          <tr><td><code>01-ci-regression</code></td><td>Ticket classifier with exact_match + F1</td><td>—</td></tr>
+          <tr><td><code>02-model-migration</code></td><td>Prompt optimization across models</td><td><a href="#cs-migration">Multi-Model Migration</a></td></tr>
+          <tr><td><code>03-llm-as-judge</code></td><td>Open-ended generation with rubric judging</td><td>—</td></tr>
+          <tr><td><code>04-custom-judge</code></td><td>JSON schema validation with a Python judge</td><td>—</td></tr>
+          <tr><td><code>05-agent-single-turn</code></td><td>Tool-using agent with constraint checking</td><td><a href="#cs-agent">Support Agent</a></td></tr>
+          <tr><td><code>06-agent-multi-turn</code></td><td>Multi-turn conversation testing</td><td><a href="#cs-agent">Support Agent</a></td></tr>
+          <tr><td><code>07-pipeline-level</code></td><td>Full RAG pipeline end-to-end</td><td><a href="#cs-rag">RAG Pipeline</a></td></tr>
+          <tr><td><code>08-fastapi-service</code></td><td>Pre/post processing pipeline with dual-level testing</td><td><a href="#cs-fastapi">FastAPI Service</a></td></tr>
+          <tr><td><code>09-summarization-qa</code></td><td>Multi-criteria rubric with reference-free evaluation</td><td><a href="#cs-summarization">Summarization QA</a></td></tr>
+        </table>
+
+        <p>Run any example:</p>
+<pre><span class="cmd">cd examples/01-ci-regression</span>
+<span class="cmd">scaffold run</span></pre>
+
+        <p>Each example has its own README with setup instructions.</p>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- SIDEBAR ACTIVE STATE -->
+  <script>
+    const sections = document.querySelectorAll('.doc-section');
+    const sidebarLinks = document.querySelectorAll('.sidebar a');
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          sidebarLinks.forEach(link => link.classList.remove('active'));
+          const activeLink = document.querySelector(`.sidebar a[href="#${entry.target.id}"]`);
+          if (activeLink) activeLink.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-80px 0px -70% 0px', threshold: 0 });
+
+    sections.forEach(section => observer.observe(section));
+  </script>
+
+</body>
+</html>

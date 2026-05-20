@@ -1,0 +1,22 @@
+version: 1
+
+target:
+  command: "python3 run_api.py --input {input_file} --output {output_file}"
+
+evals:
+  - name: api-json-validation
+    level: prompt
+    dataset: ./evals/api_responses.jsonl
+    judge:
+      type: custom
+      module: ./json_judge.py
+      function: judge
+    metrics:
+      - name: accuracy
+        threshold: 1.0
+        mode: absolute
+
+settings:
+  parallelism: 5
+  timeout_per_call: 10
+  retries: 1

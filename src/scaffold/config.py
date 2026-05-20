@@ -49,11 +49,15 @@ def _normalize_config(raw: dict[str, Any]) -> dict[str, Any]:
                 eval_raw["judge"] = _normalize_judge(eval_raw["judge"])
 
             if "level" in eval_raw and eval_raw["level"] == "agent":
-                raise ConfigError(
-                    f"Eval '{eval_raw.get('name', '?')}' uses level: agent, "
-                    "which requires Scaffold v2. "
-                    "Use level: prompt or level: pipeline for v1."
-                )
+                if "judge" not in eval_raw or (
+                    isinstance(eval_raw.get("judge"), dict)
+                    and eval_raw["judge"].get("type") != "composite"
+                ):
+                    raise ConfigError(
+                        f"Eval '{eval_raw.get('name', '?')}' uses level: agent "
+                        "but does not have a composite judge. "
+                        "Agent evals require judge type: composite."
+                    )
 
             if isinstance(eval_raw.get("dataset"), dict):
                 raise ConfigError(

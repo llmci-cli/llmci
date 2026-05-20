@@ -1,0 +1,6 @@
+{"input": "What is Python?", "expected": "Python is a high-level programming language"}
+{"input": "Explain Docker containers", "expected": "Docker is a containerization platform"}
+{"input": "How do I use Git branches?", "expected": "Branching allows parallel development"}
+{"input": "What is Kubernetes?", "expected": "Kubernetes orchestrates containerized workloads"}
+{"input": "How do I create a Docker image?", "expected": "Docker uses images and containers"}
+{"input": "What are Git commits?", "expected": "git commit"}

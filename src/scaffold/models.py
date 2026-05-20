@@ -16,6 +16,7 @@ class TargetConfig(BaseModel):
     provider: str | None = None
     model: str | None = None
     prompt_file: Path | None = None
+    base_url: str | None = None
 
     @model_validator(mode="after")
     def validate_mode(self) -> "TargetConfig":
@@ -135,3 +136,80 @@ class EvalResult:
     latency_stats: dict[str, float] = field(default_factory=dict)
     num_examples: int = 0
     num_errors: int = 0
+
+
+# --- Agent evaluation models (v2) ---
+
+
+class AgentConstraints(BaseModel):
+    """Constraints on agent execution (tool budget, token budget, etc.)."""
+
+    max_tool_calls: int | None = None
+    required_tools: list[str] | None = None
+    forbidden_tools: list[str] | None = None
+    max_tokens: int | None = None
+
+
+class AgentExpected(BaseModel):
+    """Expected outcome for an agent scenario or turn."""
+
+    outcome: str
+    constraints: AgentConstraints | None = None
+
+
+class AgentTurn(BaseModel):
+    """A single turn in a multi-turn agent conversation."""
+
+    user_message: str
+    context: dict | None = None
+    expected: AgentExpected
+
+
+class AgentScenario(BaseModel):
+    """Single-turn or multi-turn agent eval example."""
+
+    input: dict | str | None = None
+    expected: AgentExpected | None = None
+    turns: list[AgentTurn] | None = None
+    conversation_constraints: AgentConstraints | None = None
+
+    @model_validator(mode="after")
+    def validate_scenario(self) -> "AgentScenario":
+        has_single = self.input is not None and self.expected is not None
+        has_multi = self.turns is not None and len(self.turns) > 0
+        if not has_single and not has_multi:
+            raise ValueError(
+                "AgentScenario requires either (input + expected) "
+                "for single-turn or (turns) for multi-turn"
+            )
+        if has_single and has_multi:
+            raise ValueError("Specify either single-turn (input+expected) or multi-turn (turns)")
+        return self
+
+    @property
+    def is_multi_turn(self) -> bool:
+        return self.turns is not None and len(self.turns) > 0
+
+
+class TraceStep(BaseModel):
+    """A single step in an agent execution trace."""
+
+    step: int
+    type: Literal["tool_call", "response"]
+    tool: str | None = None
+    args: dict | None = None
+    content: str | None = None
+    tokens: int | None = None
+
+
+@dataclass
+class AgentTrace:
+    """Result from executing an agent scenario."""
+
+    final_output: str | None = None
+    trace: list[TraceStep] = field(default_factory=list)
+    total_tool_calls: int = 0
+    total_tokens: int = 0
+    latency_ms: float = 0.0
+    turns: list[dict] = field(default_factory=list)
+    error: str | None = None
