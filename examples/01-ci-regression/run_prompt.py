@@ -10,12 +10,12 @@ import sys
 
 KEYWORDS = {
     "hardware": [
-        "printer", "monitor", "keyboard", "webcam", "hard drive",
-        "pixel", "wifi", "cable", "mouse", "screen",
+        "printer", "monitor", "keyboard",
+        "pixel", "cable", "screen",
     ],
     "billing": [
-        "refund", "charged", "invoice", "subscription", "upgrade",
-        "cancel", "payment", "billing", "plan", "price",
+        "refund", "invoice", "subscription",
+        "cancel", "billing",
     ],
     "account": [
         "password", "email", "export", "unsubscribe", "two-factor",
