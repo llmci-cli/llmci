@@ -14,8 +14,7 @@ KEYWORDS = {
         "pixel", "wifi", "cable", "mouse", "screen",
     ],
     "billing": [
-        "refund", "charged", "invoice", "subscription", "upgrade",
-        "cancel", "payment", "billing", "plan", "price",
+        "refund", "charged", "invoice",
     ],
     "account": [
         "password", "email", "export", "unsubscribe", "two-factor",
