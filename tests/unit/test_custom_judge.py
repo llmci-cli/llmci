@@ -2,8 +2,8 @@
 
 import pytest
 
-from scaffold.errors import ConfigError
-from scaffold.judges.custom import CustomJudge
+from llmci.errors import ConfigError
+from llmci.judges.custom import CustomJudge
 
 
 @pytest.fixture

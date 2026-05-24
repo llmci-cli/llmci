@@ -5,29 +5,36 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2026-05-24
+
+### Changed
+- **Full rebrand to `llmci`** — CLI command is now `llmci` (was `scaffold`); config file is `llmci.yaml` (was `scaffold.yaml`); data directory is `.llmci/` (was `.scaffold/`); matrix PR slice env var is `LLMCI_REPORT_SLICE` (was `SCAFFOLD_REPORT_SLICE`)
+- Python package module renamed from `scaffold` to `llmci`
+- OpenAI Agents helpers renamed: `run_for_llmci_sync`, `llmci_input_to_agent_input`, etc.
+
 ## [0.1.2] - 2026-05-24
 
 ### Added
-- **`scaffold.trace.TraceBuilder`** — fluent helper to build agent eval output JSON (`final_output`, `trace`, tool counts)
-- **`scaffold.integrations.openai_agents`** — convert OpenAI Agents SDK `RunResult` to Scaffold format; `run_for_scaffold` / `run_for_scaffold_sync`
+- **`llmci.trace.TraceBuilder`** — fluent helper to build agent eval output JSON (`final_output`, `trace`, tool counts)
+- **`llmci.integrations.openai_agents`** — convert OpenAI Agents SDK `RunResult` to llmci format; `run_for_llmci` / `run_for_llmci_sync`
 - Optional extra: `pip install 'llmci[agents]'` (`openai-agents`)
 - Example [`10-agent-openai-agents`](examples/10-agent-openai-agents/) — mock (CI) and real SDK paths
 
 ## [0.1.1] - 2026-05-24
 
 ### Fixed
-- **Merged PR comments for CI matrix jobs** — parallel jobs no longer overwrite each other's eval reports. Set `SCAFFOLD_REPORT_SLICE` (e.g. `ticket-classifier/scaffold.yaml`) so each job updates its own slice in one combined comment.
+- **Merged PR comments for CI matrix jobs** — parallel jobs no longer overwrite each other's eval reports. Set `LLMCI_REPORT_SLICE` (e.g. `ticket-classifier/llmci.yaml`) so each job updates its own slice in one combined comment.
 
 ## [0.1.0] - 2026-05-23
 
-Initial public release on PyPI as [`llmci`](https://pypi.org/project/llmci/). The CLI command is `scaffold`.
+Initial public release on PyPI as [`llmci`](https://pypi.org/project/llmci/).
 
 ### Added
 
 **Core eval loop**
-- `scaffold run` — run eval datasets, compute metrics, enforce thresholds, exit non-zero on failure
-- `scaffold.yaml` config: command and direct (litellm) target modes, per-eval overrides
-- Absolute and `max_regression` threshold modes with baseline storage in `.scaffold/baselines/`
+- `llmci run` — run eval datasets, compute metrics, enforce thresholds, exit non-zero on failure
+- `llmci.yaml` config: command and direct (litellm) target modes, per-eval overrides
+- Absolute and `max_regression` threshold modes with baseline storage in `.llmci/baselines/`
 - `--compare-to`, `--update-baseline`, `--smoke`, and `--output` flags
 - Parallel execution with configurable timeouts and retries
 
@@ -49,13 +56,13 @@ Initial public release on PyPI as [`llmci`](https://pypi.org/project/llmci/). Th
 - Tool-call constraint checking (required/forbidden tools, budgets, token limits)
 
 **Model migration**
-- `scaffold migrate` — prompt optimization when switching models
+- `llmci migrate` — prompt optimization when switching models
 - Train/validation/holdout splitting with early stopping
 
 **Dataset tooling**
-- `scaffold dataset init`, `add`, `check`, and `import` (CSV/JSON)
-- `scaffold init` — interactive project setup
-- `scaffold import-promptfoo` — convert Promptfoo configs
+- `llmci dataset init`, `add`, `check`, and `import` (CSV/JSON)
+- `llmci init` — interactive project setup
+- `llmci import-promptfoo` — convert Promptfoo configs
 
 **CI integration**
 - GitHub Actions composite action (`action.yml`)
@@ -65,6 +72,7 @@ Initial public release on PyPI as [`llmci`](https://pypi.org/project/llmci/). Th
 **Examples**
 - Nine runnable examples: CI regression, model migration, LLM judge, custom judge, agent single/multi-turn, RAG pipeline, FastAPI service, summarization QA
 
+[0.1.3]: https://github.com/alexminnaar/scaffold/releases/tag/v0.1.3
 [0.1.2]: https://github.com/alexminnaar/scaffold/releases/tag/v0.1.2
 [0.1.1]: https://github.com/alexminnaar/scaffold/releases/tag/v0.1.1
 [0.1.0]: https://github.com/alexminnaar/scaffold/releases/tag/v0.1.0

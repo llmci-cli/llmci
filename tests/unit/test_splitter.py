@@ -1,7 +1,7 @@
 """Tests for stratified dataset splitting."""
 
-from scaffold.migrate.splitter import split_dataset
-from scaffold.models import EvalExample
+from llmci.migrate.splitter import split_dataset
+from llmci.models import EvalExample
 
 
 def _examples(counts: dict[str, int]) -> list[EvalExample]:

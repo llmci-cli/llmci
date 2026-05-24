@@ -2,12 +2,12 @@
 
 import pytest
 
-from scaffold.metrics import (
+from llmci.metrics import (
     _compute_classification_metrics,
     _mean_cosine_similarity,
     compute_metrics,
 )
-from scaffold.models import EvalExample, JudgeResult, TargetResult
+from llmci.models import EvalExample, JudgeResult, TargetResult
 
 
 def _make_data(pairs: list[tuple[str, str, float]]):

@@ -5,8 +5,8 @@ import json
 
 import pytest
 
-from scaffold.dataset.import_data import import_dataset
-from scaffold.errors import DatasetError
+from llmci.dataset.import_data import import_dataset
+from llmci.errors import DatasetError
 
 
 @pytest.fixture

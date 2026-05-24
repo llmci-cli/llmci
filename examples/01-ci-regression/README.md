@@ -1,6 +1,6 @@
 # 01: CI Regression Testing
 
-Demonstrates Scaffold's core use case — a deterministic classifier evaluated with exact_match judging and F1/accuracy metrics.
+Demonstrates llmci's core use case — a deterministic classifier evaluated with exact_match judging and F1/accuracy metrics.
 
 ## What it shows
 - Command-mode target (runs a Python script)
@@ -10,10 +10,10 @@ Demonstrates Scaffold's core use case — a deterministic classifier evaluated w
 ## How to run
 ```bash
 cd examples/01-ci-regression
-scaffold run
+llmci run
 ```
 
 ## How to adapt
 - Replace `run_prompt.py` with your own classifier/LLM script
 - Edit `evals/tickets.jsonl` with your evaluation examples
-- Adjust thresholds in `scaffold.yaml`
+- Adjust thresholds in `llmci.yaml`

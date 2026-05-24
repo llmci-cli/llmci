@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from scaffold.dataset.loader import load_agent_scenarios
-from scaffold.errors import DatasetError
+from llmci.dataset.loader import load_agent_scenarios
+from llmci.errors import DatasetError
 
 
 def _write_scenarios(path: Path, scenarios: list[dict]):

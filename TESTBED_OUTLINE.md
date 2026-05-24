@@ -2,10 +2,10 @@
 
 This document specifies a **separate GitHub repository** (`scaffold-testbed`) that acts as a realistic customer monorepo for dogfooding [Scaffold](https://github.com/alexminnaar/scaffold) (`llmci` on PyPI). An implementer should be able to build the entire repo from this outline without reading Scaffold's source code.
 
-**Related docs in the Scaffold repo:**
+**Related docs in the llmci repo:**
 - Case studies: `docs.html` (sections `cs-fastapi`, `cs-rag`, `cs-migration`, `cs-agent`, `cs-summarization`)
 - Minimal feature examples: `examples/01`–`09`
-- Scaffold CLI reference: `docs.html#cli-ref`
+- llmci CLI reference: `docs.html#cli-ref`
 
 ---
 
@@ -68,7 +68,7 @@ scaffold-testbed/
 └── migration/                     # §10 — Model migration case study
 ```
 
-Each service directory is **self-contained**: own `scaffold.yaml`, `evals/`, README, and CI `working-directory`.
+Each service directory is **self-contained**: own `llmci.yaml`, `evals/`, README, and CI `working-directory`.
 
 ---
 
@@ -78,7 +78,7 @@ Each service directory is **self-contained**: own `scaffold.yaml`, `evals/`, REA
 
 Scaffold writes an **input file** and expects an **output file** with JSON:
 
-**Input** (written by Scaffold):
+**Input** (written by llmci):
 ```json
 {"input": "user text here", "expected": "optional gold label"}
 ```
@@ -88,7 +88,7 @@ Scaffold writes an **input file** and expects an **output file** with JSON:
 {"output": "model or pipeline response"}
 ```
 
-CLI pattern in `scaffold.yaml`:
+CLI pattern in `llmci.yaml`:
 ```yaml
 target:
   command: "python3 scripts/run.py --input {input_file} --output {output_file}"
@@ -237,9 +237,9 @@ services/ticket-classifier/
 ├── scripts/
 │   ├── run_prompt.py              # prompt-level wrapper (classify only)
 │   └── eval_service.py            # service-level wrapper (full pipeline)
-├── scaffold.yaml                  # service-level eval (default)
+├── llmci.yaml                  # service-level eval (default)
 ├── scaffold-prompt.yaml           # prompt-level eval
-└── .scaffold/
+└── .llmci/
     └── baselines/                 # committed after first `--update-baseline` on main
 ```
 
@@ -267,7 +267,7 @@ services/ticket-classifier/
 
 **PII redaction:** phone, email, credit card, SSN patterns → `[PHONE]`, `[EMAIL]`, etc.
 
-### 5.5 `scaffold.yaml` (service-level)
+### 5.5 `llmci.yaml` (service-level)
 
 ```yaml
 version: 1
@@ -327,8 +327,8 @@ evals:
 
 ### 5.8 Acceptance criteria
 
-- [ ] `cd services/ticket-classifier && MOCK_LLM=1 scaffold run` exits 0 on `main`
-- [ ] `MOCK_LLM=1 scaffold run --config scaffold-prompt.yaml` exits 0 on `main`
+- [ ] `cd services/ticket-classifier && MOCK_LLM=1 llmci run` exits 0 on `main`
+- [ ] `MOCK_LLM=1 llmci run --config scaffold-prompt.yaml` exits 0 on `main`
 - [ ] `uvicorn app.main:app --port 8000` starts; `/health` returns 200
 - [ ] Branch `test/break-classifier`: remove billing keywords → service-level accuracy fails → PR comment posted
 
@@ -355,8 +355,8 @@ services/rag-qa/
 ├── evals/
 │   └── qa.jsonl                   # ≥10 Q&A pairs
 ├── rag_judge.py                   # custom judge module
-├── scaffold.yaml
-└── .scaffold/baselines/
+├── llmci.yaml
+└── .llmci/baselines/
 ```
 
 ### 6.3 Dataset format
@@ -377,7 +377,7 @@ def evaluate(input: str, expected: str, actual: str) -> dict:
     return {"score": score, "reason": f"{found}/{len(facts)} facts found"}
 ```
 
-### 6.5 `scaffold.yaml`
+### 6.5 `llmci.yaml`
 
 ```yaml
 version: 1
@@ -413,7 +413,7 @@ Embed a small static dict (Python, Docker, Git, Kubernetes topics) — copy from
 
 ### 6.7 Acceptance criteria
 
-- [ ] `MOCK_LLM=1 scaffold run` exits 0
+- [ ] `MOCK_LLM=1 llmci run` exits 0
 - [ ] `test/break-rag-retrieval`: break retrieval (e.g. `top_k=0`) → pass_rate fails
 
 ---
@@ -437,14 +437,14 @@ services/summarizer/
 ├── evals/
 │   ├── articles_with_refs.jsonl   # ≥6 rows with "expected"
 │   └── articles_no_refs.jsonl     # ≥6 rows, input only
-├── scaffold.yaml                  # both evals (LLM judge)
+├── llmci.yaml                  # both evals (LLM judge)
 ├── scaffold-mock.yaml             # CI: custom heuristic judge OR skip
 └── README.md
 ```
 
-### 7.3 `scaffold.yaml` (real LLM judge)
+### 7.3 `llmci.yaml` (real LLM judge)
 
-Copy structure from `examples/09-summarization-qa/scaffold.yaml`:
+Copy structure from `examples/09-summarization-qa/llmci.yaml`:
 - Eval `summary-with-refs`: metrics `mean_score`, `min_score`, `cosine_similarity`
 - Eval `summary-no-refs`: metrics `mean_score`, `pass_rate`
 - Rubrics: `faithfulness`, `completeness`, `conciseness`
@@ -468,8 +468,8 @@ judge:
 
 ### 7.6 Acceptance criteria
 
-- [ ] `MOCK_LLM=1 scaffold run --config scaffold-mock.yaml` exits 0 in CI
-- [ ] Manual: `OPENAI_API_KEY=... scaffold run` passes with real judge (document in README)
+- [ ] `MOCK_LLM=1 llmci run --config scaffold-mock.yaml` exits 0 in CI
+- [ ] Manual: `OPENAI_API_KEY=... llmci run` passes with real judge (document in README)
 
 ---
 
@@ -496,7 +496,7 @@ services/support-agent/
 ├── scaffold-single.yaml
 ├── scaffold-multi.yaml
 ├── scaffold-history.yaml          # optional stretch: history_injection
-└── .scaffold/baselines/
+└── .llmci/baselines/
 ```
 
 ### 8.3 Agent tools (mock)
@@ -609,14 +609,14 @@ services/json-api/
 ├── evals/
 │   └── api_responses.jsonl
 ├── json_judge.py
-└── scaffold.yaml
+└── llmci.yaml
 ```
 
 Copy from `examples/04-custom-judge/`. Judge function validates JSON parse + required keys.
 
 ### 9.3 Acceptance criteria
 
-- [ ] `MOCK_LLM=1 scaffold run` exits 0 with `accuracy: 1.0`
+- [ ] `MOCK_LLM=1 llmci run` exits 0 with `accuracy: 1.0`
 
 ---
 
@@ -626,7 +626,7 @@ Copy from `examples/04-custom-judge/`. Judge function validates JSON parse + req
 
 ### 10.1 Purpose
 
-Demonstrate `scaffold migrate --from ... --to ...` on ticket classification prompt.
+Demonstrate `llmci migrate --from ... --to ...` on ticket classification prompt.
 
 ### 10.2 Layout
 
@@ -637,10 +637,10 @@ migration/
 │   └── classify.txt               # symlink or copy from ticket-classifier
 ├── evals/
 │   └── tickets.jsonl              # same dataset as classifier (≥20 rows)
-└── scaffold.yaml
+└── llmci.yaml
 ```
 
-### 10.3 `scaffold.yaml`
+### 10.3 `llmci.yaml`
 
 ```yaml
 version: 1
@@ -670,7 +670,7 @@ settings:
 
 ```bash
 export OPENAI_API_KEY=...
-scaffold migrate \
+llmci migrate \
   --from openai/gpt-4o \
   --to openai/gpt-4o-mini \
   --eval ticket-classification \
@@ -739,17 +739,17 @@ install:
 	pip install -e ".[dev]"
 
 eval-classifier:
-	cd services/ticket-classifier && MOCK_LLM=1 scaffold run
+	cd services/ticket-classifier && MOCK_LLM=1 llmci run
 
 eval-classifier-prompt:
-	cd services/ticket-classifier && MOCK_LLM=1 scaffold run --config scaffold-prompt.yaml
+	cd services/ticket-classifier && MOCK_LLM=1 llmci run --config scaffold-prompt.yaml
 
 eval-all:
 	$(MAKE) eval-classifier
-	cd services/rag-qa && MOCK_LLM=1 scaffold run
-	cd services/json-api && MOCK_LLM=1 scaffold run
-	cd services/support-agent && MOCK_LLM=1 scaffold run --config scaffold-single.yaml
-	cd services/support-agent && MOCK_LLM=1 scaffold run --config scaffold-multi.yaml
+	cd services/rag-qa && MOCK_LLM=1 llmci run
+	cd services/json-api && MOCK_LLM=1 llmci run
+	cd services/support-agent && MOCK_LLM=1 llmci run --config scaffold-single.yaml
+	cd services/support-agent && MOCK_LLM=1 llmci run --config scaffold-multi.yaml
 
 test:
 	pytest shared/ services/ -q
@@ -762,7 +762,7 @@ test:
 ### 13.1 `.github/workflows/scaffold.yml`
 
 ```yaml
-name: Scaffold Evals
+name: llmci Evals
 
 on:
   pull_request:
@@ -791,13 +791,13 @@ jobs:
       matrix:
         include:
           - service: ticket-classifier
-            config: scaffold.yaml
+            config: llmci.yaml
           - service: ticket-classifier
             config: scaffold-prompt.yaml
           - service: rag-qa
-            config: scaffold.yaml
+            config: llmci.yaml
           - service: json-api
-            config: scaffold.yaml
+            config: llmci.yaml
           - service: support-agent
             config: scaffold-single.yaml
           - service: support-agent
@@ -815,7 +815,7 @@ jobs:
         env:
           MOCK_LLM: "1"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: scaffold run --config ${{ matrix.config }}
+        run: llmci run --config ${{ matrix.config }}
 ```
 
 **Important:** Do **not** set workflow-level `permissions: pull-requests: write` without `contents: read` — that breaks checkout (learned from Scaffold dogfood).
@@ -854,7 +854,7 @@ jobs:
           MOCK_LLM: "0"
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: scaffold run
+        run: llmci run
 ```
 
 For `migration`, set `working-directory: migration`.
@@ -915,7 +915,7 @@ Implement in this order. **Do not start phase N+1 until phase N acceptance crite
 ### Phase 2 — Ticket classifier (Days 2–3)
 - [ ] Full §5 implementation
 - [ ] CI matrix entries for both scaffold configs
-- [ ] Baselines on `main`: `scaffold run --update-baseline`
+- [ ] Baselines on `main`: `llmci run --update-baseline`
 - [ ] `test/break-classifier` branch
 
 ### Phase 3 — JSON API + RAG (Days 4–5)
@@ -972,10 +972,10 @@ After testbed is public, update Scaffold repo:
 |----------|---------|----------------|
 | Org name | `scaffold-ai` (GitHub), personal | Create org early |
 | PyPI package | `llmci` | Short for “LLM CI”; CLI remains `scaffold` |
-| PyPI pin | `>=0.1.0` in pyproject; CI `--upgrade llmci` | PyPI is live; git `@main` only for Scaffold dev |
+| PyPI pin | `>=0.1.0` in pyproject; CI `--upgrade llmci` | PyPI is live; git `@main` only for llmci dev |
 | Summarizer CI judge | mock custom vs skip | mock custom (`scaffold-mock.yaml`) |
 | Agent composite in CI | full vs constraint-only | constraint-only default matrix |
-| Baselines | commit `.scaffold/baselines/` | yes, on `main` after first green run |
+| Baselines | commit `.llmci/baselines/` | yes, on `main` after first green run |
 
 ---
 
@@ -992,15 +992,15 @@ After testbed is public, update Scaffold repo:
 | Migration config | `examples/02-model-migration/` |
 | CI permissions pattern | `.github/workflows/scaffold-dogfood.yml` |
 
-## Appendix B — Scaffold CLI quick reference
+## Appendix B — llmci CLI quick reference
 
 ```bash
-scaffold run                              # run evals in cwd
-scaffold run --config scaffold-prompt.yaml
-scaffold run --compare-to=main            # baseline regression
-scaffold run --update-baseline            # save baselines (main branch)
-scaffold migrate --from X --to Y --eval NAME
-scaffold dataset check ./evals/foo.jsonl
+llmci run                              # run evals in cwd
+llmci run --config scaffold-prompt.yaml
+llmci run --compare-to=main            # baseline regression
+llmci run --update-baseline            # save baselines (main branch)
+llmci migrate --from X --to Y --eval NAME
+llmci dataset check ./evals/foo.jsonl
 ```
 
 ---

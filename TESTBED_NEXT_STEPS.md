@@ -24,21 +24,21 @@ The testbed is **complete** for P0–P2. CI matrix, merged PR comments, and demo
 | All 5 services + `migration/` | Mock evals pass locally |
 | CI matrix (7 eval configs) | `.github/workflows/scaffold.yml` |
 | Manual LLM workflow | `.github/workflows/scaffold-llm.yml` |
-| Baselines on `main` | Real commit SHAs in `.scaffold/baselines/` |
+| Baselines on `main` | Real commit SHAs in `.llmci/baselines/` |
 | Regression CI | `--compare-to=origin/main` on PRs; `--update-baseline` on `main` push |
 | `fetch-depth: 0` | On committed `main` (needed for git baselines) |
 | PyPI dependency | `llmci>=0.1.0`; CI runs `pip install --upgrade llmci` |
 | Demo branches | `test/break-classifier`, `test/break-rag-retrieval`, `test/break-agent-safety` |
 | CI badge | README |
 | `make eval-all` | Matches CI matrix (incl. prompt-level classifier) |
-| Service READMEs | Use `scaffold_run.sh`, not `scaffold run --config` |
+| Service READMEs | Use `scaffold_run.sh`, not `llmci run --config` |
 | Scaffold README link | Reference integration section → testbed |
 
 ---
 
 ## P0 — Fix CI workflow ✅
 
-**Done** on `main` (commit `26349046872` area): `fetch-depth: 0`, `--compare-to=origin/main`, and `SCAFFOLD_REPORT_SLICE` coexist.
+**Done** on `main` (commit `26349046872` area): `fetch-depth: 0`, `--compare-to=origin/main`, and `LLMCI_REPORT_SLICE` coexist.
 
 ### Acceptance
 
@@ -86,9 +86,9 @@ Scaffold README already links to the testbed.
 | `OPENAI_API_KEY` secret | GitHub repo settings | Required for `scaffold-llm.yml` |
 | LLM workflow slices | `scaffold-llm.yml` | Only if posting PR comments from manual runs |
 | Multi-turn LLM eval | `scaffold-llm.yml` | Add `scaffold-multi.yaml` or `scaffold-single-full.yaml` dispatch |
-| `scaffold migrate` job | New workflow input | Separate from `scaffold run` in `migration/` |
+| `llmci migrate` job | New workflow input | Separate from `llmci run` in `migration/` |
 | HTTP classifier in CI | `wait_for_http.sh` + docker-compose | Outline §15 stretch |
-| Drop `scaffold_run.sh` | All services | When `llmci` adds `scaffold run --config` |
+| Drop `scaffold_run.sh` | All services | When `llmci` adds `llmci run --config` |
 | Richer `json-api` dataset | `evals/api_responses.jsonl` | 5 rows → more if desired |
 | Pin prod dep | `llmci==0.1.1` | Stricter than `>=`; only if you want frozen customer sim |
 

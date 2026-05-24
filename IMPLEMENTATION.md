@@ -66,7 +66,7 @@ dev = [
 ]
 
 [project.scripts]
-scaffold = "scaffold.cli:cli"
+llmci = "llmci.cli:cli"
 ```
 
 **Why these choices:**
@@ -87,7 +87,7 @@ import click
 @click.option("--debug", is_flag=True, help="Full debug logging (prompts, responses, timing).")
 @click.pass_context
 def cli(ctx, verbose, debug):
-    """Scaffold: CI-native regression testing for LLMs."""
+    """llmci: CI-native regression testing for LLMs."""
     ctx.ensure_object(dict)
     ctx.obj["verbose"] = verbose
     ctx.obj["debug"] = debug
@@ -100,7 +100,7 @@ def cli(ctx, verbose, debug):
 @click.option("--seed", default=42, help="Random seed for smoke sampling.")
 def run(compare_to, smoke, output, update_baseline, seed):
     """Run evals and compare against baselines."""
-    click.echo("scaffold run: not yet implemented")
+    click.echo("llmci run: not yet implemented")
 
 @cli.command()
 @click.option("--from", "from_model", required=True, help="Source model to migrate from.")
@@ -113,7 +113,7 @@ def run(compare_to, smoke, output, update_baseline, seed):
 @click.option("--max-edit-distance", default=None, type=int, help="Reject prompts exceeding this edit distance.")
 def migrate(from_model, to_model, eval_name, optimizer_model, patience, max_iterations, min_improvement, max_edit_distance):
     """Run prompt migration optimization."""
-    click.echo("scaffold migrate: not yet implemented")
+    click.echo("llmci migrate: not yet implemented")
 
 @cli.group()
 def dataset():
@@ -125,46 +125,46 @@ def dataset():
 @click.option("--type", "dataset_type", type=click.Choice(["deterministic", "open_ended", "agent"]), required=True)
 def dataset_init(name, dataset_type):
     """Initialize an empty eval dataset."""
-    click.echo("scaffold dataset init: not yet implemented")
+    click.echo("llmci dataset init: not yet implemented")
 
 @dataset.command("add")
 @click.option("--name", required=True)
 def dataset_add(name):
     """Add examples interactively."""
-    click.echo("scaffold dataset add: not yet implemented")
+    click.echo("llmci dataset add: not yet implemented")
 
 @dataset.command("check")
 @click.option("--name", required=True)
 def dataset_check(name):
     """Analyze dataset coverage and quality."""
-    click.echo("scaffold dataset check: not yet implemented")
+    click.echo("llmci dataset check: not yet implemented")
 
 @dataset.command("import")
 @click.option("--name", required=True)
 @click.option("--from", "source", required=True, help="Path to CSV or JSON file.")
 def dataset_import(name, source):
     """Import examples from CSV or JSON."""
-    click.echo("scaffold dataset import: not yet implemented")
+    click.echo("llmci dataset import: not yet implemented")
 
 @cli.command()
 def init():
-    """Initialize a new scaffold.yaml interactively."""
-    click.echo("scaffold init: not yet implemented")
+    """Initialize a new llmci.yaml interactively."""
+    click.echo("llmci init: not yet implemented")
 
 @cli.command("import-promptfoo")
 @click.argument("source", type=click.Path(exists=True))
-@click.option("--output", default="scaffold.yaml", help="Output path for converted config.")
+@click.option("--output", default="llmci.yaml", help="Output path for converted config.")
 def import_promptfoo(source, output):
-    """Convert a Promptfoo config to scaffold.yaml."""
-    click.echo("scaffold import-promptfoo: not yet implemented")
+    """Convert a Promptfoo config to llmci.yaml."""
+    click.echo("llmci import-promptfoo: not yet implemented")
 ```
 
 ### 0.4 Acceptance Criteria
 
 - [ ] `pip install -e .` works
-- [ ] `scaffold --help` shows all commands and subcommands
-- [ ] `scaffold run --help` shows all flags
-- [ ] `scaffold --version` prints version
+- [ ] `llmci --help` shows all commands and subcommands
+- [ ] `llmci run --help` shows all flags
+- [ ] `llmci --version` prints version
 - [ ] `ruff check` and `mypy` pass
 - [ ] CI runs lint + tests on PR
 
@@ -172,7 +172,7 @@ def import_promptfoo(source, output):
 
 ## Phase 1: Core Eval Loop
 
-**Goal:** Run a deterministic eval locally. `scaffold run` reads a config, loads a dataset, calls the target, evaluates with a judge, and prints a pass/fail report.
+**Goal:** Run a deterministic eval locally. `llmci run` reads a config, loads a dataset, calls the target, evaluates with a judge, and prints a pass/fail report.
 
 This is the "hello world" — the minimum that demonstrates the tool works.
 
@@ -239,7 +239,7 @@ class Settings(BaseModel):
     retries: int = 2
     smoke_test_size: int | None = None
 
-class ScaffoldConfig(BaseModel):
+class LlmciConfig(BaseModel):
     version: int = 1
     target: TargetConfig
     evals: list[EvalConfig]
@@ -258,8 +258,8 @@ class ScaffoldConfig(BaseModel):
 ```python
 # src/scaffold/config.py
 
-def load_config(path: Path = Path("scaffold.yaml")) -> ScaffoldConfig:
-    """Load and validate scaffold.yaml. Raises ConfigError with human-readable messages."""
+def load_config(path: Path = Path("llmci.yaml")) -> LlmciConfig:
+    """Load and validate llmci.yaml. Raises ConfigError with human-readable messages."""
     ...
 
 def normalize_judge(raw: str | dict) -> JudgeConfig:
@@ -505,7 +505,7 @@ async def run_eval(
     metrics = compute_metrics(examples, results, per_example, requested_metrics)
     ...
 
-async def run_all_evals(config: ScaffoldConfig) -> list[EvalResult]:
+async def run_all_evals(config: LlmciConfig) -> list[EvalResult]:
     """Run all evals in the config sequentially (evals are independent)."""
     ...
 ```
@@ -587,21 +587,21 @@ def add_example(name: str, base_dir: Path = Path("evals")):
     ...
 ```
 
-These two commands are simple and self-contained. `scaffold dataset check` and `scaffold dataset import` come in Phase 4 since they require more logic (coverage analysis, format parsing).
+These two commands are simple and self-contained. `llmci dataset check` and `llmci dataset import` come in Phase 4 since they require more logic (coverage analysis, format parsing).
 
 ### 1.10 Phase 1 Acceptance (End-to-End)
 
-- [ ] Create `examples/01-ci-regression/` with a real scaffold.yaml, dataset, and run_prompt.py
-- [ ] `scaffold run` in that directory (command mode) produces a correct report
-- [ ] `scaffold run` in direct API mode also works (with a real or mocked LLM)
+- [ ] Create `examples/01-ci-regression/` with a real llmci.yaml, dataset, and run_prompt.py
+- [ ] `llmci run` in that directory (command mode) produces a correct report
+- [ ] `llmci run` in direct API mode also works (with a real or mocked LLM)
 - [ ] Changing the prompt or model in the example causes different scores
 - [ ] `--smoke` runs a deterministic subset
 - [ ] Exit code is 1 when absolute thresholds are violated, 0 when they pass
 - [ ] max_regression thresholds are skipped with a warning when no baseline exists
 - [ ] `--output report.md` writes to file
 - [ ] Error handling: missing config file, missing dataset, command timeout, malformed JSONL all produce clear error messages
-- [ ] `scaffold dataset init --name test --type deterministic` creates an empty JSONL file
-- [ ] `scaffold dataset add --name test` interactively adds examples
+- [ ] `llmci dataset init --name test --type deterministic` creates an empty JSONL file
+- [ ] `llmci dataset add --name test` interactively adds examples
 
 ---
 
@@ -614,7 +614,7 @@ These two commands are simple and self-contained. `scaffold dataset check` and `
 ```python
 # src/scaffold/baseline.py
 
-BASELINE_DIR = Path(".scaffold/baselines")
+BASELINE_DIR = Path(".llmci/baselines")
 
 @dataclass
 class Baseline:
@@ -625,8 +625,8 @@ class Baseline:
 
 def save_baseline(result: EvalResult, commit_sha: str) -> Path:
     """
-    Write baseline to .scaffold/baselines/{eval_name}.json
-    Called by `scaffold run --update-baseline`.
+    Write baseline to .llmci/baselines/{eval_name}.json
+    Called by `llmci run --update-baseline`.
     """
     ...
 
@@ -635,7 +635,7 @@ def load_baseline(eval_name: str, ref: str | None = None) -> Baseline | None:
     Load baseline for an eval.
 
     If ref is provided (e.g., "main", "origin/main"), load from that git ref
-    using `git show {ref}:.scaffold/baselines/{eval_name}.json`.
+    using `git show {ref}:.llmci/baselines/{eval_name}.json`.
 
     If ref is None, load from the local filesystem.
 
@@ -649,13 +649,13 @@ def load_all_baselines(eval_names: list[str], ref: str | None = None) -> dict[st
 ```
 
 **Design notes:**
-- Baselines are JSON files committed to the repo under `.scaffold/baselines/`.
-- On the main branch, CI runs `scaffold run --update-baseline` which saves new baselines.
-- On PR branches, `scaffold run --compare-to=origin/main` loads baselines from the base branch via `git show`.
+- Baselines are JSON files committed to the repo under `.llmci/baselines/`.
+- On the main branch, CI runs `llmci run --update-baseline` which saves new baselines.
+- On PR branches, `llmci run --compare-to=origin/main` loads baselines from the base branch via `git show`.
 - This is fully stateless — no external service, no database.
 
 **Acceptance criteria:**
-- [ ] `--update-baseline` writes JSON files to `.scaffold/baselines/`
+- [ ] `--update-baseline` writes JSON files to `.llmci/baselines/`
 - [ ] `--compare-to=main` loads baselines from the git ref
 - [ ] Missing baselines are handled gracefully (first run, new eval added)
 - [ ] Stale baselines (eval renamed/removed) don't cause crashes
@@ -713,7 +713,7 @@ def format_pr_report(
     """
     Full PR report as markdown:
 
-    ## Scaffold Eval Report
+    ## llmci Eval Report
 
     | Eval | Metric | Baseline | This PR | Threshold | Status |
     |------|--------|----------|---------|-----------|--------|
@@ -758,7 +758,7 @@ def detect_github_context() -> dict | None:
 
 ```yaml
 # action.yml
-name: "Scaffold Eval"
+name: "llmci Eval"
 description: "Run Scaffold LLM evals and post results"
 inputs:
   compare-to:
@@ -771,7 +771,7 @@ runs:
   using: "composite"
   steps:
     - run: pip install llmci
-    - run: scaffold run --compare-to=${{ inputs.compare-to }} --output=scaffold-report.md
+    - run: llmci run --compare-to=${{ inputs.compare-to }} --output=scaffold-report.md
     - run: |
         # Post comment using GitHub API
         ...
@@ -783,7 +783,7 @@ In addition to the user-facing GitHub Action, add a **dogfood workflow** that ru
 
 ```yaml
 # .github/workflows/scaffold-dogfood.yml
-name: Scaffold Dogfood
+name: llmci Dogfood
 on: [pull_request, push]
 
 jobs:
@@ -798,7 +798,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -e .
-      - run: scaffold run
+      - run: llmci run
         working-directory: examples/${{ matrix.example }}
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -806,8 +806,8 @@ jobs:
 
 ### 2.7 Phase 2 Acceptance (End-to-End)
 
-- [ ] `scaffold run --update-baseline` saves baselines to `.scaffold/baselines/`
-- [ ] `scaffold run --compare-to=main` loads baselines and detects regressions
+- [ ] `llmci run --update-baseline` saves baselines to `.llmci/baselines/`
+- [ ] `llmci run --compare-to=main` loads baselines and detects regressions
 - [ ] PR report shows baseline vs current with threshold status
 - [ ] Degraded examples are listed when regressions are detected
 - [ ] **Real GitHub Actions run on an actual PR** — not just local testing. This validates the full CI path: checkout, baseline loading via `git show`, PR comment posting, exit code gating.
@@ -887,14 +887,14 @@ Respond with a JSON object:
 - Structured JSON output avoids brittle parsing.
 - Each criterion is evaluated independently (separate LLM call per criterion per example). This is more expensive but more reliable than evaluating all criteria in one call.
 - Uses `temperature: 0` by default for maximum reproducibility.
-- Result caching: hash(model + criterion + input + expected + actual) → cached result stored in `.scaffold/cache/judge_results.json`. Cache is invalidated when the rubric changes. Avoids re-running identical judge calls across runs.
+- Result caching: hash(model + criterion + input + expected + actual) → cached result stored in `.llmci/cache/judge_results.json`. Cache is invalidated when the rubric changes. Avoids re-running identical judge calls across runs.
 - Patch target for mocking in tests: `scaffold.judges.llm_judge.litellm.acompletion` (import at module level so patch-at-use-site works).
 
 **Acceptance criteria:**
 - [ ] Evaluates each rubric criterion independently
 - [ ] Handles LLM judge failures (timeout, malformed response) gracefully — counts as a criterion failure with reason
 - [ ] Respects parallelism settings
-- [ ] Caches results to `.scaffold/cache/` and skips identical calls on re-runs
+- [ ] Caches results to `.llmci/cache/` and skips identical calls on re-runs
 - [ ] Cache hit rate reported in `--verbose` mode
 - [ ] Works with any litellm-supported model
 
@@ -913,7 +913,7 @@ class CustomJudge(Judge):
     def _load_function(self, module_path: str, function_name: str):
         """
         Dynamically import a function from a Python file.
-        Path is resolved relative to scaffold.yaml's directory.
+        Path is resolved relative to llmci.yaml's directory.
         The function must have signature: (input: str, expected: str, actual: str) -> dict
         The dict must contain at minimum: {"score": float}  (0.0 to 1.0)
         Optional: {"score": float, "reason": str}
@@ -980,7 +980,7 @@ def create_judge(config: JudgeConfig) -> Judge:
 
 ## Phase 4: Advanced Dataset Tooling
 
-**Goal:** `scaffold dataset check` (coverage analysis) and `scaffold dataset import` (CSV/JSON import). Basic `init` and `add` were shipped in Phase 1.
+**Goal:** `llmci dataset check` (coverage analysis) and `llmci dataset import` (CSV/JSON import). Basic `init` and `add` were shipped in Phase 1.
 
 ### 4.1 Dataset Check (Coverage Analysis)
 
@@ -1028,10 +1028,10 @@ def import_dataset(name: str, source_path: Path, base_dir: Path = Path("evals"))
 
 ### 4.3 Phase 4 Acceptance
 
-- [ ] `scaffold dataset check --name test` reports coverage gaps, duplicate inputs, and length outliers
+- [ ] `llmci dataset check --name test` reports coverage gaps, duplicate inputs, and length outliers
 - [ ] Coverage report flags underrepresented categories by name with suggested count
-- [ ] `scaffold dataset import --name test --from data.csv` imports CSV data with column mapping
-- [ ] `scaffold dataset import --name test --from data.json` imports JSON array
+- [ ] `llmci dataset import --name test --from data.csv` imports CSV data with column mapping
+- [ ] `llmci dataset import --name test --from data.json` imports JSON array
 - [ ] Import reports skipped rows with reasons (missing fields, parse errors)
 
 ---
@@ -1192,7 +1192,7 @@ def format_migration_report(result: OptimizationResult) -> str:
 
 ### 5.5 CLI Integration
 
-Wire `scaffold migrate` in cli.py:
+Wire `llmci migrate` in cli.py:
 
 ```python
 @cli.command()
@@ -1228,7 +1228,7 @@ def migrate(from_model, to_model, eval_name, optimizer_model, patience, max_iter
 ### 5.6 Phase 5 Acceptance
 
 - [ ] Create `examples/02-model-migration/` with a working migration example
-- [ ] `scaffold migrate --from gpt-4o --to gpt-4.5 --eval ticket-classification` runs the loop
+- [ ] `llmci migrate --from gpt-4o --to gpt-4.5 --eval ticket-classification` runs the loop
 - [ ] Optimizer makes small, targeted changes (not full rewrites)
 - [ ] Early stopping kicks in when improvement plateaus
 - [ ] Holdout score is computed only at the end (not leaked during optimization)
@@ -1392,14 +1392,14 @@ class CompositeJudge(Judge):
 
 **Goal:** Production-ready release with documentation, examples, and migration paths.
 
-### 7.1 `scaffold init`
+### 7.1 `llmci init`
 
 Interactive config generator:
 
 1. Detect prompt files in the current directory
 2. Ask: command mode or direct API mode?
 3. Ask: what type of task? (classification / open-ended / agent)
-4. Generate a starter `scaffold.yaml`
+4. Generate a starter `llmci.yaml`
 5. Generate a starter dataset with 3-5 placeholder examples
 6. Print next steps
 
@@ -1408,9 +1408,9 @@ Interactive config generator:
 ```python
 # src/scaffold/import_promptfoo.py
 
-def import_promptfoo_config(source: Path, output: Path = Path("scaffold.yaml")):
+def import_promptfoo_config(source: Path, output: Path = Path("llmci.yaml")):
     """
-    Parse a promptfooconfig.yaml and convert to scaffold.yaml.
+    Parse a promptfooconfig.yaml and convert to llmci.yaml.
 
     Mapping:
     - providers → target
@@ -1462,8 +1462,8 @@ Similar implementations for `pydantic_ai.py` and `claude_agents.py`.
 
 ### 7.5 Phase 7 Acceptance
 
-- [ ] `scaffold init` generates a working config from scratch
-- [ ] `scaffold import-promptfoo` converts basic Promptfoo configs
+- [ ] `llmci init` generates a working config from scratch
+- [ ] `llmci import-promptfoo` converts basic Promptfoo configs
 - [ ] All 7 examples are runnable with just an API key
 - [ ] README covers installation, quickstart, and each feature
 - [ ] PyPI package `llmci` installable
@@ -1663,7 +1663,7 @@ LLM outputs are inherently non-deterministic. This affects two areas:
 
 **In the user's evals (Scaffold's purpose):** Scaffold should help users handle this, but it's a runtime concern, not a test concern for us. Relevant design decisions:
 - LLM judge uses `temperature: 0` by default for maximum reproducibility.
-- `scaffold run` accepts `--seed` for reproducible sampling.
+- `llmci run` accepts `--seed` for reproducible sampling.
 - Smoke test sampling uses a fixed seed.
 - Migration holdout split uses a fixed seed.
 
@@ -1738,7 +1738,7 @@ Phase 0 ─── Phase 1 ─── Phase 2 ─── Phase 3
               (polish + examples)
 ```
 
-- Phase 1 includes basic `scaffold dataset init/add` (per PLAN build sequence).
+- Phase 1 includes basic `llmci dataset init/add` (per PLAN build sequence).
 - Phase 4 (advanced dataset tooling: `check`, `import`) is independent of Phase 3 and can run in parallel.
 - Phase 5 (migration) depends on Phase 3 (needs LLM judge for open-ended eval during optimization).
 - Phase 6 (agents) introduces composite judges, constraint judges, and trajectory judges — these are new judge types, not from Phase 3. Phase 6 depends on Phase 5 for agent migration.

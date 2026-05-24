@@ -6,7 +6,7 @@ Same tool names as agent_def.py so constraint evals match the dataset.
 
 from __future__ import annotations
 
-from scaffold.trace import TraceBuilder
+from llmci.trace import TraceBuilder
 
 TOOL_DB = {
     "get_weather": {"New York": "72°F sunny", "London": "58°F cloudy", "Tokyo": "65°F rainy"},

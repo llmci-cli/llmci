@@ -1,19 +1,19 @@
-"""Tests for scaffold init."""
+"""Tests for llmci init."""
 
 import json
 
 from click.testing import CliRunner
 
-from scaffold.cli import cli
+from llmci.cli import cli
 
 
-class TestScaffoldInit:
+class TestLlmciInit:
     def test_creates_files(self, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
         runner = CliRunner()
         result = runner.invoke(cli, ["init"], input="command\nclassification\nmy-eval\n\n")
         assert result.exit_code == 0
-        assert (tmp_path / "scaffold.yaml").exists()
+        assert (tmp_path / "llmci.yaml").exists()
         assert (tmp_path / "evals" / "my-eval.jsonl").exists()
 
     def test_creates_classification_config(self, tmp_path, monkeypatch):
@@ -23,7 +23,7 @@ class TestScaffoldInit:
         assert result.exit_code == 0
 
         import yaml
-        config = yaml.safe_load((tmp_path / "scaffold.yaml").read_text())
+        config = yaml.safe_load((tmp_path / "llmci.yaml").read_text())
         assert config["version"] == 1
         assert config["evals"][0]["name"] == "test-eval"
         assert config["evals"][0]["judge"] == "exact_match"
@@ -38,7 +38,7 @@ class TestScaffoldInit:
         assert result.exit_code == 0
 
         import yaml
-        config = yaml.safe_load((tmp_path / "scaffold.yaml").read_text())
+        config = yaml.safe_load((tmp_path / "llmci.yaml").read_text())
         assert config["evals"][0]["judge"]["type"] == "llm"
 
     def test_creates_agent_config(self, tmp_path, monkeypatch):
@@ -48,7 +48,7 @@ class TestScaffoldInit:
         assert result.exit_code == 0
 
         import yaml
-        config = yaml.safe_load((tmp_path / "scaffold.yaml").read_text())
+        config = yaml.safe_load((tmp_path / "llmci.yaml").read_text())
         assert config["evals"][0]["level"] == "agent"
         assert config["evals"][0]["judge"]["type"] == "composite"
 
@@ -66,7 +66,7 @@ class TestScaffoldInit:
 
     def test_aborts_on_existing(self, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
-        (tmp_path / "scaffold.yaml").write_text("existing")
+        (tmp_path / "llmci.yaml").write_text("existing")
         runner = CliRunner()
         result = runner.invoke(cli, ["init"], input="n\n")
         assert "Aborted" in result.output
@@ -81,5 +81,5 @@ class TestScaffoldInit:
         assert result.exit_code == 0
 
         import yaml
-        config = yaml.safe_load((tmp_path / "scaffold.yaml").read_text())
+        config = yaml.safe_load((tmp_path / "llmci.yaml").read_text())
         assert "direct" in config["target"]

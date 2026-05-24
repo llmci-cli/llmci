@@ -10,7 +10,7 @@ Demonstrates testing a full RAG (Retrieval-Augmented Generation) pipeline end-to
 ## How to run
 ```bash
 cd examples/07-pipeline-level
-scaffold run
+llmci run
 ```
 
 ## How to adapt

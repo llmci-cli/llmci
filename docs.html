@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Docs — Scaffold</title>
+  <title>Docs — llmci</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -76,6 +76,29 @@
       align-items: center;
       gap: 8px;
       text-decoration: none;
+    }
+
+    .logo-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.1;
+      gap: 1px;
+    }
+
+    .logo-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9375rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+
+    .logo-tag {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.5625rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
     }
 
     .logo-mark { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; }
@@ -386,7 +409,10 @@
             <rect x="30" y="30" width="40" height="10" rx="3" fill="#059669" opacity="0.45"/>
           </svg>
         </div>
-        Scaffold
+        <div class="logo-text">
+          <span class="logo-name">llmci</span>
+          <span class="logo-tag">LLM CI</span>
+        </div>
       </a>
       <div class="nav-links">
         <a href="index.html">Home</a>
@@ -414,7 +440,7 @@
 
       <div class="sidebar-section">
         <div class="sidebar-heading">Configuration</div>
-        <a href="#config-file"><span class="sidebar-icon">&#x2699;</span> scaffold.yaml</a>
+        <a href="#config-file"><span class="sidebar-icon">&#x2699;</span> llmci.yaml</a>
         <a href="#targets"><span class="sidebar-icon">&#x25B6;</span> Targets</a>
         <a href="#judges"><span class="sidebar-icon">&#x2696;</span> Judges</a>
         <a href="#metrics"><span class="sidebar-icon">&#x1F4CA;</span> Metrics</a>
@@ -453,9 +479,13 @@
       <!-- INSTALLATION -->
       <section class="doc-section" id="installation">
         <h2>Installation</h2>
-        <p class="section-lead">Install Scaffold from PyPI. Requires Python 3.11 or later.</p>
+        <p class="section-lead">Install llmci from PyPI. Requires Python 3.10 or later. The CLI command is <code>llmci</code>.</p>
 
 <pre><span class="cmd">pip install llmci</span></pre>
+
+        <p>For agent evals with the OpenAI Agents SDK adapter:</p>
+
+<pre><span class="cmd">pip install 'llmci[agents]'</span></pre>
 
         <p>For development, install from source:</p>
 
@@ -465,7 +495,7 @@
 
         <p>Verify your installation:</p>
 
-<pre><span class="cmd">scaffold --version</span></pre>
+<pre><span class="cmd">llmci --version</span></pre>
       </section>
 
       <hr>
@@ -476,16 +506,16 @@
         <p class="section-lead">Get up and running in under 5 minutes.</p>
 
         <h3>1. Initialize</h3>
-        <p>Run <code>scaffold init</code> to generate a config and starter dataset interactively:</p>
+        <p>Run <code>llmci init</code> to generate a config and starter dataset interactively:</p>
 
-<pre><span class="cmd">scaffold init</span>
+<pre><span class="cmd">llmci init</span>
 
 <span class="comment"># Prompts you for:</span>
 <span class="comment">#   Target mode:  command / direct</span>
 <span class="comment">#   Task type:    classification / open_ended / agent</span>
 <span class="comment">#   Eval name:    my-eval</span></pre>
 
-        <p>This creates <code>scaffold.yaml</code> and <code>evals/my-eval.jsonl</code> with starter examples.</p>
+        <p>This creates <code>llmci.yaml</code> and <code>evals/my-eval.jsonl</code> with starter examples.</p>
 
         <h3>2. Add your eval data</h3>
         <p>Edit the generated JSONL file. Each line is one test case:</p>
@@ -496,15 +526,15 @@
 
         <p>Or add examples interactively:</p>
 
-<pre><span class="cmd">scaffold dataset add --name my-eval</span></pre>
+<pre><span class="cmd">llmci dataset add --name my-eval</span></pre>
 
         <h3>3. Run evals</h3>
 
-<pre><span class="cmd">scaffold run</span></pre>
+<pre><span class="cmd">llmci run</span></pre>
 
         <p>You'll see a report like this:</p>
 
-<pre><span class="comment">## Scaffold Eval Report</span>
+<pre><span class="comment">## llmci Eval Report</span>
 
 <span class="comment">| Eval   | Metric   | Score | Threshold | Status |</span>
 <span class="comment">|--------|----------|-------|-----------|--------|</span>
@@ -518,20 +548,20 @@
       <!-- CORE CONCEPTS -->
       <section class="doc-section" id="concepts">
         <h2>Core Concepts</h2>
-        <p class="section-lead">The mental model behind Scaffold.</p>
+        <p class="section-lead">The mental model behind llmci.</p>
 
         <h3>Eval = Unit Test for LLMs</h3>
         <p>An <strong>eval</strong> is like a test suite. It has a dataset of input/expected pairs, a target (the thing you're testing), a judge (how to score), and metric thresholds (pass/fail criteria).</p>
 
         <h3>Targets</h3>
-        <p>The <strong>target</strong> is whatever you're testing — a prompt, a script, a full pipeline. Scaffold sends each input to your target and collects the output. Two modes:</p>
+        <p>The <strong>target</strong> is whatever you're testing — a prompt, a script, a full pipeline. llmci sends each input to your target and collects the output. Two modes:</p>
         <ul>
           <li><strong>Command mode</strong> — run any executable. Language-agnostic.</li>
           <li><strong>Direct mode</strong> — call an LLM API directly via litellm.</li>
         </ul>
 
         <h3>Judges</h3>
-        <p>A <strong>judge</strong> scores each output. Scaffold includes exact match, LLM-as-judge, custom Python functions, and composite judges for agents.</p>
+        <p>A <strong>judge</strong> scores each output. llmci includes exact match, LLM-as-judge, custom Python functions, and composite judges for agents.</p>
 
         <h3>Thresholds</h3>
         <p>Each metric has a threshold. Two modes:</p>
@@ -548,7 +578,7 @@
 
       <!-- SCAFFOLD.YAML -->
       <section class="doc-section" id="config-file">
-        <h2>scaffold.yaml</h2>
+        <h2>llmci.yaml</h2>
         <p class="section-lead">The config file defines your target, evals, and settings.</p>
 
 <pre><span class="key">version</span>: <span class="string">1</span>
@@ -584,7 +614,7 @@
       <!-- TARGETS -->
       <section class="doc-section" id="targets">
         <h2>Targets</h2>
-        <p class="section-lead">Define what Scaffold tests — a script, a service, or a direct LLM call.</p>
+        <p class="section-lead">Define what llmci tests — a script, a service, or a direct LLM call.</p>
 
         <h3>Command Mode</h3>
         <p>Wrap any executable. Your script receives a JSON input file and writes a JSON output file:</p>
@@ -791,7 +821,7 @@ Ticket: <span class="string">{input}</span></pre>
 
         <div class="callout callout-info">
           <div class="callout-icon">&#x2139;</div>
-          <p><code>max_regression</code> thresholds require a stored baseline. Run <code>scaffold run --update-baseline</code> on your main branch first.</p>
+          <p><code>max_regression</code> thresholds require a stored baseline. Run <code>llmci run --update-baseline</code> on your main branch first.</p>
         </div>
       </section>
 
@@ -804,33 +834,63 @@ Ticket: <span class="string">{input}</span></pre>
 
         <h3>Storing baselines</h3>
         <p>On your main branch, save the current metric scores:</p>
-<pre><span class="cmd">scaffold run --update-baseline</span></pre>
-        <p>This writes JSON files to <code>.scaffold/baselines/</code>. Commit them to your repo.</p>
+<pre><span class="cmd">llmci run --update-baseline</span></pre>
+        <p>This writes JSON files to <code>.llmci/baselines/</code>. Commit them to your repo.</p>
 
         <h3>Comparing against baselines</h3>
         <p>On a PR branch, compare against the main branch:</p>
-<pre><span class="cmd">scaffold run --compare-to=main</span></pre>
+<pre><span class="cmd">llmci run --compare-to=main</span></pre>
 
         <h3>GitHub Actions</h3>
-        <p>Scaffold auto-detects GitHub Actions and posts eval results as a PR comment:</p>
+        <p>llmci auto-detects GitHub Actions and posts eval results as a PR comment.</p>
 
-<pre><span class="comment"># .github/workflows/scaffold.yml</span>
-<span class="key">name</span>: <span class="string">Scaffold Evals</span>
+        <h4>Single job (composite action)</h4>
+        <p>For one eval config per workflow run:</p>
+
+<pre><span class="comment"># .github/workflows/llmci.yml</span>
+<span class="key">name</span>: <span class="string">llmci Evals</span>
 <span class="key">on</span>: [<span class="string">pull_request</span>]
 <span class="key">jobs</span>:
   <span class="key">eval</span>:
     <span class="key">runs-on</span>: <span class="string">ubuntu-latest</span>
+    <span class="key">permissions</span>:
+      <span class="key">contents</span>: <span class="string">read</span>
+      <span class="key">pull-requests</span>: <span class="string">write</span>
     <span class="key">steps</span>:
       - <span class="key">uses</span>: <span class="string">actions/checkout@v4</span>
+        <span class="key">with</span>:
+          <span class="key">fetch-depth</span>: <span class="string">0</span>   <span class="comment"># required for --compare-to git baselines</span>
       - <span class="key">uses</span>: <span class="string">alexminnaar/scaffold@main</span>
         <span class="key">with</span>:
           <span class="key">compare-to</span>: <span class="string">origin/main</span>
         <span class="key">env</span>:
           <span class="key">OPENAI_API_KEY</span>: <span class="string">${{ secrets.OPENAI_API_KEY }}</span></pre>
 
+        <h4>Matrix jobs (multiple services)</h4>
+        <p>When parallel matrix jobs each run evals, set <code>LLMCI_REPORT_SLICE</code> so every job merges its report into one PR comment instead of overwriting the others:</p>
+
+<pre><span class="key">strategy</span>:
+  <span class="key">matrix</span>:
+    <span class="key">include</span>:
+      - { <span class="key">service</span>: <span class="string">ticket-classifier</span>, <span class="key">config</span>: <span class="string">llmci.yaml</span> }
+      - { <span class="key">service</span>: <span class="string">rag-qa</span>, <span class="key">config</span>: <span class="string">llmci.yaml</span> }
+<span class="key">steps</span>:
+  - <span class="key">uses</span>: <span class="string">actions/checkout@v4</span>
+    <span class="key">with</span>:
+      <span class="key">fetch-depth</span>: <span class="string">0</span>
+  - <span class="key">run</span>: <span class="string">pip install llmci</span>
+  - <span class="key">name</span>: <span class="string">Run eval</span>
+    <span class="key">working-directory</span>: <span class="string">services/${{ matrix.service }}</span>
+    <span class="key">env</span>:
+      <span class="key">GITHUB_TOKEN</span>: <span class="string">${{ secrets.GITHUB_TOKEN }}</span>
+      <span class="key">LLMCI_REPORT_SLICE</span>: <span class="string">${{ matrix.service }}/${{ matrix.config }}</span>
+    <span class="key">run</span>: <span class="string">llmci run --config ${{ matrix.config }} --compare-to=origin/main</span></pre>
+
+        <p>On <code>main</code> pushes, use <code>--update-baseline</code> instead of <code>--compare-to</code>. See the full pattern in <a href="https://github.com/alexminnaar/scaffold-testbed/blob/main/.github/workflows/scaffold.yml">scaffold-testbed</a>.</p>
+
         <div class="callout callout-tip">
           <div class="callout-icon">&#x2713;</div>
-          <p>Scaffold uses a hidden HTML comment to find its own PR comments. Re-running the action updates the existing comment instead of creating duplicates.</p>
+          <p>llmci uses a hidden HTML comment to find its own PR comments. Re-running the action updates the existing comment instead of creating duplicates. With <code>LLMCI_REPORT_SLICE</code>, each matrix job updates its own slice in that single comment.</p>
         </div>
       </section>
 
@@ -841,9 +901,9 @@ Ticket: <span class="string">{input}</span></pre>
         <h2>Model Migration</h2>
         <p class="section-lead">Automatically re-tune your prompt when switching LLM models.</p>
 
-        <p>When you upgrade from one model to another, your prompt may need adjustments to maintain quality. Scaffold automates this:</p>
+        <p>When you upgrade from one model to another, your prompt may need adjustments to maintain quality. llmci automates this:</p>
 
-<pre><span class="cmd">scaffold migrate \</span>
+<pre><span class="cmd">llmci migrate \</span>
   <span class="flag">--from</span> gpt-4o \
   <span class="flag">--to</span> gpt-4.5 \
   <span class="flag">--eval</span> ticket-classification \
@@ -902,6 +962,27 @@ Ticket: <span class="string">{input}</span></pre>
   <span class="key">"total_tokens"</span>: 150
 }</pre>
 
+        <h3>Building trace output</h3>
+        <p>Agent evals invoke your agent as a <strong>command</strong> that reads input JSON and writes output JSON. Use <code>TraceBuilder</code> for mocks and custom frameworks, or the OpenAI Agents adapter for SDK runs.</p>
+
+        <h4>TraceBuilder (any framework)</h4>
+
+<pre><span class="key">from</span> llmci.trace <span class="key">import</span> TraceBuilder
+
+tb = TraceBuilder()
+tb.tool(<span class="string">"get_weather"</span>, {<span class="string">"city"</span>: <span class="string">"London"</span>}, result=<span class="string">"58°F cloudy"</span>, tokens=25)
+tb.response(<span class="string">"It's 58°F and cloudy in London."</span>)
+output = tb.to_dict()   <span class="comment"># write to {output_file}</span></pre>
+
+        <h4>OpenAI Agents SDK adapter</h4>
+
+<pre><span class="key">from</span> llmci.integrations.openai_agents <span class="key">import</span> run_for_llmci_sync
+
+result = run_for_llmci_sync(build_agent(), {<span class="string">"query"</span>: <span class="string">"Weather in Tokyo?"</span>})
+<span class="comment"># result: final_output, trace, total_tool_calls, total_tokens</span></pre>
+
+        <p>Requires <code>pip install 'llmci[agents]'</code> and <code>OPENAI_API_KEY</code>. For CI without an API key, use <code>MOCK_LLM=1</code> with a TraceBuilder mock — see <a href="https://github.com/alexminnaar/scaffold/tree/main/examples/10-agent-openai-agents"><code>examples/10-agent-openai-agents</code></a>.</p>
+
         <h3>Composite Judge Criteria</h3>
         <table>
           <tr><th>Type</th><th>How it works</th><th>Requires LLM</th></tr>
@@ -925,20 +1006,20 @@ Ticket: <span class="string">{input}</span></pre>
         <p class="section-lead">Create, curate, and analyze eval datasets.</p>
 
         <h3>Initialize a dataset</h3>
-<pre><span class="cmd">scaffold dataset init --name my-eval --type classification</span></pre>
+<pre><span class="cmd">llmci dataset init --name my-eval --type classification</span></pre>
         <p>Creates an empty <code>evals/my-eval.jsonl</code> file.</p>
 
         <h3>Add examples interactively</h3>
-<pre><span class="cmd">scaffold dataset add --name my-eval</span></pre>
+<pre><span class="cmd">llmci dataset add --name my-eval</span></pre>
         <p>Prompts for input/expected pairs and appends them to the dataset.</p>
 
         <h3>Check dataset quality</h3>
-<pre><span class="cmd">scaffold dataset check --name my-eval</span></pre>
+<pre><span class="cmd">llmci dataset check --name my-eval</span></pre>
         <p>Reports category distribution, underrepresented categories, duplicate inputs, class imbalance, and input length statistics.</p>
 
         <h3>Import from CSV or JSON</h3>
-<pre><span class="cmd">scaffold dataset import --name my-eval --from data.csv</span>
-<span class="cmd">scaffold dataset import --name my-eval --from data.json --input-column question --expected-column answer</span></pre>
+<pre><span class="cmd">llmci dataset import --name my-eval --from data.csv</span>
+<span class="cmd">llmci dataset import --name my-eval --from data.json --input-column question --expected-column answer</span></pre>
       </section>
 
       <hr>
@@ -949,18 +1030,18 @@ Ticket: <span class="string">{input}</span></pre>
 
         <table>
           <tr><th>Command</th><th>Description</th></tr>
-          <tr><td><code>scaffold run</code></td><td>Run evals and report results</td></tr>
-          <tr><td><code>scaffold run --smoke</code></td><td>Run on a subset of the dataset</td></tr>
-          <tr><td><code>scaffold run --update-baseline</code></td><td>Save current scores as baseline</td></tr>
-          <tr><td><code>scaffold run --compare-to=main</code></td><td>Compare against a baseline branch</td></tr>
-          <tr><td><code>scaffold run --output report.md</code></td><td>Write report to a file</td></tr>
-          <tr><td><code>scaffold migrate</code></td><td>Optimize a prompt for a new model</td></tr>
-          <tr><td><code>scaffold init</code></td><td>Generate scaffold.yaml interactively</td></tr>
-          <tr><td><code>scaffold dataset init</code></td><td>Create a new eval dataset</td></tr>
-          <tr><td><code>scaffold dataset add</code></td><td>Add examples interactively</td></tr>
-          <tr><td><code>scaffold dataset check</code></td><td>Analyze dataset coverage</td></tr>
-          <tr><td><code>scaffold dataset import</code></td><td>Import from CSV/JSON</td></tr>
-          <tr><td><code>scaffold import-promptfoo</code></td><td>Convert a Promptfoo config</td></tr>
+          <tr><td><code>llmci run</code></td><td>Run evals and report results</td></tr>
+          <tr><td><code>llmci run --smoke</code></td><td>Run on a subset of the dataset</td></tr>
+          <tr><td><code>llmci run --update-baseline</code></td><td>Save current scores as baseline</td></tr>
+          <tr><td><code>llmci run --compare-to=main</code></td><td>Compare against a baseline branch</td></tr>
+          <tr><td><code>llmci run --output report.md</code></td><td>Write report to a file</td></tr>
+          <tr><td><code>llmci migrate</code></td><td>Optimize a prompt for a new model</td></tr>
+          <tr><td><code>llmci init</code></td><td>Generate llmci.yaml interactively</td></tr>
+          <tr><td><code>llmci dataset init</code></td><td>Create a new eval dataset</td></tr>
+          <tr><td><code>llmci dataset add</code></td><td>Add examples interactively</td></tr>
+          <tr><td><code>llmci dataset check</code></td><td>Analyze dataset coverage</td></tr>
+          <tr><td><code>llmci dataset import</code></td><td>Import from CSV/JSON</td></tr>
+          <tr><td><code>llmci import-promptfoo</code></td><td>Convert a Promptfoo config</td></tr>
         </table>
 
         <p>Global flags:</p>
@@ -976,13 +1057,13 @@ Ticket: <span class="string">{input}</span></pre>
       <!-- GITHUB ACTION -->
       <section class="doc-section" id="github-action">
         <h2>GitHub Action</h2>
-        <p class="section-lead">Drop Scaffold into any GitHub Actions workflow.</p>
+        <p class="section-lead">Drop llmci into any GitHub Actions workflow.</p>
 
 <pre><span class="key">- uses</span>: <span class="string">alexminnaar/scaffold@main</span>
   <span class="key">with</span>:
     <span class="key">compare-to</span>: <span class="string">origin/main</span>       <span class="comment"># baseline branch</span>
     <span class="key">smoke</span>: <span class="string">false</span>                   <span class="comment"># run full dataset</span>
-    <span class="key">working-directory</span>: <span class="string">.</span>           <span class="comment"># dir with scaffold.yaml</span>
+    <span class="key">working-directory</span>: <span class="string">.</span>           <span class="comment"># dir with llmci.yaml</span>
   <span class="key">env</span>:
     <span class="key">OPENAI_API_KEY</span>: <span class="string">${{ secrets.OPENAI_API_KEY }}</span></pre>
 
@@ -990,7 +1071,7 @@ Ticket: <span class="string">{input}</span></pre>
           <tr><th>Input</th><th>Default</th><th>Description</th></tr>
           <tr><td><code>compare-to</code></td><td><code>origin/main</code></td><td>Branch to load baselines from</td></tr>
           <tr><td><code>smoke</code></td><td><code>false</code></td><td>Run on a dataset subset</td></tr>
-          <tr><td><code>working-directory</code></td><td><code>.</code></td><td>Directory containing scaffold.yaml</td></tr>
+          <tr><td><code>working-directory</code></td><td><code>.</code></td><td>Directory containing llmci.yaml</td></tr>
           <tr><td><code>output</code></td><td>(none)</td><td>Write report to a file path</td></tr>
           <tr><td><code>github-token</code></td><td><code>github.token</code></td><td>Token for posting PR comments</td></tr>
         </table>
@@ -1003,7 +1084,7 @@ Ticket: <span class="string">{input}</span></pre>
         <h2>Migrating from Promptfoo</h2>
         <p class="section-lead">One command to convert an existing Promptfoo config.</p>
 
-<pre><span class="cmd">scaffold import-promptfoo promptfooconfig.yaml</span></pre>
+<pre><span class="cmd">llmci import-promptfoo promptfooconfig.yaml</span></pre>
 
         <p>This converts:</p>
         <ul>
@@ -1056,7 +1137,7 @@ Ticket: <span class="string">{input}</span></pre>
         <h4>Service-level gating</h4>
         <p>Test the full pipeline by hitting the actual FastAPI endpoint. A thin wrapper script calls the service and extracts the classification:</p>
 
-<pre><span class="comment"># eval_service.py — Scaffold command-mode wrapper</span>
+<pre><span class="comment"># eval_service.py — llmci command-mode wrapper</span>
 <span class="key">import</span> argparse, json, requests
 
 parser = argparse.ArgumentParser()
@@ -1100,7 +1181,7 @@ json.dump({<span class="string">"output"</span>: result[<span class="string">"ca
     <span class="key">runs-on</span>: <span class="string">ubuntu-latest</span>
     <span class="key">steps</span>:
       - <span class="key">uses</span>: <span class="string">actions/checkout@v4</span>
-      - <span class="key">run</span>: <span class="string">scaffold run</span>              <span class="comment"># prompt-level (fast, no service needed)</span>
+      - <span class="key">run</span>: <span class="string">llmci run</span>              <span class="comment"># prompt-level (fast, no service needed)</span>
         <span class="key">working-directory</span>: <span class="string">evals/prompt</span>
 
   <span class="key">service-eval</span>:
@@ -1109,7 +1190,7 @@ json.dump({<span class="string">"output"</span>: result[<span class="string">"ca
       - <span class="key">uses</span>: <span class="string">actions/checkout@v4</span>
       - <span class="key">run</span>: <span class="string">docker compose up -d</span>
       - <span class="key">run</span>: <span class="string">sleep 5</span>              <span class="comment"># wait for service startup</span>
-      - <span class="key">run</span>: <span class="string">scaffold run --compare-to=main</span>
+      - <span class="key">run</span>: <span class="string">llmci run --compare-to=main</span>
         <span class="key">working-directory</span>: <span class="string">evals/service</span></pre>
 
       </section>
@@ -1169,12 +1250,12 @@ json.dump({<span class="string">"output"</span>: result[<span class="string">"ca
         <p>Manually tuning 12 prompts is weeks of work. Each service has different tolerance for quality drops — the billing classifier needs 98% accuracy, the FAQ summarizer can tolerate 90%.</p>
 
         <h4>Automated migration per service</h4>
-        <p>Each service already has a <code>scaffold.yaml</code> with eval datasets from CI. Migration becomes a loop:</p>
+        <p>Each service already has a <code>llmci.yaml</code> with eval datasets from CI. Migration becomes a loop:</p>
 
 <pre><span class="comment">#!/bin/bash</span>
 <span class="key">for</span> service <span class="key">in</span> billing-classifier faq-summarizer ticket-router ...; <span class="key">do</span>
   <span class="cmd">cd</span> services/$service
-  scaffold migrate \
+  llmci migrate \
     <span class="flag">--from</span> gpt-4o \
     <span class="flag">--to</span> gpt-4o-mini \
     <span class="flag">--eval</span> main-eval \
@@ -1183,7 +1264,7 @@ json.dump({<span class="string">"output"</span>: result[<span class="string">"ca
   <span class="cmd">cd</span> ../..
 <span class="key">done</span></pre>
 
-        <p>For each service, Scaffold:</p>
+        <p>For each service, llmci:</p>
         <ol>
           <li>Establishes the quality bar on the old model (holdout score)</li>
           <li>Iteratively optimizes the prompt for the new model</li>
@@ -1207,7 +1288,7 @@ json.dump({<span class="string">"output"</span>: result[<span class="string">"ca
         <p>Agent bugs are subtle. The agent might use the wrong tool, make too many API calls (cost), call a destructive tool when it shouldn't (safety), or give correct answers via an inefficient path (latency).</p>
 
         <h4>Composite evaluation</h4>
-        <p>Use Scaffold's agent evaluation with constraint, outcome, and trajectory judges weighted by importance:</p>
+        <p>Use llmci's agent evaluation with constraint, outcome, and trajectory judges weighted by importance:</p>
 
 <pre><span class="key">evals</span>:
   - <span class="key">name</span>: <span class="string">support-agent</span>
@@ -1248,7 +1329,7 @@ json.dump({<span class="string">"output"</span>: result[<span class="string">"ca
         </div>
 
         <h4>Framework integration</h4>
-        <p>Agent evals invoke your agent as a command. Build trace JSON with <code>scaffold.trace.TraceBuilder</code>, or use <code>scaffold.integrations.openai_agents.run_for_scaffold_sync</code> for the OpenAI Agents SDK. See <code>examples/10-agent-openai-agents</code> for a runnable adapter with mock (<code>MOCK_LLM=1</code>) and real SDK paths.</p>
+        <p>See <a href="#agents">Agent Evaluation</a> for TraceBuilder, the OpenAI Agents adapter, and <a href="https://github.com/alexminnaar/scaffold/tree/main/examples/10-agent-openai-agents"><code>examples/10-agent-openai-agents</code></a>.</p>
       </section>
 
       <hr>
@@ -1333,7 +1414,7 @@ json.dump({<span class="string">"output"</span>: result[<span class="string">"ca
 
         <p>Run any example:</p>
 <pre><span class="cmd">cd examples/01-ci-regression</span>
-<span class="cmd">scaffold run</span></pre>
+<span class="cmd">llmci run</span></pre>
 
         <p>Each example has its own README with setup instructions.</p>
       </section>

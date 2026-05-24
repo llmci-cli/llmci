@@ -54,7 +54,7 @@ Default: run on every PR. The whole value proposition is catching regressions be
 
 ## Config Format
 
-The primary interface. Lives at `scaffold.yaml` in the repo root.
+The primary interface. Lives at `llmci.yaml` in the repo root.
 
 ```yaml
 version: 1
@@ -117,7 +117,7 @@ settings:
 
 ### Built-in and Custom Judges
 
-Scaffold ships with judges for common evaluation patterns, but teams can also define their own:
+llmci ships with judges for common evaluation patterns, but teams can also define their own:
 
 | Judge type | How it works | When to use |
 |---|---|---|
@@ -150,17 +150,17 @@ This is referenced from the config as `judge: {type: custom, module: ./judges/sc
 
 ### LLM Provider Authentication
 
-**Scaffold never stores, manages, or proxies API keys.** It reads standard environment variables set by the user. This is a deliberate design choice — zero auth infrastructure, zero credential storage, zero security surface.
+**llmci never stores, manages, or proxies API keys.** It reads standard environment variables set by the user. This is a deliberate design choice — zero auth infrastructure, zero credential storage, zero security surface.
 
 There are up to three places where Scaffold needs LLM access:
 
 | Role | What it's for | Who picks the model |
 |---|---|---|
-| **Target model** | The LLM being evaluated (in direct API mode) | User sets in `scaffold.yaml` under `target.model` |
-| **Judge model** | LLM-as-judge for rubric evaluation | User sets in `scaffold.yaml` under `evals[].judge.model` (per eval) |
-| **Optimizer model** | The LLM that rewrites prompts during migration | User sets via `scaffold migrate --optimizer-model` |
+| **Target model** | The LLM being evaluated (in direct API mode) | User sets in `llmci.yaml` under `target.model` |
+| **Judge model** | LLM-as-judge for rubric evaluation | User sets in `llmci.yaml` under `evals[].judge.model` (per eval) |
+| **Optimizer model** | The LLM that rewrites prompts during migration | User sets via `llmci migrate --optimizer-model` |
 
-In **command mode** (black-box), Scaffold doesn't call any LLM for the target at all — the user's command handles that internally. Scaffold only needs LLM access for the judge and optimizer, if used.
+In **command mode** (black-box), llmci doesn't call any LLM for the target at all — the user's command handles that internally. Scaffold only needs LLM access for the judge and optimizer, if used.
 
 **How auth works in practice:**
 
@@ -168,7 +168,7 @@ In **command mode** (black-box), Scaffold doesn't call any LLM for the target at
 # Locally — user has keys in their environment
 export OPENAI_API_KEY=sk-...
 export ANTHROPIC_API_KEY=sk-ant-...
-scaffold run
+llmci run
 ```
 
 ```yaml
@@ -182,7 +182,7 @@ env:
 # Jenkins — same pattern with credentials plugin
 ```
 
-Scaffold uses [litellm](https://github.com/BerriAI/litellm) under the hood for direct API calls, which means it inherits litellm's provider support and env var conventions automatically. Any provider litellm supports, Scaffold supports — OpenAI, Anthropic, Google, Mistral, Azure, AWS Bedrock, local models via Ollama, or any OpenAI-compatible endpoint.
+llmci uses [litellm](https://github.com/BerriAI/litellm) under the hood for direct API calls, which means it inherits litellm's provider support and env var conventions automatically. Any provider litellm supports, llmci supports — OpenAI, Anthropic, Google, Mistral, Azure, AWS Bedrock, local models via Ollama, or any OpenAI-compatible endpoint.
 
 The config specifies model names using litellm's naming convention:
 
@@ -265,9 +265,9 @@ Developer pushes branch
 CI triggers (GitHub Actions / GitLab CI / etc.)
         │
         ▼
-scaffold run --compare-to=main
+llmci run --compare-to=main
         │
-        ├── 1. Load eval config (scaffold.yaml)
+        ├── 1. Load eval config (llmci.yaml)
         ├── 2. Load eval datasets (.jsonl files)
         ├── 3. Execute LLM calls (branch version)
         ├── 4. Compute metrics
@@ -286,15 +286,15 @@ Post result as PR check + comment
 ### Baseline Storage (v1: In-Repo)
 
 ```
-.scaffold/
+.llmci/
   baselines/
     ticket-classification.json    # {"f1_macro": 0.95, "accuracy": 0.97}
     response-quality.json         # {"rubric_pass_rate": 0.91}
 ```
 
 - Committed to the repo, version-controlled, auditable.
-- Updated on main branch via `scaffold run --update-baseline`.
-- PRs compare their results against baselines from the base branch using `git show main:.scaffold/baselines/...`.
+- Updated on main branch via `llmci run --update-baseline`.
+- PRs compare their results against baselines from the base branch using `git show main:.llmci/baselines/...`.
 - Fully stateless — no external service needed.
 
 ### PR Report
@@ -302,7 +302,7 @@ Post result as PR check + comment
 Posted as a PR comment and/or CI summary:
 
 ```
-## Scaffold Eval Report
+## llmci Eval Report
 
 | Eval                  | Metric           | Baseline | This PR | Threshold | Status |
 |-----------------------|------------------|----------|---------|-----------|--------|
@@ -422,22 +422,22 @@ Default: use a strong model (customer-configurable) as the optimizer, separate f
 
 ```bash
 # Initialize a new scaffold config interactively
-scaffold init
+llmci init
 
 # Run evals and compare against a baseline branch
-scaffold run [--compare-to=main] [--smoke] [--output=report.md]
+llmci run [--compare-to=main] [--smoke] [--output=report.md]
 
 # Update the stored baseline (run on main branch in CI)
-scaffold run --update-baseline
+llmci run --update-baseline
 
 # Run prompt migration optimization
-scaffold migrate --from <model> --to <model> --eval <eval_name>
+llmci migrate --from <model> --to <model> --eval <eval_name>
 
 # Create and manage eval datasets
-scaffold dataset init --name <eval_name> --type <deterministic|open_ended|agent>
-scaffold dataset add --name <eval_name>                # interactive example entry
-scaffold dataset check --name <eval_name>              # coverage analysis + gap detection
-scaffold dataset import --name <eval_name> --from <file.csv|file.json>
+llmci dataset init --name <eval_name> --type <deterministic|open_ended|agent>
+llmci dataset add --name <eval_name>                # interactive example entry
+llmci dataset check --name <eval_name>              # coverage analysis + gap detection
+llmci dataset import --name <eval_name> --from <file.csv|file.json>
 
 # Generate / expand eval datasets (v2)
 scaffold generate --from-logs <exported-logs-dir/> --output <dataset.jsonl>
@@ -445,7 +445,7 @@ scaffold generate --from-spec <agent_config.yaml> --output <dataset.jsonl>
 scaffold generate --augment <seed.jsonl> --output <expanded.jsonl> --target-size 200
 
 # Import config from Promptfoo
-scaffold import-promptfoo <promptfooconfig.yaml>
+llmci import-promptfoo <promptfooconfig.yaml>
 ```
 
 ---
@@ -465,14 +465,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: pip install llmci
-      - run: scaffold run --compare-to=origin/main
+      - run: llmci run --compare-to=origin/main
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}  # if using multiple providers
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-The `scaffold run` command exits 0 (pass) or 1 (fail), so it works as a CI gate without any special integration. The report action is optional sugar.
+The `llmci run` command exits 0 (pass) or 1 (fail), so it works as a CI gate without any special integration. The report action is optional sugar.
 
 ---
 
@@ -480,7 +480,7 @@ The `scaffold run` command exits 0 (pass) or 1 (fail), so it works as a CI gate 
 
 **Language:** Python. The target audience is Python-native, LLM SDKs are Python-first, and extensibility (custom judges as Python functions) is strongest here.
 
-**Language-agnostic by design.** While Scaffold itself is Python, the `command` target mode makes it language-agnostic. Any language, any framework, any pipeline — as long as it reads an input file and writes an output file, Scaffold can evaluate it. This is a key differentiator against DeepEval (pytest-coupled, Python-only) and DSPy (requires rewriting as DSPy programs). A Node.js service, a Go binary, a bash script — they all work.
+**Language-agnostic by design.** While Scaffold itself is Python, the `command` target mode makes it language-agnostic. Any language, any framework, any pipeline — as long as it reads an input file and writes an output file, llmci can evaluate it. This is a key differentiator against DeepEval (pytest-coupled, Python-only) and DSPy (requires rewriting as DSPy programs). A Node.js service, a Go binary, a bash script — they all work.
 
 **Distribution:** PyPI (`pip install llmci`), GitHub Action wrapper, Docker image.
 
@@ -490,7 +490,7 @@ llmci/
 ├── src/
 │   └── scaffold/
 │       ├── cli.py                  # CLI entry point (click or typer)
-│       ├── config.py               # scaffold.yaml parsing + validation
+│       ├── config.py               # llmci.yaml parsing + validation
 │       ├── runner.py               # orchestrates eval execution
 │       ├── targets/
 │       │   ├── command.py          # subprocess-based (black box mode)
@@ -502,7 +502,7 @@ llmci/
 │       │   └── custom.py           # user-defined judge functions
 │       ├── baseline.py             # baseline storage + comparison
 │       ├── dataset/
-│       │   ├── init.py             # scaffold dataset init
+│       │   ├── init.py             # llmci dataset init
 │       │   ├── add.py              # interactive example entry
 │       │   ├── check.py            # coverage analysis + gap detection
 │       │   └── import_data.py      # import from CSV/JSON
@@ -525,45 +525,45 @@ llmci/
 ├── examples/
 │   ├── 01-ci-regression/           # Ticket classifier with exact_match + F1
 │   │   ├── README.md
-│   │   ├── scaffold.yaml
+│   │   ├── llmci.yaml
 │   │   ├── evals/tickets.jsonl
 │   │   ├── prompts/classify.txt
 │   │   └── run_prompt.py
 │   ├── 02-model-migration/         # Migrate GPT-4o → GPT-4.5
 │   │   ├── README.md
-│   │   ├── scaffold.yaml
+│   │   ├── llmci.yaml
 │   │   ├── evals/tickets.jsonl
 │   │   └── prompts/classify.txt
 │   ├── 03-llm-as-judge/            # Open-ended generation with rubric judging
 │   │   ├── README.md
-│   │   ├── scaffold.yaml
+│   │   ├── llmci.yaml
 │   │   ├── evals/responses.jsonl
 │   │   └── run_prompt.py
 │   ├── 04-custom-judge/            # JSON schema validation with a Python judge
 │   │   ├── README.md
-│   │   ├── scaffold.yaml
+│   │   ├── llmci.yaml
 │   │   ├── evals/structured.jsonl
 │   │   ├── judges/schema_judge.py
 │   │   └── run_prompt.py
 │   ├── 05-agent-single-turn/       # Single-turn agent with composite judging
 │   │   ├── README.md
-│   │   ├── scaffold.yaml
+│   │   ├── llmci.yaml
 │   │   ├── evals/scenarios.jsonl
 │   │   └── run_agent.py
 │   ├── 06-agent-multi-turn/        # Multi-turn conversation testing
 │   │   ├── README.md
-│   │   ├── scaffold.yaml
+│   │   ├── llmci.yaml
 │   │   ├── evals/conversations.jsonl
 │   │   └── run_agent.py
 │   └── 07-pipeline-level/          # Full pipeline test (RAG + LLM)
 │       ├── README.md
-│       ├── scaffold.yaml
+│       ├── llmci.yaml
 │       ├── evals/questions.jsonl
 │       └── run_pipeline.py
 └── tests/
 ```
 
-Each example is self-contained and runnable. A user clones the repo, `cd`s into an example folder, sets their API key, and runs `scaffold run`. The README in each example explains what it demonstrates, what to look for in the output, and how to adapt it to their own use case. The use-cases page (`use-cases.html`) links directly to these examples on GitHub.
+Each example is self-contained and runnable. A user clones the repo, `cd`s into an example folder, sets their API key, and runs `llmci run`. The README in each example explains what it demonstrates, what to look for in the output, and how to adapt it to their own use case. The use-cases page (`use-cases.html`) links directly to these examples on GitHub.
 
 ---
 
@@ -571,12 +571,12 @@ Each example is self-contained and runnable. A user clones the repo, `cd`s into 
 
 | Phase | Scope | Timeline |
 |---|---|---|
-| **1. Core eval loop** | Config parsing, dataset loading, command + direct mode targets, deterministic judges (exact match, F1, accuracy), `scaffold run`, `scaffold dataset init/add/check` | Week 1–2 |
+| **1. Core eval loop** | Config parsing, dataset loading, command + direct mode targets, deterministic judges (exact match, F1, accuracy), `llmci run`, `llmci dataset init/add/check` | Week 1–2 |
 | **2. Baseline + CI** | In-repo baselines, `--compare-to` regression detection, `--update-baseline`, markdown report, GitHub Action, PR comments | Week 3 |
 | **3. LLM-as-judge** | Rubric-based judging, configurable judge model, result caching | Week 4 |
-| **4. Migration** | Train/val/holdout splitter, optimizer loop with step size control, early stopping, migration report, `scaffold migrate` | Week 5–6 |
-| **5. Polish + launch** | `scaffold init`, documentation, runnable examples (one per use case), error handling, open source release, landing page screenshots (GitHub Actions check, PR comment with eval report, CI log output) | Week 7 |
-| **5b. Promptfoo migration** | `scaffold import-promptfoo` to convert Promptfoo YAML configs to scaffold.yaml. Low effort, high adoption value — captures the migration wave. | Week 7 |
+| **4. Migration** | Train/val/holdout splitter, optimizer loop with step size control, early stopping, migration report, `llmci migrate` | Week 5–6 |
+| **5. Polish + launch** | `llmci init`, documentation, runnable examples (one per use case), error handling, open source release, landing page screenshots (GitHub Actions check, PR comment with eval report, CI log output) | Week 7 |
+| **5b. Promptfoo migration** | `llmci import-promptfoo` to convert Promptfoo YAML configs to llmci.yaml. Low effort, high adoption value — captures the migration wave. | Week 7 |
 
 ---
 
@@ -608,7 +608,7 @@ Each example is self-contained and runnable. A user clones the repo, `cd`s into 
 
 ### Key Competitive Dynamics
 
-1. **Promptfoo acquisition by OpenAI (March 2026).** Promptfoo was the closest tool to Scaffold — CLI-native, YAML configs, CI support. The acquisition creates a trust gap for multi-provider teams, a migration wave of users seeking alternatives, and a strategic pivot risk as OpenAI may focus Promptfoo on red-teaming/security over general eval. Scaffold should explicitly position as provider-neutral and community-owned.
+1. **Promptfoo acquisition by OpenAI (March 2026).** Promptfoo was the closest tool to llmci — CLI-native, YAML configs, CI support. The acquisition creates a trust gap for multi-provider teams, a migration wave of users seeking alternatives, and a strategic pivot risk as OpenAI may focus Promptfoo on red-teaming/security over general eval. Scaffold should explicitly position as provider-neutral and community-owned.
 
 2. **Scaffold's unique moats.** No competitor offers automated model migration with holdout validation. No competitor does CI-gated agentic trajectory evaluation. No competitor combines dataset generation (from production logs, specs, and augmentation) with CI gating. These are not incremental features — they represent categories that don't exist in the competitive set.
 
@@ -626,7 +626,7 @@ Each example is self-contained and runnable. A user clones the repo, `cd`s into 
 
 **"CI-native regression testing for LLMs. Provider-neutral. No platform required."**
 
-Scaffold is a safety gate, not a dashboard. It catches regressions before merge, automates model migration, and works with every provider. It is not owned by any model provider.
+llmci is a safety gate, not a dashboard. It catches regressions before merge, automates model migration, and works with every provider. It is not owned by any model provider.
 
 ### Target Personas
 
@@ -637,8 +637,8 @@ Scaffold is a safety gate, not a dashboard. It catches regressions before merge,
 ### Wedge Use Cases (easiest adoption paths)
 
 1. **Model migration.** Team needs to upgrade a model and wants automated prompt re-tuning. Immediate, concrete, quantifiable value. This is Scaffold's strongest wedge because no alternative exists.
-2. **Post-Promptfoo migration.** Team is evaluating alternatives after the acquisition. Scaffold offers a familiar CLI + YAML workflow with capabilities Promptfoo never had.
-3. **First CI gate.** Team has no LLM testing at all. `scaffold init` → `scaffold run` in five minutes. The bar is zero — any testing is an improvement.
+2. **Post-Promptfoo migration.** Team is evaluating alternatives after the acquisition. llmci offers a familiar CLI + YAML workflow with capabilities Promptfoo never had.
+3. **First CI gate.** Team has no LLM testing at all. `llmci init` → `llmci run` in five minutes. The bar is zero — any testing is an improvement.
 
 ### Key Messages by Competitor
 
@@ -774,7 +774,7 @@ Key design points for multi-turn:
 - **Each turn has its own expected outcome and constraints.** This lets you catch turn-specific regressions (e.g., "the agent handles cancellation fine but breaks on re-subscription follow-ups").
 - **`conversation_constraints` apply across the full conversation.** Total tool calls, total tokens, total latency — budgets that matter at the conversation level, not just per-turn.
 - **`context` is only on the first turn.** Subsequent turns inherit the conversation state — the agent should remember what happened, not be re-told.
-- **Evaluation is per-turn and per-conversation.** Scaffold evaluates each turn's outcome independently, then computes a conversation-level composite score. A regression on any turn flags the whole scenario.
+- **Evaluation is per-turn and per-conversation.** llmci evaluates each turn's outcome independently, then computes a conversation-level composite score. A regression on any turn flags the whole scenario.
 
 #### Eval modes for multi-turn
 
@@ -845,7 +845,7 @@ The key new primitive is the **execution trace**. The customer's agent outputs a
 }
 ```
 
-Scaffold doesn't run the agent directly — it invokes the customer's command. Scaffold passes input (and conversation history for multi-turn) to the command, collects the output trace, and evaluates it. In full replay mode, Scaffold calls the command once per turn; in history injection mode, it calls it once with all prior turns pre-filled. Either way, the customer's command owns the agent logic while Scaffold owns the evaluation.
+llmci doesn't run the agent directly — it invokes the customer's command. Scaffold passes input (and conversation history for multi-turn) to the command, collects the output trace, and evaluates it. In full replay mode, Scaffold calls the command once per turn; in history injection mode, it calls it once with all prior turns pre-filled. Either way, the customer's command owns the agent logic while Scaffold owns the evaluation.
 
 ### Eval Config for Agents
 
@@ -908,19 +908,19 @@ The same core optimization loop (small steps, holdout validation, early stopping
 
 ### Framework Adapters
 
-Lightweight test-time wrappers that capture execution traces in Scaffold's format when running evals. These run during `scaffold run`, not in production — they wrap the agent only during the eval invocation, reducing integration effort from "restructure your agent output" to "wrap your agent in one call":
+Lightweight test-time wrappers that capture execution traces in Scaffold's format when running evals. These run during `llmci run`, not in production — they wrap the agent only during the eval invocation, reducing integration effort from "restructure your agent output" to "wrap your agent in one call":
 
 ```python
 # OpenAI Agent SDK
-from scaffold.integrations.openai_agents import traced_agent
+from llmci.integrations.openai_agents import traced_agent
 agent = traced_agent(existing_agent, trace_output="./traces/")
 
 # PydanticAI
-from scaffold.integrations.pydantic_ai import traced_agent
+from llmci.integrations.pydantic_ai import traced_agent
 agent = traced_agent(existing_agent, trace_output="./traces/")
 
 # Claude Agent SDK
-from scaffold.integrations.claude_agents import traced_agent
+from llmci.integrations.claude_agents import traced_agent
 agent = traced_agent(existing_agent, trace_output="./traces/")
 ```
 
@@ -935,7 +935,7 @@ agent = traced_agent(existing_agent, trace_output="./traces/")
 | **Migration** | Tune one prompt | + Tune system prompt, tool descriptions, step prompts |
 | **Integrations** | Generic (command mode) | + OpenAI Agents, Claude Agent SDK, PydanticAI adapters |
 | **Baselines** | Metric scores | + Cost/latency/tool-call budgets |
-| **Dataset creation** | Manual curation (`scaffold dataset init/add/check`) | + `scaffold generate` (log import, synthetic, augmentation) |
+| **Dataset creation** | Manual curation (`llmci dataset init/add/check`) | + `llmci generate` (log import, synthetic, augmentation) |
 
 The core architecture (config file, dataset format, baseline comparison, CI gate, optimization loop) carries over entirely. The main new investments are the trace format, agent-specific judges, and framework adapters.
 
@@ -958,34 +958,34 @@ The simplest and often best approach. A domain expert writes input/expected pair
 
 ```bash
 # Initialize an empty eval dataset with the right schema
-scaffold dataset init --name ticket-classification --type deterministic
+llmci dataset init --name ticket-classification --type deterministic
 
 # Add examples interactively
-scaffold dataset add --name ticket-classification
+llmci dataset add --name ticket-classification
 # > Input: "My printer won't connect to wifi"
 # > Expected: "hardware"
 # > Added. (47 examples total, 6 categories covered)
 
 # Validate dataset coverage and quality
-scaffold dataset check --name ticket-classification
+llmci dataset check --name ticket-classification
 # > 203 examples across 8 categories
 # > ⚠ "returns" has only 4 examples (min recommended: 15)
 # > ⚠ No multilingual examples detected
 # > ✓ All other categories well-covered
 ```
 
-The `scaffold dataset check` command is key — it analyzes the dataset for coverage gaps (underrepresented categories, missing edge case types, lack of diversity) and suggests where to add more examples. This turns manual curation from "write until you feel done" into a guided process with a clear finish line.
+The `llmci dataset check` command is key — it analyzes the dataset for coverage gaps (underrepresented categories, missing edge case types, lack of diversity) and suggests where to add more examples. This turns manual curation from "write until you feel done" into a guided process with a clear finish line.
 
 For agents, manual curation is harder (you need scenarios, expected outcomes, and constraints), but still viable for a core set of 50–100 scenarios. The automated strategies below are most valuable for expanding beyond this core.
 
 #### Strategy 1: Production Log Import
 
-The most valuable gold data comes from what the system is already doing successfully in production. Most teams already have production logs — from Langfuse, Arize, their own application logging, or exported CSVs. Scaffold doesn't touch production; it consumes exported logs.
+The most valuable gold data comes from what the system is already doing successfully in production. Most teams already have production logs — from Langfuse, Arize, their own application logging, or exported CSVs. llmci doesn't touch production; it consumes exported logs.
 
 **Scaffold's role is import and curation, not collection.** The flow:
 
 1. Customer exports production logs from whatever system they already use (Langfuse export, Arize export, application database dump, CSV/JSONL files).
-2. `scaffold generate --from-logs ./exported_logs/` parses the logs into Scaffold's format. Supports common formats out of the box (Langfuse JSONL, generic JSONL with input/output fields, CSV).
+2. `llmci generate --from-logs ./exported_logs/` parses the logs into llmci's format. Supports common formats out of the box (Langfuse JSONL, generic JSONL with input/output fields, CSV).
 3. Scaffold clusters examples by scenario type and selects diverse, representative cases.
 4. An LLM reviews each candidate to identify which examples represent clearly successful outcomes.
 5. Scaffold converts successful examples into eval datasets — the input becomes the test case, the output becomes the expected result, and observed metrics (tool calls, tokens) become constraint baselines.
@@ -999,15 +999,15 @@ scaffold generate --from-logs ./exported_logs/ \
                   --diversity high
 ```
 
-This is the highest-quality approach because the data reflects real usage patterns, not synthetic ones. But Scaffold never runs in production — it only consumes what the team already captures.
+This is the highest-quality approach because the data reflects real usage patterns, not synthetic ones. But llmci never runs in production — it only consumes what the team already captures.
 
 #### Strategy 2: Synthetic Scenario Generation
 
 For teams without production logs (new systems, pre-launch), generate scenarios from the system's specification:
 
 1. Customer provides tool/API definitions (OpenAPI specs, function schemas, tool descriptions) and the agent's system prompt.
-2. `scaffold generate --from-spec` uses an LLM to generate realistic user scenarios that exercise different tool combinations and edge cases.
-3. For each scenario, scaffold runs the agent to produce a candidate outcome and trace.
+2. `llmci generate --from-spec` uses an LLM to generate realistic user scenarios that exercise different tool combinations and edge cases.
+3. For each scenario, llmci runs the agent to produce a candidate outcome and trace.
 4. An LLM (or optionally a human) reviews the output to determine if it's correct, then marks it as gold.
 
 ```bash
@@ -1038,7 +1038,7 @@ This is the fastest way to go from a minimal hand-curated set to a statistically
 
 #### Constraint Inference
 
-A unique challenge for agent eval datasets is setting reasonable constraints. What's a fair `max_tool_calls` or `max_tokens` for a given scenario? Scaffold can infer these automatically:
+A unique challenge for agent eval datasets is setting reasonable constraints. What's a fair `max_tool_calls` or `max_tokens` for a given scenario? llmci can infer these automatically:
 
 1. Run each scenario N times (e.g., 10) on the current agent locally.
 2. Compute percentile-based bounds from observed behavior (e.g., p90 tool calls + 20% buffer).
@@ -1098,7 +1098,7 @@ The dataset generation feature further widens the moat. Competitors assume you a
 
 Promptfoo's strongest feature is its red-teaming suite (142+ attack plugins, OWASP LLM Top 10 coverage). DeepEval has similar vulnerability scanning. Scaffold v1-v2 intentionally omits this — regression testing and migration are the core mission. However, security scanning is a natural extension:
 
-- `scaffold scan` could run adversarial inputs (prompt injection, jailbreaks, PII leakage) against the target and fail the CI check if vulnerabilities are found.
+- `llmci scan` could run adversarial inputs (prompt injection, jailbreaks, PII leakage) against the target and fail the CI check if vulnerabilities are found.
 - This would be a v3 feature or a separate companion tool. Adding it too early dilutes the "focused CI gate" positioning.
 
 ### RAGAS Integration as a Judge Type
@@ -1115,14 +1115,14 @@ This gives Scaffold RAG-specific evaluation for free while maintaining focus on 
 
 ### Ecosystem Positioning
 
-Scaffold is deliberately composable. It does one thing (CI quality gate) and does it well. The expected stack for a mature LLM team:
+llmci is deliberately composable. It does one thing (CI quality gate) and does it well. The expected stack for a mature LLM team:
 
 | Layer | Tool |
 |---|---|
 | **Production monitoring** | Langfuse, Arize Phoenix, Braintrust |
 | **Pre-merge testing** | **Scaffold** |
 | **Prompt development** | DSPy, manual iteration |
-| **Security scanning** | Promptfoo (or future `scaffold scan`) |
+| **Security scanning** | Promptfoo (or future `llmci scan`) |
 
 This positioning avoids platform sprawl and makes adoption frictionless — Scaffold slots in alongside whatever observability tool the team already uses.
 
@@ -1131,13 +1131,13 @@ This positioning avoids platform sprawl and makes adoption frictionless — Scaf
 ## Open Questions
 
 - [ ] PyPI package name availability (`llmci`, `evalgate`, etc.)
-- [ ] Stretch goal (v1): `scaffold init` auto-detecting prompt files and suggesting eval structure
+- [ ] Stretch goal (v1): `llmci init` auto-detecting prompt files and suggesting eval structure
 - [ ] Whether to support a remote baseline service in v1 or defer to paid tier
-- [ ] Promptfoo config import: how faithful should `scaffold import-promptfoo` be? Full parity or just the most common patterns?
+- [ ] Promptfoo config import: how faithful should `llmci import-promptfoo` be? Full parity or just the most common patterns?
 - [ ] Should Scaffold support a `--watch` mode for local development (re-run evals on file save) to capture some of the dev-time usage that Promptfoo handles?
 - [ ] v2: Standard trace format — adopt an existing standard (e.g., OpenTelemetry spans) or define a custom one?
 - [ ] v2: How to handle agent non-determinism in baselines — run N times and average, or use outcome-only baselines?
 - [ ] v2: Scope of framework adapters — which SDKs to support first based on adoption?
 - [ ] v3: Red teaming — build in-house or integrate with existing tools?
-- [ ] Cost estimation: should `scaffold run --dry-run` or `--estimate-cost` preview the expected API spend before running? Useful for large datasets or expensive judge models.
+- [ ] Cost estimation: should `llmci run --dry-run` or `--estimate-cost` preview the expected API spend before running? Useful for large datasets or expensive judge models.
 - [ ] Community: should Scaffold have a public eval dataset registry (like a package registry but for gold datasets)?

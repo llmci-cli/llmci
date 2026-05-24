@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Use Cases — Scaffold</title>
+  <title>Use Cases — llmci</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -88,6 +88,29 @@
       align-items: center;
       gap: 8px;
       text-decoration: none;
+    }
+
+    .logo-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.1;
+      gap: 1px;
+    }
+
+    .logo-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9375rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+
+    .logo-tag {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.5625rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
     }
 
     .logo-mark {
@@ -458,7 +481,10 @@
             <rect x="30" y="30" width="40" height="10" rx="3" fill="#059669" opacity="0.45"/>
           </svg>
         </div>
-        Scaffold
+        <div class="logo-text">
+          <span class="logo-name">llmci</span>
+          <span class="logo-tag">LLM CI</span>
+        </div>
       </a>
       <div class="nav-links">
         <a href="index.html">Home</a>
@@ -476,7 +502,7 @@
   <div class="page-header">
     <div class="container">
       <h1>Use Cases</h1>
-      <p>Detailed walkthroughs for the most common ways teams use Scaffold, with config examples and realistic scenarios.</p>
+      <p>Detailed walkthroughs for the most common ways teams use llmci, with config examples and realistic scenarios.</p>
       <div class="toc">
         <a href="#ci-regression">CI Regression Testing</a>
         <a href="#model-migration">Model Migration</a>
@@ -493,19 +519,19 @@
     <div class="container">
       <div class="uc-label">Use Case 01</div>
       <h2>CI Regression Testing</h2>
-      <p>Gate every pull request with automated eval checks. When someone changes a prompt, model, model parameters, or any upstream code that affects LLM output, Scaffold detects quality drops before the change reaches production.</p>
+      <p>Gate every pull request with automated eval checks. When someone changes a prompt, model, model parameters, or any upstream code that affects LLM output, llmci detects quality drops before the change reaches production.</p>
 
       <h3>The problem</h3>
       <p>Someone on your team updates a prompt. The change looks fine in manual testing. The PR gets approved and merged. A week later, customer support tickets spike &mdash; the model is misclassifying 8% of inputs that it used to handle correctly. Nobody connected the dots until real users were affected.</p>
       <p>This happens because there's no automated check that runs the full eval dataset against the change. Manual spot-checks miss edge cases. Without a regression gate, quality drift is invisible until production breaks.</p>
 
-      <h3>How Scaffold solves it</h3>
-      <p>Add a <code>scaffold.yaml</code> to your repo. Point it at your eval dataset. Scaffold runs on every PR and compares results against the main branch baseline. If quality drops beyond your thresholds, the PR is blocked with a detailed report showing exactly which examples regressed.</p>
+      <h3>How llmci solves it</h3>
+      <p>Add a <code>llmci.yaml</code> to your repo. Point it at your eval dataset. llmci runs on every PR and compares results against the main branch baseline. If quality drops beyond your thresholds, the PR is blocked with a detailed report showing exactly which examples regressed.</p>
 
       <div class="code-frame">
         <div class="code-tab">
           <span class="dot"></span>
-          <span>scaffold.yaml</span>
+          <span>llmci.yaml</span>
         </div>
         <div class="code-body"><span class="k">version</span>: <span class="n">1</span>
 
@@ -527,7 +553,7 @@
       </div>
 
       <h3>Two testing levels</h3>
-      <p>Scaffold supports both prompt-level and pipeline-level testing:</p>
+      <p>llmci supports both prompt-level and pipeline-level testing:</p>
 
       <table class="uc-table">
         <thead>
@@ -542,7 +568,7 @@
       <p>Pipeline-level is the default. It catches the sneaky case where the prompt is unchanged but someone refactored the retrieval logic, changed a preprocessing step, or modified the data that feeds into the prompt.</p>
 
       <h3>Available judges and metrics</h3>
-      <p>Scaffold ships with judges for common evaluation patterns:</p>
+      <p>llmci ships with judges for common evaluation patterns:</p>
 
       <table class="uc-table">
         <thead>
@@ -577,7 +603,7 @@
       <div class="code-frame">
         <div class="code-tab">
           <span class="dot"></span>
-          <span>scaffold.yaml</span>
+          <span>llmci.yaml</span>
         </div>
         <div class="code-body"><span class="k">evals</span>:
   - <span class="k">name</span>: <span class="s">schema-validation</span>
@@ -603,12 +629,12 @@
       </div>
 
       <h3>GitHub Actions setup</h3>
-      <p>One step in your workflow file. Scaffold exits 0 (pass) or 1 (fail), so it works as a CI gate without any special integration.</p>
+      <p>One step in your workflow file. llmci exits 0 (pass) or 1 (fail), so it works as a CI gate without any special integration.</p>
 
       <div class="code-frame">
         <div class="code-tab">
           <span class="dot"></span>
-          <span>.github/workflows/scaffold.yml</span>
+          <span>.github/workflows/llmci.yml</span>
         </div>
         <div class="code-body"><span class="k">name</span>: <span class="s">LLM Content Tests</span>
 <span class="k">on</span>: [<span class="s">pull_request</span>]
@@ -619,7 +645,7 @@
     <span class="k">steps</span>:
       - <span class="k">uses</span>: <span class="s">actions/checkout@v4</span>
       - <span class="k">run</span>: <span class="s">pip install llmci</span>
-      - <span class="k">run</span>: <span class="s">scaffold run --compare-to=origin/main</span>
+      - <span class="k">run</span>: <span class="s">llmci run --compare-to=origin/main</span>
         <span class="k">env</span>:
           <span class="k">OPENAI_API_KEY</span>: <span class="s">${{ secrets.OPENAI_API_KEY }}</span>
           <span class="k">GITHUB_TOKEN</span>: <span class="s">${{ secrets.GITHUB_TOKEN }}</span></div>
@@ -627,7 +653,7 @@
 
       <div class="scenario">
         <h4>Real-world scenario</h4>
-        <p>Your team runs a support ticket classifier. A developer updates the system prompt to improve handling of billing questions. The PR passes code review. Scaffold runs 243 eval examples and finds that while billing accuracy improved by 4%, hardware classification accuracy dropped 8%. The PR is blocked with a report showing the 7 specific examples that regressed, so the developer can fix the prompt before merging.</p>
+        <p>Your team runs a support ticket classifier. A developer updates the system prompt to improve handling of billing questions. The PR passes code review. llmci runs 243 eval examples and finds that while billing accuracy improved by 4%, hardware classification accuracy dropped 8%. The PR is blocked with a report showing the 7 specific examples that regressed, so the developer can fix the prompt before merging.</p>
       </div>
 
       <!-- TODO: Uncomment when examples are built
@@ -642,20 +668,20 @@
     <div class="container">
       <div class="uc-label">Use Case 02</div>
       <h2>Model Migration</h2>
-      <p>When you need to upgrade a model or switch providers, Scaffold automatically tunes your prompt to achieve parity on the new model. No manual prompt engineering. No guesswork. No fire drill.</p>
+      <p>When you need to upgrade a model or switch providers, llmci automatically tunes your prompt to achieve parity on the new model. No manual prompt engineering. No guesswork. No fire drill.</p>
 
       <h3>The problem</h3>
       <p>Your model is being deprecated. Or a newer model offers better price/performance. You swap the model name in your config, run your evals, and scores drop 6%. Now you're in a multi-day prompt engineering cycle: tweak the prompt, re-run evals, check if you fixed one thing but broke another. Multiply this by every prompt in your system.</p>
 
-      <h3>How Scaffold solves it</h3>
-      <p>One command. Scaffold runs an iterative optimization loop &mdash; analogous to gradient descent &mdash; that makes small, targeted edits to your prompt until it achieves parity on the new model. It uses holdout validation and early stopping to prevent overfitting.</p>
+      <h3>How llmci solves it</h3>
+      <p>One command. llmci runs an iterative optimization loop &mdash; analogous to gradient descent &mdash; that makes small, targeted edits to your prompt until it achieves parity on the new model. It uses holdout validation and early stopping to prevent overfitting.</p>
 
       <div class="code-frame">
         <div class="code-tab">
           <span class="dot"></span>
           <span>Terminal</span>
         </div>
-        <div class="code-body"><span class="p">$ </span><span class="w">scaffold migrate</span> <span class="f">--from</span> gpt-4o <span class="f">--to</span> gpt-4.5 <span class="f">--eval</span> ticket-classification
+        <div class="code-body"><span class="p">$ </span><span class="w">llmci migrate</span> <span class="f">--from</span> gpt-4o <span class="f">--to</span> gpt-4.5 <span class="f">--eval</span> ticket-classification
 
 <span class="c">Running baseline on gpt-4o...          0.952</span>
 <span class="c">Running on gpt-4.5 (current prompt)...  0.891</span>
@@ -677,7 +703,7 @@
 
       <table class="uc-table">
         <thead>
-          <tr><th>ML Concept</th><th>Scaffold Equivalent</th></tr>
+          <tr><th>ML Concept</th><th>llmci Equivalent</th></tr>
         </thead>
         <tbody>
           <tr><td>Step size / learning rate</td><td>How many changes per iteration. Small steps aid debuggability.</td></tr>
@@ -696,7 +722,7 @@
 
       <div class="scenario">
         <h4>Real-world scenario</h4>
-        <p>Your company uses GPT-4o across 12 classification prompts. OpenAI announces GPT-4o is being retired in 60 days. Instead of a month of manual prompt engineering, you run <code>scaffold migrate</code> for each prompt. 10 of 12 converge to within 1% of the original baseline. The remaining 2 require minor manual adjustments flagged in the migration report. The entire migration takes 2 days instead of 4 weeks.</p>
+        <p>Your company uses GPT-4o across 12 classification prompts. OpenAI announces GPT-4o is being retired in 60 days. Instead of a month of manual prompt engineering, you run <code>llmci migrate</code> for each prompt. 10 of 12 converge to within 1% of the original baseline. The remaining 2 require minor manual adjustments flagged in the migration report. The entire migration takes 2 days instead of 4 weeks.</p>
       </div>
 
       <!-- TODO: Uncomment when examples are built
@@ -711,13 +737,13 @@
     <div class="container">
       <div class="uc-label">Use Case 03</div>
       <h2>Agent Testing</h2>
-      <p>Agents make sequences of decisions &mdash; tool calls, routing, branching &mdash; often across multi-turn conversations. Scaffold evaluates the full trajectory, not just the final output.</p>
+      <p>Agents make sequences of decisions &mdash; tool calls, routing, branching &mdash; often across multi-turn conversations. llmci evaluates the full trajectory, not just the final output.</p>
 
       <h3>The problem</h3>
       <p>Your support agent handles subscription cancellations. Someone updates the refund tool's API response format. The agent's prompts haven't changed. But now it misinterprets the refund confirmation at step 3, tells the customer their refund failed when it actually succeeded, and tries the refund again. The duplicate refund costs you real money. An output-only test would have missed this &mdash; the final output was still "refund processed."</p>
 
-      <h3>How Scaffold solves it</h3>
-      <p>Scaffold evaluates agents with a composite judge that checks four dimensions:</p>
+      <h3>How llmci solves it</h3>
+      <p>llmci evaluates agents with a composite judge that checks four dimensions:</p>
 
       <div class="key-points">
         <div class="key-point">
@@ -739,7 +765,7 @@
       </div>
 
       <h3>Multi-turn conversation testing</h3>
-      <p>Many agent interactions are multi-turn. Scaffold supports conversation scenarios where each turn has its own expected outcome and constraints, plus conversation-level budgets across all turns.</p>
+      <p>Many agent interactions are multi-turn. llmci supports conversation scenarios where each turn has its own expected outcome and constraints, plus conversation-level budgets across all turns.</p>
 
       <div class="code-frame">
         <div class="code-tab">
@@ -780,27 +806,27 @@
         </tbody>
       </table>
 
-      <p>Scaffold doesn't need to know the difference &mdash; it just evaluates the output trace. The mocked-vs-real distinction lives in your command, not in Scaffold's config.</p>
+      <p>llmci doesn't need to know the difference &mdash; it just evaluates the output trace. The mocked-vs-real distinction lives in your command, not in llmci's config.</p>
 
       <h3>Framework adapters</h3>
-      <p>Agent evals run your agent as a command that reads input JSON and writes trace JSON. Use <code>TraceBuilder</code> for mocks and custom frameworks, or <code>run_for_scaffold_sync</code> for the OpenAI Agents SDK. Test-time only, never in production.</p>
+      <p>Agent evals run your agent as a command that reads input JSON and writes trace JSON. Use <code>TraceBuilder</code> for mocks and custom frameworks, or <code>run_for_llmci_sync</code> for the OpenAI Agents SDK. Test-time only, never in production.</p>
 
       <div class="code-frame">
         <div class="code-tab">
           <span class="dot"></span>
           <span>Python</span>
         </div>
-        <div class="code-body"><span class="k">from</span> scaffold.integrations.openai_agents <span class="k">import</span> run_for_scaffold_sync
+        <div class="code-body"><span class="k">from</span> llmci.integrations.openai_agents <span class="k">import</span> run_for_llmci_sync
 
-<span class="c"># Convert RunResult to Scaffold trace JSON for eval</span>
-output = run_for_scaffold_sync(build_agent(), input_data)</div>
+<span class="c"># Convert RunResult to llmci trace JSON for eval</span>
+output = run_for_llmci_sync(build_agent(), input_data)</div>
       </div>
 
       <p>Reference adapter: OpenAI Agents SDK (<code>pip install 'llmci[agents]'</code>). Other frameworks integrate via <code>TraceBuilder</code> in your <code>run_agent.py</code> entrypoint.</p>
 
       <div class="scenario">
         <h4>Real-world scenario</h4>
-        <p>Your team deploys a customer support agent built on the OpenAI Agent SDK. A developer updates the system prompt to be more concise. The change looks clean in testing. But on multi-turn conversations where the customer changes their mind mid-conversation ("actually, re-subscribe me on the basic plan"), the shorter prompt loses context and the agent re-creates the premium subscription instead. Scaffold's multi-turn eval catches this: turn 3's outcome judge fails, and the trajectory judge flags the incorrect tool call.</p>
+        <p>Your team deploys a customer support agent built on the OpenAI Agent SDK. A developer updates the system prompt to be more concise. The change looks clean in testing. But on multi-turn conversations where the customer changes their mind mid-conversation ("actually, re-subscribe me on the basic plan"), the shorter prompt loses context and the agent re-creates the premium subscription instead. llmci's multi-turn eval catches this: turn 3's outcome judge fails, and the trajectory judge flags the incorrect tool call.</p>
       </div>
 
       <p style="margin-top: 24px;"><strong>Try it yourself:</strong> <a href="https://github.com/alexminnaar/scaffold/tree/main/examples/05-agent-single-turn" style="color: var(--accent); font-weight: 600;">examples/05-agent-single-turn</a>, <a href="https://github.com/alexminnaar/scaffold/tree/main/examples/06-agent-multi-turn" style="color: var(--accent); font-weight: 600;">examples/06-agent-multi-turn</a>, and <a href="https://github.com/alexminnaar/scaffold/tree/main/examples/10-agent-openai-agents" style="color: var(--accent); font-weight: 600;">examples/10-agent-openai-agents</a> (OpenAI Agents SDK adapter)</p>
@@ -813,7 +839,7 @@ output = run_for_scaffold_sync(build_agent(), input_data)</div>
     <div class="container">
       <div class="uc-label">Use Case 04</div>
       <h2>Dataset Creation</h2>
-      <p>Building eval datasets is the biggest adoption barrier. But these are CI gates, not training sets. 200 carefully chosen examples beat 2,000 auto-generated ones. Scaffold makes dataset creation a guided process, not a guessing game.</p>
+      <p>Building eval datasets is the biggest adoption barrier. But these are CI gates, not training sets. 200 carefully chosen examples beat 2,000 auto-generated ones. llmci makes dataset creation a guided process, not a guessing game.</p>
 
       <h3>Start with manual curation</h3>
       <p>The default and often best approach. A domain expert writes input/expected pairs focusing on coverage of important cases. You need breadth (cover the categories, edge cases, failure modes), not depth.</p>
@@ -823,50 +849,50 @@ output = run_for_scaffold_sync(build_agent(), input_data)</div>
           <span class="dot"></span>
           <span>Terminal</span>
         </div>
-        <div class="code-body"><span class="p">$ </span><span class="w">scaffold dataset init</span> <span class="f">--name</span> ticket-classification <span class="f">--type</span> deterministic
+        <div class="code-body"><span class="p">$ </span><span class="w">llmci dataset init</span> <span class="f">--name</span> ticket-classification <span class="f">--type</span> deterministic
 <span class="g">&#10003; Created ./evals/ticket_classification.jsonl</span>
 
-<span class="p">$ </span><span class="w">scaffold dataset add</span> <span class="f">--name</span> ticket-classification
+<span class="p">$ </span><span class="w">llmci dataset add</span> <span class="f">--name</span> ticket-classification
 <span class="c">Input: "My printer won't connect to wifi"</span>
 <span class="c">Expected: "hardware"</span>
 <span class="g">&#10003; Added. (47 examples, 6 categories covered)</span>
 
-<span class="p">$ </span><span class="w">scaffold dataset check</span> <span class="f">--name</span> ticket-classification
+<span class="p">$ </span><span class="w">llmci dataset check</span> <span class="f">--name</span> ticket-classification
 <span class="c">203 examples across 8 categories</span>
 <span class="c">&#x26A0; "returns" has only 4 examples (min recommended: 15)</span>
 <span class="c">&#x26A0; No multilingual examples detected</span>
 <span class="g">&#10003; All other categories well-covered</span></div>
       </div>
 
-      <p>The <code>scaffold dataset check</code> command is key. It analyzes coverage gaps and tells you exactly where to add more examples. This turns "write until you feel done" into a guided process with a clear finish line.</p>
+      <p>The <code>llmci dataset check</code> command is key. It analyzes coverage gaps and tells you exactly where to add more examples. This turns "write until you feel done" into a guided process with a clear finish line.</p>
 
       <h3>Then expand with automated generation</h3>
-      <p>Once you have a solid manual core, Scaffold offers three strategies to expand:</p>
+      <p>Once you have a solid manual core, llmci offers three strategies to expand:</p>
 
       <h4>Import production logs</h4>
-      <p>Export logs from Langfuse, Arize, or your own system. Scaffold identifies successful runs, selects diverse examples, and converts them into eval scenarios. Scaffold never touches production &mdash; it only consumes what you export.</p>
+      <p>Export logs from Langfuse, Arize, or your own system. llmci identifies successful runs, selects diverse examples, and converts them into eval scenarios. llmci never touches production &mdash; it only consumes what you export.</p>
       <div class="code-frame">
         <div class="code-tab"><span class="dot"></span><span>Terminal</span></div>
-        <div class="code-body"><span class="g">$</span> scaffold generate --from-logs ./exported-logs/ --output evals/data/dataset.jsonl</div>
+        <div class="code-body"><span class="g">$</span> llmci generate --from-logs ./exported-logs/ --output evals/data/dataset.jsonl</div>
       </div>
 
       <h4>Generate from specs</h4>
-      <p>Provide tool definitions and a system prompt. Scaffold generates realistic scenarios that exercise your full tool surface, with coverage targets to ensure edge cases are included.</p>
+      <p>Provide tool definitions and a system prompt. llmci generates realistic scenarios that exercise your full tool surface, with coverage targets to ensure edge cases are included.</p>
       <div class="code-frame">
         <div class="code-tab"><span class="dot"></span><span>Terminal</span></div>
-        <div class="code-body"><span class="g">$</span> scaffold generate --from-spec agent_config.yaml --output evals/data/agent_scenarios.jsonl</div>
+        <div class="code-body"><span class="g">$</span> llmci generate --from-spec agent_config.yaml --output evals/data/agent_scenarios.jsonl</div>
       </div>
 
       <h4>Augment existing examples</h4>
-      <p>Start with 20&ndash;30 hand-curated examples. Scaffold generates perturbations &mdash; rephrased inputs, changed parameters, combined intents, edge cases &mdash; to expand to a statistically meaningful dataset.</p>
+      <p>Start with 20&ndash;30 hand-curated examples. llmci generates perturbations &mdash; rephrased inputs, changed parameters, combined intents, edge cases &mdash; to expand to a statistically meaningful dataset.</p>
       <div class="code-frame">
         <div class="code-tab"><span class="dot"></span><span>Terminal</span></div>
-        <div class="code-body"><span class="g">$</span> scaffold generate --augment evals/data/seed.jsonl --output evals/data/expanded.jsonl --target-size 200</div>
+        <div class="code-body"><span class="g">$</span> llmci generate --augment evals/data/seed.jsonl --output evals/data/expanded.jsonl --target-size 200</div>
       </div>
 
       <div class="scenario">
         <h4>Real-world scenario</h4>
-        <p>Your team is launching a new feature that uses an LLM to classify customer feedback. You have no eval dataset. On Monday, a product manager spends 2 hours writing 80 examples across the 6 feedback categories, focusing on edge cases they know are tricky. <code>scaffold dataset check</code> flags that the "feature request" and "bug report" categories are underrepresented. They add 30 more targeted examples. By Tuesday afternoon, you have a 200-example dataset with solid coverage, and your CI pipeline is gated.</p>
+        <p>Your team is launching a new feature that uses an LLM to classify customer feedback. You have no eval dataset. On Monday, a product manager spends 2 hours writing 80 examples across the 6 feedback categories, focusing on edge cases they know are tricky. <code>llmci dataset check</code> flags that the "feature request" and "bug report" categories are underrepresented. They add 30 more targeted examples. By Tuesday afternoon, you have a 200-example dataset with solid coverage, and your CI pipeline is gated.</p>
       </div>
     </div>
   </section>
@@ -877,7 +903,7 @@ output = run_for_scaffold_sync(build_agent(), input_data)</div>
     <div class="container">
       <div class="uc-label">Use Case 05</div>
       <h2>Migrating from Promptfoo</h2>
-      <p>After OpenAI acquired Promptfoo in March 2026, teams using multiple model providers need a neutral eval tool they can trust. Scaffold is provider-neutral, community-owned, and offers capabilities Promptfoo never had.</p>
+      <p>After OpenAI acquired Promptfoo in March 2026, teams using multiple model providers need a neutral eval tool they can trust. llmci is provider-neutral, community-owned, and offers capabilities Promptfoo never had.</p>
 
       <h3>Why teams are migrating</h3>
       <ul>
@@ -887,29 +913,29 @@ output = run_for_scaffold_sync(build_agent(), input_data)</div>
       </ul>
 
       <h3>Config import</h3>
-      <p>Scaffold can import your existing Promptfoo configuration:</p>
+      <p>llmci can import your existing Promptfoo configuration:</p>
 
       <div class="code-frame">
         <div class="code-tab">
           <span class="dot"></span>
           <span>Terminal</span>
         </div>
-        <div class="code-body"><span class="p">$ </span><span class="w">scaffold import-promptfoo</span> promptfooconfig.yaml
+        <div class="code-body"><span class="p">$ </span><span class="w">llmci import-promptfoo</span> promptfooconfig.yaml
 
 <span class="c">Detected 3 test suites</span>
 <span class="c">Converted 2 deterministic evals (exact match + F1)</span>
 <span class="c">Converted 1 LLM-as-judge eval (rubric-based)</span>
 <span class="c">Migrated 847 test cases across all suites</span>
 
-<span class="g">&#10003; Written to ./scaffold.yaml</span>
-  <span class="c">Review the config and run: scaffold run</span></div>
+<span class="g">&#10003; Written to ./llmci.yaml</span>
+  <span class="c">Review the config and run: llmci run</span></div>
       </div>
 
       <h3>What you gain</h3>
 
       <table class="uc-table">
         <thead>
-          <tr><th>Capability</th><th>Promptfoo</th><th>Scaffold</th></tr>
+          <tr><th>Capability</th><th>Promptfoo</th><th>llmci</th></tr>
         </thead>
         <tbody>
           <tr><td>CI gating</td><td>Supported, but designed for comparison</td><td>Native &mdash; designed for pass/fail gating</td></tr>
@@ -924,7 +950,7 @@ output = run_for_scaffold_sync(build_agent(), input_data)</div>
 
       <div class="scenario">
         <h4>Real-world scenario</h4>
-        <p>Your team has been using Promptfoo for 8 months with 5 eval suites across 3 repos. After the OpenAI acquisition, your platform team decides to migrate. They run <code>scaffold import-promptfoo</code> on each repo, review the generated configs, and switch the CI workflows to use Scaffold. The migration takes half a day per repo. By the end of the week, all 3 repos are running on Scaffold with the same eval coverage they had before &mdash; plus model migration and pipeline-level testing they didn't have before.</p>
+        <p>Your team has been using Promptfoo for 8 months with 5 eval suites across 3 repos. After the OpenAI acquisition, your platform team decides to migrate. They run <code>llmci import-promptfoo</code> on each repo, review the generated configs, and switch the CI workflows to use llmci. The migration takes half a day per repo. By the end of the week, all 3 repos are running on llmci with the same eval coverage they had before &mdash; plus model migration and pipeline-level testing they didn't have before.</p>
       </div>
     </div>
   </section>
@@ -944,7 +970,7 @@ output = run_for_scaffold_sync(build_agent(), input_data)</div>
 
   <footer>
     <div class="container">
-      <p>&copy; 2026 Scaffold</p>
+      <p>&copy; 2026 llmci</p>
       <div style="display: flex; gap: 24px;">
         <a href="https://github.com/alexminnaar/scaffold">GitHub</a>
         <a href="#">Docs</a>

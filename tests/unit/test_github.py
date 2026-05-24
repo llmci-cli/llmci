@@ -4,7 +4,7 @@ import json
 import os
 from unittest.mock import patch
 
-from scaffold.integrations.github import (
+from llmci.integrations.github import (
     COMMENT_MARKER,
     _extract_pr_number,
     build_merged_comment_body,
@@ -74,36 +74,36 @@ class TestExtractPrNumber:
 
 class TestReportSliceMerging:
     def test_build_single_slice(self):
-        body = build_merged_comment_body(None, "json-api/scaffold.yaml", "## Scaffold Eval Report\n\n| ok |")
+        body = build_merged_comment_body(None, "json-api/llmci.yaml", "## llmci Eval Report\n\n| ok |")
         assert COMMENT_MARKER in body
-        assert "<!-- scaffold-eval-slice:json-api/scaffold.yaml -->" in body
-        assert "### json-api · `scaffold.yaml`" in body
-        assert "## Scaffold Eval Report" in body
+        assert "<!-- llmci-eval-slice:json-api/llmci.yaml -->" in body
+        assert "### json-api · `llmci.yaml`" in body
+        assert "## llmci Eval Report" in body
 
     def test_merge_second_slice(self):
-        first = build_merged_comment_body(None, "json-api/scaffold.yaml", "report-a")
-        merged = build_merged_comment_body(first, "ticket-classifier/scaffold.yaml", "report-b")
+        first = build_merged_comment_body(None, "json-api/llmci.yaml", "report-a")
+        merged = build_merged_comment_body(first, "ticket-classifier/llmci.yaml", "report-b")
         slices = parse_report_slices(merged)
         assert slices == {
-            "json-api/scaffold.yaml": "report-a",
-            "ticket-classifier/scaffold.yaml": "report-b",
+            "json-api/llmci.yaml": "report-a",
+            "ticket-classifier/llmci.yaml": "report-b",
         }
 
     def test_update_existing_slice(self):
-        initial = build_merged_comment_body(None, "json-api/scaffold.yaml", "old")
-        updated = build_merged_comment_body(initial, "json-api/scaffold.yaml", "new")
+        initial = build_merged_comment_body(None, "json-api/llmci.yaml", "old")
+        updated = build_merged_comment_body(initial, "json-api/llmci.yaml", "new")
         slices = parse_report_slices(updated)
-        assert slices["json-api/scaffold.yaml"] == "new"
-        assert "<!-- scaffold-eval-slice:ticket-classifier" not in updated
+        assert slices["json-api/llmci.yaml"] == "new"
+        assert "<!-- llmci-eval-slice:ticket-classifier" not in updated
 
     def test_parse_legacy_comment_without_slices(self):
-        legacy = f"{COMMENT_MARKER}\n## Scaffold Eval Report\n\nlegacy"
+        legacy = f"{COMMENT_MARKER}\n## llmci Eval Report\n\nlegacy"
         assert parse_report_slices(legacy) == {}
 
     def test_resolve_report_slice_key_from_env(self):
-        with patch.dict(os.environ, {"SCAFFOLD_REPORT_SLICE": "rag-qa/scaffold.yaml"}, clear=True):
-            assert resolve_report_slice_key() == "rag-qa/scaffold.yaml"
+        with patch.dict(os.environ, {"LLMCI_REPORT_SLICE": "rag-qa/llmci.yaml"}, clear=True):
+            assert resolve_report_slice_key() == "rag-qa/llmci.yaml"
 
     def test_resolve_report_slice_key_empty(self):
-        with patch.dict(os.environ, {"SCAFFOLD_REPORT_SLICE": "  "}, clear=True):
+        with patch.dict(os.environ, {"LLMCI_REPORT_SLICE": "  "}, clear=True):
             assert resolve_report_slice_key() is None

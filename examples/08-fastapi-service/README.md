@@ -11,8 +11,8 @@ A customer support ticket classifier with a realistic pipeline:
 
 | Level | Config | What it tests | Speed |
 |-------|--------|--------------|-------|
-| Prompt | `scaffold-prompt-level.yaml` | Classification logic only | Fast |
-| Service | `scaffold.yaml` | Full pipeline (pre/post processing) | Slower |
+| Prompt | `llmci-prompt-level.yaml` | Classification logic only | Fast |
+| Service | `llmci.yaml` | Full pipeline (pre/post processing) | Slower |
 
 A prompt-level eval catches prompt regressions in seconds. A service-level eval
 catches bugs in PII redaction, confidence thresholds, or other pipeline code.
@@ -21,11 +21,11 @@ catches bugs in PII redaction, confidence thresholds, or other pipeline code.
 
 ```bash
 # Service-level (default) — full pipeline
-scaffold run
+llmci run
 
 # Prompt-level — swap the config and re-run
-cp scaffold-prompt-level.yaml scaffold.yaml
-scaffold run
+cp llmci-prompt-level.yaml llmci.yaml
+llmci run
 ```
 
 ## What to try

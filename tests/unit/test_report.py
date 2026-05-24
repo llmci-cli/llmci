@@ -1,8 +1,8 @@
 """Tests for report generation."""
 
-from scaffold.baseline import Baseline
-from scaffold.models import EvalConfig, EvalResult, JudgeConfig, MetricThreshold
-from scaffold.report import format_report
+from llmci.baseline import Baseline
+from llmci.models import EvalConfig, EvalResult, JudgeConfig, MetricThreshold
+from llmci.report import format_report
 
 
 def _make_result(eval_name: str, metrics: dict[str, float], num_examples: int = 10) -> EvalResult:

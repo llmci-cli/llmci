@@ -1,7 +1,7 @@
 """Tests for migration report formatting."""
 
-from scaffold.migrate.optimizer import OptimizationResult, OptimizationStep
-from scaffold.migrate.report import format_migration_report
+from llmci.migrate.optimizer import OptimizationResult, OptimizationStep
+from llmci.migrate.report import format_migration_report
 
 
 class TestMigrationReport:

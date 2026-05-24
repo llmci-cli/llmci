@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from scaffold.dataset.loader import load_dataset
-from scaffold.errors import DatasetError
+from llmci.dataset.loader import load_dataset
+from llmci.errors import DatasetError
 
 
 @pytest.fixture

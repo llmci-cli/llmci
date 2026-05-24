@@ -1,5 +1,5 @@
-name: "Scaffold Eval"
-description: "Run Scaffold LLM evals and post results as a PR comment"
+name: "llmci Eval"
+description: "Run llmci LLM evals and post results as a PR comment"
 inputs:
   compare-to:
     description: "Branch to compare baselines against"
@@ -14,7 +14,7 @@ inputs:
     description: "Write report to this file path"
     default: ""
   working-directory:
-    description: "Directory containing scaffold.yaml"
+    description: "Directory containing llmci.yaml"
     default: "."
 runs:
   using: "composite"
@@ -23,7 +23,7 @@ runs:
       uses: actions/setup-python@v5
       with:
         python-version: "3.12"
-    - name: Install Scaffold
+    - name: Install llmci
       shell: bash
       run: pip install llmci
     - name: Run evals
@@ -39,4 +39,4 @@ runs:
         if [ -n "${{ inputs.output }}" ]; then
           ARGS="$ARGS --output=${{ inputs.output }}"
         fi
-        scaffold run $ARGS
+        llmci run $ARGS

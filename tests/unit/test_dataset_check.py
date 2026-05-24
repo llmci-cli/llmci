@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from scaffold.dataset.check import check_dataset, format_coverage_report
+from llmci.dataset.check import check_dataset, format_coverage_report
 
 
 @pytest.fixture

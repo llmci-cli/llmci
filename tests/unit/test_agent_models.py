@@ -3,7 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
-from scaffold.models import (
+from llmci.models import (
     AgentConstraints,
     AgentExpected,
     AgentScenario,

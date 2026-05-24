@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scaffold — CI-Native Regression Testing for LLMs</title>
+  <title>llmci — CI-Native Regression Testing for LLMs</title>
+  <meta name="description" content="llmci is an open-source CI quality gate for LLMs. Install with pip install llmci, run llmci in your pipeline, and catch regressions before they merge.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -93,6 +94,30 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      text-decoration: none;
+    }
+
+    .logo-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.1;
+      gap: 1px;
+    }
+
+    .logo-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9375rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+
+    .logo-tag {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.5625rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
     }
 
     .logo-mark {
@@ -429,6 +454,23 @@
       border: 1px solid var(--border);
       padding: 8px 16px;
       border-radius: 8px;
+    }
+
+    .install-hint {
+      margin-top: 10px;
+      font-size: 0.8125rem;
+      color: var(--text-tertiary);
+      text-align: center;
+    }
+
+    .install-hint code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      padding: 2px 6px;
+      border-radius: 4px;
     }
 
     /* Hero product screenshot (Linear-style) */
@@ -1251,7 +1293,7 @@
   <!-- NAV -->
   <nav>
     <div class="container">
-      <div class="logo">
+      <a href="index.html" class="logo">
         <div class="logo-mark">
           <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect x="10" y="70" width="80" height="10" rx="3" fill="#059669"/>
@@ -1259,8 +1301,11 @@
             <rect x="30" y="30" width="40" height="10" rx="3" fill="#059669" opacity="0.45"/>
           </svg>
         </div>
-        Scaffold
-      </div>
+        <div class="logo-text">
+          <span class="logo-name">llmci</span>
+          <span class="logo-tag">LLM CI</span>
+        </div>
+      </a>
       <div class="nav-links">
         <a href="#how-it-works">How It Works</a>
         <a href="#features">Features</a>
@@ -1321,10 +1366,10 @@
     <div class="hero-orb hero-orb-1"></div>
     <div class="hero-orb hero-orb-2"></div>
     <div class="container">
-      <div class="hero-badge"><span class="dot"></span> Open Source &middot; Provider Neutral</div>
+      <div class="hero-badge"><span class="dot"></span> PyPI &middot; Open Source &middot; Provider Neutral</div>
       <h1>Stop merging PRs that<br><span class="accent">break your LLMs</span></h1>
       <p class="hero-desc">
-        Someone changed the prompt. Production quality tanked. Nobody noticed for a week. Scaffold is a CI quality gate that catches LLM regressions before they merge &mdash; in five minutes, not five sprints.
+        Someone changed the prompt. Production quality tanked. Nobody noticed for a week. <strong>llmci</strong> is a CI quality gate that catches LLM regressions before they merge &mdash; in five minutes, not five sprints.
       </p>
       <div class="hero-actions">
         <a href="#how-it-works" class="btn btn-primary">Get Started</a>
@@ -1333,12 +1378,13 @@
       <div class="install-line">
         <code>pip install llmci</code>
       </div>
+      <p class="install-hint">CLI command: <code>llmci</code> &nbsp;&middot;&nbsp; config: <code>llmci.yaml</code></p>
 
       <div class="hero-showcase hero-showcase-fade">
         <div class="hero-showcase-inner">
           <img
             src="assets/github-pr-eval-report.png"
-            alt="GitHub pull request comment from Scaffold showing eval metrics, regressions detected, and failed examples"
+            alt="GitHub pull request comment from llmci showing eval metrics, regressions detected, and failed examples"
             width="1080"
             height="auto"
             loading="eager"
@@ -1368,7 +1414,7 @@
       <div class="migrate-icon">&#x21C4;</div>
       <div>
         <h4>Migrating from Promptfoo?</h4>
-        <p>Scaffold is provider-neutral, open source, and not owned by any model provider. Drop-in CI gating with model migration, agentic eval, and dataset generation that Promptfoo never had. <a href="#">Migration guide &rarr;</a></p>
+        <p><strong>llmci</strong> is provider-neutral, open source, and not owned by any model provider. Drop-in CI gating with model migration, agentic eval, and dataset generation that Promptfoo never had. <a href="#">Migration guide &rarr;</a></p>
       </div>
     </div>
   </div>
@@ -1386,12 +1432,12 @@
         <div class="step-cell">
           <div class="num">01</div>
           <h3>Define your evals</h3>
-          <p>Add a <code style="background: var(--bg-alt); padding: 1px 5px; border-radius: 4px; font-size: 0.82em;">scaffold.yaml</code> to your repo. Point it at your eval dataset, pick metrics, set thresholds.</p>
+          <p>Add a <code style="background: var(--bg-alt); padding: 1px 5px; border-radius: 4px; font-size: 0.82em;">llmci.yaml</code> to your repo. Point it at your eval dataset, pick metrics, set thresholds.</p>
         </div>
         <div class="step-cell">
           <div class="num">02</div>
           <h3>Run in CI</h3>
-          <p>One step in your GitHub Action or CI pipeline. Scaffold runs evals and compares against your main branch baseline.</p>
+          <p>One step in your GitHub Action or CI pipeline. llmci runs evals and compares against your main branch baseline.</p>
         </div>
         <div class="step-cell">
           <div class="num">03</div>
@@ -1457,12 +1503,12 @@
           </g>
           <text x="283" y="116" text-anchor="middle" fill="#4b5563" font-family="Inter, sans-serif" font-size="12" font-weight="600">CI Trigger</text>
 
-          <!-- Node 3: scaffold run -->
+          <!-- Node 3: llmci run -->
           <rect x="418" y="18" width="130" height="68" rx="14" fill="rgba(5,150,105,0.04)" stroke="#059669" stroke-width="1.5" />
           <g transform="translate(471, 38)">
             <polyline points="16,5 7.5,14 3,9.5" stroke="#059669" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
           </g>
-          <text x="483" y="116" text-anchor="middle" fill="#4b5563" font-family="Inter, sans-serif" font-size="12" font-weight="600">scaffold run</text>
+          <text x="483" y="116" text-anchor="middle" fill="#4b5563" font-family="Inter, sans-serif" font-size="12" font-weight="600">llmci run</text>
 
           <!-- Node 4: Compare Baseline -->
           <rect x="618" y="18" width="130" height="68" rx="14" fill="rgba(5,150,105,0.04)" stroke="#059669" stroke-width="1.5" />
@@ -1502,7 +1548,7 @@
               <div class="f-icon">&#8646;</div>
               <div>
                 <h4>Black-box testing</h4>
-                <p>Runs your pipeline as a subprocess. Scaffold doesn't need to know your stack&mdash;just inputs and outputs.</p>
+                <p>Runs your pipeline as a subprocess. llmci doesn't need to know your stack&mdash;just inputs and outputs.</p>
               </div>
             </li>
             <li>
@@ -1532,7 +1578,7 @@
           <div class="code-frame">
             <div class="code-tab">
               <span class="dot" style="border-color: #4b5563;"></span>
-              <span>scaffold.yaml</span>
+              <span>llmci.yaml</span>
             </div>
             <div class="code-body">
 <span class="k">version</span>: <span class="n">1</span>
@@ -1576,7 +1622,7 @@
           <div class="section-label">Model Migration</div>
           <h2>Switch models without<br>the fire drill</h2>
           <p class="section-desc">
-            Model retired? Upgrading to the latest? Scaffold automatically tunes your prompt to achieve parity on the new model &mdash; with holdout validation and early stopping to prevent overfitting. No other eval tool offers automated migration.
+            Model retired? Upgrading to the latest? llmci automatically tunes your prompt to achieve parity on the new model &mdash; with holdout validation and early stopping to prevent overfitting. No other eval tool offers automated migration.
           </p>
         </div>
         <div class="split-visual">
@@ -1586,7 +1632,7 @@
               <span>Terminal</span>
             </div>
             <div class="code-body">
-<span class="p">$ </span><span class="w">scaffold migrate</span> <span class="f">--from</span> gpt-4o <span class="f">--to</span> gpt-4.5 <span class="f">--eval</span> ticket-classification
+<span class="p">$ </span><span class="w">llmci migrate</span> <span class="f">--from</span> gpt-4o <span class="f">--to</span> gpt-4.5 <span class="f">--eval</span> ticket-classification
 
 <span class="c">Running baseline on gpt-4o...          0.952</span>
 <span class="c">Running on gpt-4.5 (current prompt)...  0.891</span>
@@ -1728,7 +1774,7 @@
       <div class="section-label">Agentic Workflows</div>
       <h2>Test agents,<br>not just prompts</h2>
       <p class="section-desc">
-        Agents make sequences of decisions&mdash;tool calls, routing, branching&mdash;often across multi-turn conversations. A single output check isn't enough. Scaffold evaluates the full trajectory: outcome, efficiency, tool usage, and cost, per-turn and per-conversation.
+        Agents make sequences of decisions&mdash;tool calls, routing, branching&mdash;often across multi-turn conversations. A single output check isn't enough. llmci evaluates the full trajectory: outcome, efficiency, tool usage, and cost, per-turn and per-conversation.
       </p>
 
       <div class="cards-2x2">
@@ -1785,7 +1831,7 @@
           <div class="trace-step">
             <div class="trace-dot eval">&#x2605;</div>
             <div class="trace-content" style="border-color: var(--accent-border); background: var(--accent-bg);">
-              <span class="action" style="color: var(--accent);">Scaffold evaluation</span>
+              <span class="action" style="color: var(--accent);">llmci evaluation</span>
               <span class="meta">3 tool calls &middot; 3,550 tokens</span>
             </div>
           </div>
@@ -1806,7 +1852,7 @@
           <div class="code-frame">
             <div class="code-tab">
               <span class="dot" style="border-color: #4b5563;"></span>
-              <span>scaffold.yaml &mdash; agent eval</span>
+              <span>llmci.yaml &mdash; agent eval</span>
             </div>
             <div class="code-body">
 <span class="k">evals</span>:
@@ -1844,10 +1890,10 @@
               <span>Python</span>
             </div>
             <div class="code-body">
-<span class="k">from</span> scaffold.integrations.openai_agents <span class="k">import</span> run_for_scaffold_sync
+<span class="k">from</span> llmci.integrations.openai_agents <span class="k">import</span> run_for_llmci_sync
 
-<span class="c"># Convert OpenAI Agents SDK runs to Scaffold trace JSON</span>
-output = run_for_scaffold_sync(build_agent(), input_data)
+<span class="c"># Convert OpenAI Agents SDK runs to llmci trace JSON</span>
+output = run_for_llmci_sync(build_agent(), input_data)
 <span class="c"># output: final_output, trace[], total_tool_calls, total_tokens</span>
             </div>
           </div>
@@ -1874,12 +1920,12 @@ output = run_for_scaffold_sync(build_agent(), input_data)
         <div class="card-3">
           <div class="ic">&#x2B06;</div>
           <h3>Import production logs</h3>
-          <p>Export logs from Langfuse, Arize, or your own system. Scaffold identifies successful runs, selects diverse examples, and converts them into eval scenarios with inferred constraints.</p>
+          <p>Export logs from Langfuse, Arize, or your own system. llmci identifies successful runs, selects diverse examples, and converts them into eval scenarios with inferred constraints.</p>
         </div>
         <div class="card-3">
           <div class="ic">&#x2606;</div>
           <h3>Generate from specs</h3>
-          <p>Provide tool definitions and a system prompt. Scaffold generates realistic scenarios that exercise your full tool surface with coverage targets.</p>
+          <p>Provide tool definitions and a system prompt. llmci generates realistic scenarios that exercise your full tool surface with coverage targets.</p>
         </div>
         <div class="card-3">
           <div class="ic">&#x2194;</div>
@@ -1894,14 +1940,14 @@ output = run_for_scaffold_sync(build_agent(), input_data)
           <span>Terminal</span>
         </div>
         <div class="code-body">
-<span class="p">$ </span><span class="w">scaffold dataset check</span> <span class="f">--name</span> ticket-classification
+<span class="p">$ </span><span class="w">llmci dataset check</span> <span class="f">--name</span> ticket-classification
 
 <span class="c">203 examples across 8 categories</span>
 <span class="c">&#x26A0; "returns" has only 4 examples (min recommended: 15)</span>
 <span class="c">&#x26A0; No multilingual examples detected</span>
 <span class="g">&#10003; All other categories well-covered</span>
 
-<span class="p">$ </span><span class="w">scaffold generate</span> <span class="f">--from-logs</span> ./exported_logs/ <span class="f">--format</span> langfuse <span class="f">--output</span> ./evals/scenarios.jsonl
+<span class="p">$ </span><span class="w">llmci generate</span> <span class="f">--from-logs</span> ./exported_logs/ <span class="f">--format</span> langfuse <span class="f">--output</span> ./evals/scenarios.jsonl
 
 <span class="c">Analyzing 2,847 exported logs...</span>
 <span class="c">Identified 12 scenario clusters</span>
@@ -1910,7 +1956,7 @@ output = run_for_scaffold_sync(build_agent(), input_data)
 
 <span class="g">&#10003; Generated 143 eval examples</span>
   <span class="c">Written to ./evals/scenarios.jsonl</span>
-  <span class="c">Run scaffold generate --review to inspect and approve</span>
+  <span class="c">Run llmci generate --review to inspect and approve</span>
         </div>
       </div>
     </div>
@@ -1920,10 +1966,10 @@ output = run_for_scaffold_sync(build_agent(), input_data)
   <section id="compare" class="bg-alt">
     <div class="container">
       <div class="section-num">06</div>
-      <div class="section-label">Why Scaffold</div>
+      <div class="section-label">Why llmci</div>
       <h2>Not another dashboard. Not owned by a model vendor.</h2>
       <p class="section-desc">
-        After Promptfoo's acquisition by OpenAI, teams need a neutral quality gate they can trust. Scaffold is open source, community-owned, and works with every provider.
+        After Promptfoo's acquisition by OpenAI, teams need a neutral quality gate they can trust. llmci is open source, community-owned, and works with every provider.
       </p>
 
       <div class="comp-table-wrap">
@@ -1931,7 +1977,7 @@ output = run_for_scaffold_sync(build_agent(), input_data)
           <thead>
             <tr>
               <th style="width: 22%"></th>
-              <th class="hl" style="width: 19.5%">Scaffold</th>
+              <th class="hl" style="width: 19.5%">llmci</th>
               <th style="width: 19.5%">Promptfoo <span style="font-weight: 400; font-size: 0.65rem; color: var(--text-tertiary); display: block;">now owned by OpenAI</span></th>
               <th style="width: 19.5%">Langfuse</th>
               <th style="width: 19.5%">DSPy</th>
@@ -2011,7 +2057,7 @@ output = run_for_scaffold_sync(build_agent(), input_data)
   <section class="cta-section">
     <div class="container">
       <h2>Ship LLM changes<br>with confidence</h2>
-      <p>Open source. Provider neutral. Five-minute setup. Never merge a regression again.</p>
+      <p>Open source on PyPI. Provider neutral. Five-minute setup. Never merge a regression again.</p>
       <div class="hero-actions">
         <a href="https://github.com/alexminnaar/scaffold" class="btn btn-primary">Get Started</a>
         <a href="docs.html" class="btn btn-ghost">Read the Docs</a>
@@ -2022,7 +2068,7 @@ output = run_for_scaffold_sync(build_agent(), input_data)
   <!-- FOOTER -->
   <footer>
     <div class="container">
-      <p>&copy; 2026 Scaffold</p>
+      <p>&copy; 2026 llmci</p>
       <div style="display: flex; gap: 24px;">
         <a href="https://github.com/alexminnaar/scaffold">GitHub</a>
         <a href="docs.html">Docs</a>

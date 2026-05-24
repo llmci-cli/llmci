@@ -2,7 +2,7 @@
 
 import pytest
 
-from scaffold.judges.exact_match import ExactMatchJudge
+from llmci.judges.exact_match import ExactMatchJudge
 
 
 @pytest.fixture

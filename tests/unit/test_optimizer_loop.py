@@ -6,9 +6,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from scaffold.migrate.optimizer import optimize_prompt
-from scaffold.migrate.splitter import DataSplit
-from scaffold.models import EvalConfig, EvalExample, JudgeConfig
+from llmci.migrate.optimizer import optimize_prompt
+from llmci.migrate.splitter import DataSplit
+from llmci.models import EvalConfig, EvalExample, JudgeConfig
 
 
 def _make_examples(n: int, category: str = "billing") -> list[EvalExample]:
@@ -49,12 +49,12 @@ async def test_optimizer_converges_when_all_pass():
 
     with (
         patch(
-            "scaffold.migrate.optimizer._evaluate_prompt",
+            "llmci.migrate.optimizer._evaluate_prompt",
             new_callable=AsyncMock,
             return_value=1.0,
         ),
         patch(
-            "scaffold.migrate.optimizer._get_failures",
+            "llmci.migrate.optimizer._get_failures",
             new_callable=AsyncMock,
             return_value=[],
         ),
@@ -94,9 +94,9 @@ async def test_optimizer_stops_on_patience():
         return f"Modified prompt v{call_count}: {{input}}"
 
     with (
-        patch("scaffold.migrate.optimizer._evaluate_prompt", side_effect=mock_evaluate),
-        patch("scaffold.migrate.optimizer._get_failures", side_effect=mock_failures),
-        patch("scaffold.migrate.optimizer._suggest_modification", side_effect=mock_suggest),
+        patch("llmci.migrate.optimizer._evaluate_prompt", side_effect=mock_evaluate),
+        patch("llmci.migrate.optimizer._get_failures", side_effect=mock_failures),
+        patch("llmci.migrate.optimizer._suggest_modification", side_effect=mock_suggest),
     ):
         result = await optimize_prompt(
             original_prompt="Classify: {input}",
@@ -133,9 +133,9 @@ async def test_optimizer_respects_max_iterations():
         return f"Prompt v{iteration}: {{input}}"
 
     with (
-        patch("scaffold.migrate.optimizer._evaluate_prompt", side_effect=mock_evaluate),
-        patch("scaffold.migrate.optimizer._get_failures", side_effect=mock_failures),
-        patch("scaffold.migrate.optimizer._suggest_modification", side_effect=mock_suggest),
+        patch("llmci.migrate.optimizer._evaluate_prompt", side_effect=mock_evaluate),
+        patch("llmci.migrate.optimizer._get_failures", side_effect=mock_failures),
+        patch("llmci.migrate.optimizer._suggest_modification", side_effect=mock_suggest),
     ):
         result = await optimize_prompt(
             original_prompt="Classify: {input}",

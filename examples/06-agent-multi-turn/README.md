@@ -11,7 +11,7 @@ Demonstrates evaluation of a conversational agent across multiple turns.
 ## How to run
 ```bash
 cd examples/06-agent-multi-turn
-scaffold run
+llmci run
 ```
 
 ## How to adapt

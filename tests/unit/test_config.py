@@ -5,15 +5,15 @@ from pathlib import Path
 import pytest
 import yaml
 
-from scaffold.config import _normalize_judge, load_config
-from scaffold.errors import ConfigError
+from llmci.config import _normalize_judge, load_config
+from llmci.errors import ConfigError
 
 
 @pytest.fixture
 def tmp_config(tmp_path):
     """Helper to write a YAML config and return its path."""
     def _write(data: dict) -> Path:
-        p = tmp_path / "scaffold.yaml"
+        p = tmp_path / "llmci.yaml"
         p.write_text(yaml.dump(data))
         return p
     return _write
@@ -57,7 +57,7 @@ class TestLoadConfig:
             load_config(tmp_path / "nonexistent.yaml")
 
     def test_invalid_yaml(self, tmp_path):
-        p = tmp_path / "scaffold.yaml"
+        p = tmp_path / "llmci.yaml"
         p.write_text(":\ninvalid: [yaml")
         with pytest.raises(ConfigError, match="Invalid YAML"):
             load_config(p)

@@ -3,12 +3,12 @@
 
 import pytest
 
-from scaffold.judges.composite import (
+from llmci.judges.composite import (
     CompositeAgentJudge,
     ConstraintJudge,
     _parse_judge_response,
 )
-from scaffold.models import (
+from llmci.models import (
     AgentConstraints,
     AgentExpected,
     AgentScenario,

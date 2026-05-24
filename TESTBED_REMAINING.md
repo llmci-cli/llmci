@@ -16,7 +16,7 @@ Handoff document for completing [`scaffold-testbed`](https://github.com/alexminn
 | Services | `ticket-classifier`, `rag-qa`, `summarizer`, `json-api`, `support-agent`, `migration/` |
 | Shared | `mock_llm.py`, `scaffold_run.sh`, `wait_for_http.sh` |
 | CI | `.github/workflows/scaffold.yml` (mock matrix), `scaffold-llm.yml` (manual LLM) |
-| Baselines | Committed per-service under `.scaffold/baselines/` |
+| Baselines | Committed per-service under `.llmci/baselines/` |
 | Tests | `make test` — 4 passed (`shared/`, ticket-classifier pipeline) |
 | Local evals | `make eval-all` passes in mock mode (with `scaffold_run.sh` for alt configs) |
 | PyPI dep | `llmci>=0.1.0`; README updated for PyPI-first install |
@@ -48,14 +48,14 @@ git push -u origin main
 - [ ] GitHub Actions runs on push/PR
 - [ ] Re-run baselines on `main` with real commit SHA:
   ```bash
-  cd services/ticket-classifier && MOCK_LLM=1 scaffold run --update-baseline
+  cd services/ticket-classifier && MOCK_LLM=1 llmci run --update-baseline
   # repeat for each service / config that has baselines
-  git add .scaffold/baselines/ && git commit -m "Refresh baselines with commit SHA"
+  git add .llmci/baselines/ && git commit -m "Refresh baselines with commit SHA"
   ```
 
 ### 2.2 Add `--compare-to=origin/main` in CI
 
-**Problem:** Ticket classifier defines `max_regression` on accuracy, but plain `scaffold run` skips regression checks. Scaffold loads regression baselines from a **git ref**, not the local filesystem.
+**Problem:** Ticket classifier defines `max_regression` on accuracy, but plain `llmci run` skips regression checks. Scaffold loads regression baselines from a **git ref**, not the local filesystem.
 
 **File:** `.github/workflows/scaffold.yml` — eval job run step
 
@@ -95,19 +95,19 @@ Ensure checkout uses sufficient history:
 
 ### Root cause: matrix jobs overwrite each other (fixed in `llmci` 0.1.1)
 
-Parallel CI matrix jobs used to race on a single PR comment — last job won. **Scaffold 0.1.1+** merges slices when `SCAFFOLD_REPORT_SLICE` is set (testbed workflow already uses `${{ matrix.service }}/${{ matrix.config }}`). Upgrade PyPI: `pip install --upgrade llmci`.
+Parallel CI matrix jobs used to race on a single PR comment — last job won. **Scaffold 0.1.1+** merges slices when `LLMCI_REPORT_SLICE` is set (testbed workflow already uses `${{ matrix.service }}/${{ matrix.config }}`). Upgrade PyPI: `pip install --upgrade llmci`.
 
 ### 2.3 Fix `--config` documentation (or implement CLI flag)
 
-**Problem:** Service READMEs document `scaffold run --config scaffold-*.yaml`, but **`llmci` has no `--config` flag**. Only `shared/scripts/scaffold_run.sh --config ...` works.
+**Problem:** Service READMEs document `llmci run --config scaffold-*.yaml`, but **`llmci` has no `--config` flag**. Only `shared/scripts/scaffold_run.sh --config ...` works.
 
 **Affected files:**
 
 | File | Current (wrong) |
 |------|-----------------|
-| `services/ticket-classifier/README.md` | `scaffold run --config scaffold-prompt.yaml` |
-| `services/support-agent/README.md` | `scaffold run --config scaffold-single.yaml` |
-| `services/summarizer/README.md` | `scaffold run --config scaffold-mock.yaml` |
+| `services/ticket-classifier/README.md` | `llmci run --config scaffold-prompt.yaml` |
+| `services/support-agent/README.md` | `llmci run --config scaffold-single.yaml` |
+| `services/summarizer/README.md` | `llmci run --config scaffold-mock.yaml` |
 
 **Option A — Testbed-only (quick):** Replace all with:
 
@@ -115,7 +115,7 @@ Parallel CI matrix jobs used to race on a single PR comment — last job won. **
 MOCK_LLM=1 ../../shared/scripts/scaffold_run.sh --config scaffold-prompt.yaml
 ```
 
-**Option B — Scaffold CLI (better long-term):** Add `--config` to `llmci` in the main Scaffold repo, publish `0.1.1`, then simplify testbed CI/Makefile to call `scaffold run --config` directly and delete `scaffold_run.sh`.
+**Option B — llmci CLI (better long-term):** Add `--config` to `llmci` in the main Scaffold repo, publish `0.1.1`, then simplify testbed CI/Makefile to call `llmci run --config` directly and delete `scaffold_run.sh`.
 
 **Acceptance:**
 - [ ] Every documented run command works copy-paste on a fresh clone
@@ -173,7 +173,7 @@ Include in `eval-all` before or after `eval-classifier`.
 After GitHub repo exists, add to root `README.md`:
 
 ```markdown
-[![Scaffold Evals](https://github.com/<org>/scaffold-testbed/actions/workflows/scaffold.yml/badge.svg)](https://github.com/<org>/scaffold-testbed/actions/workflows/scaffold.yml)
+[![llmci Evals](https://github.com/<org>/scaffold-testbed/actions/workflows/scaffold.yml/badge.svg)](https://github.com/<org>/scaffold-testbed/actions/workflows/scaffold.yml)
 ```
 
 ---
@@ -207,7 +207,7 @@ After GitHub repo exists, add to root `README.md`:
 |-------|------|-------|
 | Trace step numbering | `agent/run_agent.py` | After `_append_tool()` returns incremented step, extra `step += 1` may skip step numbers in trace |
 | History injection ignored | `agent/run_agent.py` | `run_multi_turn()` uses `user_message` only; `scaffold-history.yaml` won't work for context-dependent turns ("Can you cancel it?") until `history` is wired in |
-| No default config | `services/support-agent/` | Bare `scaffold run` fails — document or add symlink/default `scaffold.yaml` |
+| No default config | `services/support-agent/` | Bare `llmci run` fails — document or add symlink/default `llmci.yaml` |
 
 **Acceptance for history mode (optional):**
 - [ ] `scaffold-history.yaml` added to manual LLM workflow once history routing works
@@ -215,9 +215,9 @@ After GitHub repo exists, add to root `README.md`:
 
 ### 4.5 Summarizer footgun
 
-`services/summarizer/scaffold.yaml` is the **real LLM judge** config. Running `scaffold run` without `OPENAI_API_KEY` fails.
+`services/summarizer/llmci.yaml` is the **real LLM judge** config. Running `llmci run` without `OPENAI_API_KEY` fails.
 
-**Task:** README should lead with mock config; warn that default `scaffold.yaml` requires API key. Consider renaming or adding a comment at top of `scaffold.yaml`.
+**Task:** README should lead with mock config; warn that default `llmci.yaml` requires API key. Consider renaming or adding a comment at top of `llmci.yaml`.
 
 ---
 
@@ -247,10 +247,10 @@ Current `docker-compose.yml` uses inline `uvicorn` command (no Dockerfile). Outl
 
 `scaffold-llm.yml` currently runs:
 - summarizer (real judge)
-- migration (`scaffold run` only — not `scaffold migrate`)
+- migration (`llmci run` only — not `llmci migrate`)
 - support-agent (`scaffold-single-full.yaml` only)
 
-Consider adding: multi-turn composite config, `scaffold-history.yaml`, or a separate manual job for `scaffold migrate`.
+Consider adding: multi-turn composite config, `scaffold-history.yaml`, or a separate manual job for `llmci migrate`.
 
 ### 5.5 Richer datasets
 
@@ -268,7 +268,7 @@ These are **not** in testbed but reduce friction:
 
 | Change | Benefit |
 |--------|---------|
-| Add `scaffold run --config PATH` to `llmci` | Remove `scaffold_run.sh` workaround |
+| Add `llmci run --config PATH` to `llmci` | Remove `scaffold_run.sh` workaround |
 | Publish `llmci==0.1.1` with `--config` | Testbed CI simplifies |
 | Trusted PyPI publishing workflow | Safer releases than manual tokens |
 

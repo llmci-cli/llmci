@@ -33,7 +33,7 @@ Scaffold's positioning occupies a gap: it is a safety gate, not a dashboard. Its
 
 **What it is:** An open-source CLI-first tool for evaluating and red-teaming LLM applications. YAML-based test definitions, support for 60+ providers, and 500+ adversarial attack vectors for security testing.
 
-**Acquired by OpenAI, March 9, 2026.** This is the single most important competitive development. Promptfoo was the closest tool to Scaffold's positioning — CLI-native, YAML configs, CI integration. The acquisition raises significant concerns:
+**Acquired by OpenAI, March 9, 2026.** This is the single most important competitive development. Promptfoo was the closest tool to llmci's positioning — CLI-native, YAML configs, CI integration. The acquisition raises significant concerns:
 
 - **Provider neutrality.** Will Promptfoo remain unbiased across providers, or will it subtly favor OpenAI models? Enterprise teams using Anthropic, Google, or open-source models may not trust an OpenAI-owned eval tool.
 - **Open-source trajectory.** Promptfoo is MIT-licensed today, but OpenAI could restrict features to a commercial offering over time.
@@ -54,7 +54,7 @@ Scaffold's positioning occupies a gap: it is a safety gate, not a dashboard. Its
 - CI integration exists but is secondary to dev-time exploration (the tool was designed for comparison, not gating)
 - Post-acquisition uncertainty on neutrality
 
-**Scaffold opportunity:** Promptfoo users concerned about the OpenAI acquisition are actively looking for alternatives. Scaffold can position as the provider-neutral, CI-native alternative with capabilities Promptfoo never had (migration, agents, dataset generation).
+**Scaffold opportunity:** Promptfoo users concerned about the OpenAI acquisition are actively looking for alternatives. llmci can position as the provider-neutral, CI-native alternative with capabilities Promptfoo never had (migration, agents, dataset generation).
 
 ---
 
@@ -81,7 +81,7 @@ Scaffold's positioning occupies a gap: it is a safety gate, not a dashboard. Its
 - Pricing: Free tier is limited; Pro is $249/month; Enterprise is custom
 - Heavier integration burden — requires SDK instrumentation in your code
 
-**Scaffold opportunity:** Teams that want the CI gating benefit without adopting a full platform. Scaffold is zero-infrastructure — it's a CLI that reads a YAML file and exits 0 or 1. No account, no SDK, no data leaving your repo.
+**Scaffold opportunity:** Teams that want the CI gating benefit without adopting a full platform. llmci is zero-infrastructure — it's a CLI that reads a YAML file and exits 0 or 1. No account, no SDK, no data leaving your repo.
 
 ---
 
@@ -131,7 +131,7 @@ Scaffold's positioning occupies a gap: it is a safety gate, not a dashboard. Its
 - No eval dataset generation
 - No agentic trajectory evaluation
 
-**Scaffold opportunity:** DSPy and Scaffold solve adjacent problems. DSPy is for building optimized prompts; Scaffold is for ensuring they don't regress. They could be used together. However, Scaffold's migration feature directly competes with DSPy's re-optimization story — and Scaffold's approach (small iterative edits with holdout validation) is more controlled and production-safe than DSPy's ground-up re-optimization.
+**Scaffold opportunity:** DSPy and Scaffold solve adjacent problems. DSPy is for building optimized prompts; llmci is for ensuring they don't regress. They could be used together. However, Scaffold's migration feature directly competes with DSPy's re-optimization story — and Scaffold's approach (small iterative edits with holdout validation) is more controlled and production-safe than DSPy's ground-up re-optimization.
 
 ---
 
@@ -155,7 +155,7 @@ Scaffold's positioning occupies a gap: it is a safety gate, not a dashboard. Its
 - Tightly coupled to Python pytest — less flexible than command-mode black-box testing
 - No baseline comparison (tests pass/fail on absolute thresholds, not relative regression)
 
-**Scaffold opportunity:** DeepEval is the closest existing tool to Scaffold's CI philosophy. The key differentiators are migration automation, pipeline-level (not just prompt-level) testing, relative regression thresholds, and agentic evaluation. DeepEval's pytest coupling also means it only works for Python codebases; Scaffold's command mode works with any language.
+**Scaffold opportunity:** DeepEval is the closest existing tool to llmci's CI philosophy. The key differentiators are migration automation, pipeline-level (not just prompt-level) testing, relative regression thresholds, and agentic evaluation. DeepEval's pytest coupling also means it only works for Python codebases; Scaffold's command mode works with any language.
 
 ---
 
@@ -199,7 +199,7 @@ Scaffold's positioning occupies a gap: it is a safety gate, not a dashboard. Its
 - No agentic evaluation
 - Library, not a tool — requires custom scripting to use in CI
 
-**Scaffold opportunity:** RAGAS could potentially be integrated as a judge type within Scaffold for RAG-specific evals, combining RAGAS's domain expertise with Scaffold's CI infrastructure.
+**Scaffold opportunity:** RAGAS could potentially be integrated as a judge type within Scaffold for RAG-specific evals, combining RAGAS's domain expertise with llmci's CI infrastructure.
 
 ---
 
@@ -216,16 +216,16 @@ Scaffold's positioning occupies a gap: it is a safety gate, not a dashboard. Its
 | **Eval dataset generation** | Bootstrap datasets from production traces, specs, or augmentation | DeepEval/Confident AI has synthetic generation. Braintrust has "trace to dataset." Neither offers the full three-strategy approach. |
 | **Zero-infrastructure CI gate** | CLI reads YAML, exits 0/1. No account, no SDK, no platform. | Braintrust requires an account. Langfuse requires infrastructure. Promptfoo is closest but was designed for exploration, not gating. |
 
-### What competitors do that Scaffold doesn't (v1 gaps)
+### What competitors do that llmci doesn't (v1 gaps)
 
 | Feature | Who has it | Scaffold stance |
 |---|---|---|
-| **Production monitoring/observability** | Langfuse, Braintrust, Arize Phoenix | Out of scope. Scaffold is pre-merge, not production. Complementary, not competitive. |
+| **Production monitoring/observability** | Langfuse, Braintrust, Arize Phoenix | Out of scope. llmci is pre-merge, not production. Complementary, not competitive. |
 | **Red teaming / security scanning** | Promptfoo (142 plugins), DeepEval | Not planned for v1. Could be a future addition. |
-| **Visual experiment comparison UI** | Braintrust (strong diff UX) | Scaffold outputs markdown reports. A dashboard is a paid-tier future feature. |
+| **Visual experiment comparison UI** | Braintrust (strong diff UX) | llmci outputs markdown reports. A dashboard is a paid-tier future feature. |
 | **Embedding drift detection** | Arize Phoenix | Production monitoring concern, out of scope. |
 | **RAG-specific metrics** | RAGAS, DeepEval | Could integrate RAGAS as a judge type in the future. |
-| **Self-hosted platform** | Langfuse | Scaffold doesn't need hosting — it's a CLI. Self-hosting is irrelevant. |
+| **Self-hosted platform** | Langfuse | llmci doesn't need hosting — it's a CLI. Self-hosting is irrelevant. |
 | **Fine-tuning optimization** | DSPy (BootstrapFinetune) | Scaffold focuses on prompt tuning, not weight tuning. |
 
 ---
@@ -302,4 +302,4 @@ This is Scaffold's biggest opportunity for differentiation. The market is unserv
 ### Wedge use cases (easiest adoption paths)
 1. **Model migration** — Team needs to upgrade a model and wants automated prompt re-tuning. Immediate, concrete value.
 2. **Post-Promptfoo migration** — Team is looking for alternatives after the OpenAI acquisition. Drop-in replacement with more features.
-3. **First CI gate** — Team has no LLM testing at all and wants the simplest possible setup. `scaffold init` → `scaffold run` in five minutes.
+3. **First CI gate** — Team has no LLM testing at all and wants the simplest possible setup. `llmci init` → `llmci run` in five minutes.

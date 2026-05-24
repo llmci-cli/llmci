@@ -5,8 +5,8 @@ import json
 import pytest
 import yaml
 
-from scaffold.errors import ConfigError
-from scaffold.import_promptfoo import import_promptfoo_config
+from llmci.errors import ConfigError
+from llmci.import_promptfoo import import_promptfoo_config
 
 
 class TestImportPromptfoo:
@@ -22,7 +22,7 @@ class TestImportPromptfoo:
             ],
         }))
 
-        output = tmp_path / "scaffold.yaml"
+        output = tmp_path / "llmci.yaml"
         import_promptfoo_config(source, output)
 
         config = yaml.safe_load(output.read_text())
@@ -47,7 +47,7 @@ class TestImportPromptfoo:
             ],
         }))
 
-        output = tmp_path / "scaffold.yaml"
+        output = tmp_path / "llmci.yaml"
         import_promptfoo_config(source, output)
 
         dataset_path = tmp_path / "evals" / "imported.jsonl"
@@ -70,7 +70,7 @@ class TestImportPromptfoo:
             ],
         }))
 
-        output = tmp_path / "scaffold.yaml"
+        output = tmp_path / "llmci.yaml"
         import_promptfoo_config(source, output)
 
         config = yaml.safe_load(output.read_text())
@@ -90,7 +90,7 @@ class TestImportPromptfoo:
         source = tmp_path / "promptfooconfig.yaml"
         source.write_text(yaml.dump({"tests": []}))
 
-        output = tmp_path / "scaffold.yaml"
+        output = tmp_path / "llmci.yaml"
         import_promptfoo_config(source, output)
 
         config = yaml.safe_load(output.read_text())
@@ -105,7 +105,7 @@ class TestImportPromptfoo:
             "tests": [],
         }))
 
-        output = tmp_path / "scaffold.yaml"
+        output = tmp_path / "llmci.yaml"
         import_promptfoo_config(source, output)
 
         config = yaml.safe_load(output.read_text())

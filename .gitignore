@@ -30,5 +30,5 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
-# Scaffold runtime artifacts (baselines are committed; cache is not)
-.scaffold/cache/
+# llmci runtime artifacts (baselines are committed; cache is not)
+.llmci/cache/

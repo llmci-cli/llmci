@@ -2,7 +2,7 @@
 
 
 
-from scaffold.migrate.optimizer import (
+from llmci.migrate.optimizer import (
     OptimizationResult,
     _edit_distance,
     _extract_prompt,

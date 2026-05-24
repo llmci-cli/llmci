@@ -1,1 +1,1 @@
-"""Shared test fixtures for Scaffold."""
+"""Shared test fixtures for llmci."""

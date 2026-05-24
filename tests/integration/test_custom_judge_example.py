@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from scaffold.config import load_config
-from scaffold.runner import run_all_evals
+from llmci.config import load_config
+from llmci.runner import run_all_evals
 
 EXAMPLE_DIR = Path(__file__).parent.parent.parent / "examples" / "04-custom-judge"
 

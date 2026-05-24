@@ -1,9 +1,9 @@
 """Tests for regression detection."""
 
 
-from scaffold.baseline import Baseline
-from scaffold.comparison import check_thresholds
-from scaffold.models import (
+from llmci.baseline import Baseline
+from llmci.comparison import check_thresholds
+from llmci.models import (
     EvalConfig,
     EvalResult,
     JudgeConfig,

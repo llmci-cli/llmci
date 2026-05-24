@@ -2,7 +2,7 @@
 
 import json
 
-from scaffold.trace import TraceBuilder
+from llmci.trace import TraceBuilder
 
 
 class TestTraceBuilder:

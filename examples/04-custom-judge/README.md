@@ -10,11 +10,11 @@ Demonstrates evaluation with a user-defined Python judge function for domain-spe
 ## How to run
 ```bash
 cd examples/04-custom-judge
-scaffold run
+llmci run
 ```
 
 ## How to adapt
 - Write your own judge function in a `.py` file
 - Function signature: `def judge(input: str, expected: str, actual: str) -> dict`
 - Return `{"score": 0.0-1.0, "reason": "..."}`
-- Point `scaffold.yaml` at your module and function
+- Point `llmci.yaml` at your module and function

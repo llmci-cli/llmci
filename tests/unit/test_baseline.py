@@ -5,19 +5,19 @@ from unittest.mock import patch
 
 import pytest
 
-from scaffold.baseline import (
+from llmci.baseline import (
     load_all_baselines,
     load_baseline,
     save_baseline,
 )
-from scaffold.models import EvalResult
+from llmci.models import EvalResult
 
 
 @pytest.fixture
 def mock_baseline_dir(tmp_path, monkeypatch):
     """Point BASELINE_DIR to a temp directory."""
-    bl_dir = tmp_path / ".scaffold" / "baselines"
-    monkeypatch.setattr("scaffold.baseline.BASELINE_DIR", bl_dir)
+    bl_dir = tmp_path / ".llmci" / "baselines"
+    monkeypatch.setattr("llmci.baseline.BASELINE_DIR", bl_dir)
     return bl_dir
 
 
@@ -79,7 +79,7 @@ class TestLoadBaseline:
             "commit_sha": "def456",
         })
 
-        with patch("scaffold.baseline.subprocess.run") as mock_run:
+        with patch("llmci.baseline.subprocess.run") as mock_run:
             mock_run.return_value.returncode = 0
             mock_run.return_value.stdout = baseline_json
             bl = load_baseline("test-eval", ref="origin/main")
@@ -89,7 +89,7 @@ class TestLoadBaseline:
         assert bl.commit_sha == "def456"
 
     def test_load_from_git_ref_not_found(self, mock_baseline_dir):
-        with patch("scaffold.baseline.subprocess.run") as mock_run:
+        with patch("llmci.baseline.subprocess.run") as mock_run:
             mock_run.return_value.returncode = 128
             bl = load_baseline("test-eval", ref="origin/main")
 

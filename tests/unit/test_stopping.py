@@ -1,6 +1,6 @@
 """Tests for early stopping."""
 
-from scaffold.migrate.stopping import EarlyStopping
+from llmci.migrate.stopping import EarlyStopping
 
 
 class TestEarlyStopping:

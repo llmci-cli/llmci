@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""OpenAI Agents SDK agent for Scaffold evals (real API path)."""
+"""OpenAI Agents SDK agent for llmci evals (real API path)."""
 
 from __future__ import annotations
 

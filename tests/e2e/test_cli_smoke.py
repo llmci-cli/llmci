@@ -2,8 +2,8 @@
 
 from click.testing import CliRunner
 
-from scaffold import __version__
-from scaffold.cli import cli
+from llmci import __version__
+from llmci.cli import cli
 
 
 def test_cli_help():

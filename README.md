@@ -1,10 +1,10 @@
-# Scaffold
+# llmci
 
 CI-native regression testing and migration for LLMs.
 
 Catch quality drops before they merge. Migrate models without breaking things.
 
-Scaffold is not an observability tool — it's a **pre-merge safety gate**. Define eval datasets, set quality thresholds, and let CI block bad changes to your prompts, models, or pipelines.
+llmci is not an observability tool — it's a **pre-merge safety gate**. Define eval datasets, set quality thresholds, and let CI block bad changes to your prompts, models, or pipelines.
 
 ## Installation
 
@@ -12,19 +12,17 @@ Scaffold is not an observability tool — it's a **pre-merge safety gate**. Defi
 pip install llmci
 ```
 
-The PyPI package is `llmci`; the CLI command is `scaffold`.
-
-Requires Python 3.11+.
+Requires Python 3.10+.
 
 ## Quick Start
 
 ### 1. Initialize
 
 ```bash
-scaffold init
+llmci init
 ```
 
-This creates a `scaffold.yaml` config and a starter eval dataset. You'll be asked:
+This creates a `llmci.yaml` config and a starter eval dataset. You'll be asked:
 - **Target mode** — `command` (run any script) or `direct` (call an LLM API)
 - **Task type** — classification, open-ended, or agent
 - **Eval name** — what to call this eval
@@ -41,19 +39,19 @@ Edit the generated `evals/<name>.jsonl`. Each line is a JSON object:
 Or add examples interactively:
 
 ```bash
-scaffold dataset add --name my-eval
+llmci dataset add --name my-eval
 ```
 
 ### 3. Run
 
 ```bash
-scaffold run
+llmci run
 ```
 
 Output:
 
 ```
-## Scaffold Eval Report
+## llmci Eval Report
 
 | Eval | Metric | Score | Threshold | Status |
 |------|--------|-------|-----------|--------|
@@ -65,7 +63,7 @@ Exit code 0 = all thresholds pass. Exit code 1 = regression detected.
 
 ## Configuration
 
-`scaffold.yaml` defines your target, evals, and settings:
+`llmci.yaml` defines your target, evals, and settings:
 
 ```yaml
 version: 1
@@ -177,19 +175,19 @@ Or use the CLI directly:
 
 ```yaml
 - run: pip install llmci
-- run: scaffold run --compare-to=origin/main
+- run: llmci run --compare-to=origin/main
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-When running in GitHub Actions, Scaffold automatically posts eval results as a PR comment.
+When running in GitHub Actions, llmci automatically posts eval results as a PR comment.
 
 For **matrix CI** (multiple services in parallel), set a unique slice per job so reports merge into one comment:
 
 ```yaml
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  SCAFFOLD_REPORT_SLICE: ${{ matrix.service }}/${{ matrix.config }}
+  LLMCI_REPORT_SLICE: ${{ matrix.service }}/${{ matrix.config }}
 ```
 
 ### Baselines
@@ -197,21 +195,21 @@ env:
 Store baseline scores on your main branch:
 
 ```bash
-scaffold run --update-baseline
+llmci run --update-baseline
 ```
 
 Then compare PRs against that baseline:
 
 ```bash
-scaffold run --compare-to=main
+llmci run --compare-to=main
 ```
 
 ## Model Migration
 
-When switching models (e.g., GPT-4o to GPT-4.5), Scaffold can automatically tune your prompt to maintain quality parity:
+When switching models (e.g., GPT-4o to GPT-4.5), llmci can automatically tune your prompt to maintain quality parity:
 
 ```bash
-scaffold migrate \
+llmci migrate \
   --from gpt-4o \
   --to gpt-4.5 \
   --eval ticket-classification \
@@ -244,7 +242,7 @@ evals:
           weight: 2.0
 ```
 
-Your agent runs as a **command** that reads Scaffold input JSON and writes trace JSON. Use `scaffold.trace.TraceBuilder` to build output, or `scaffold.integrations.openai_agents` for the OpenAI Agents SDK — see [`examples/10-agent-openai-agents`](examples/10-agent-openai-agents/).
+Your agent runs as a **command** that reads llmci input JSON and writes trace JSON. Use `llmci.trace.TraceBuilder` to build output, or `llmci.integrations.openai_agents` for the OpenAI Agents SDK — see [`examples/10-agent-openai-agents`](examples/10-agent-openai-agents/).
 
 Supports:
 - **Single-turn** and **multi-turn** conversations
@@ -257,25 +255,25 @@ Supports:
 
 ```bash
 # Initialize a new dataset
-scaffold dataset init --name my-eval --type classification
+llmci dataset init --name my-eval --type classification
 
 # Add examples interactively
-scaffold dataset add --name my-eval
+llmci dataset add --name my-eval
 
 # Analyze coverage and quality
-scaffold dataset check --name my-eval
+llmci dataset check --name my-eval
 
 # Import from CSV or JSON
-scaffold dataset import --name my-eval --from data.csv
+llmci dataset import --name my-eval --from data.csv
 ```
 
 ## Migrating from Promptfoo
 
 ```bash
-scaffold import-promptfoo promptfooconfig.yaml
+llmci import-promptfoo promptfooconfig.yaml
 ```
 
-Converts providers, test assertions, and variables into Scaffold's format.
+Converts providers, test assertions, and variables into llmci's format.
 
 ## Reference integration
 
@@ -307,14 +305,14 @@ The [`scaffold-testbed`](https://github.com/alexminnaar/scaffold-testbed) reposi
 ## CLI Reference
 
 ```
-scaffold run              Run evals and report results
-scaffold migrate          Optimize prompts for a new model
-scaffold init             Generate scaffold.yaml interactively
-scaffold dataset init     Create a new eval dataset
-scaffold dataset add      Add examples interactively
-scaffold dataset check    Analyze dataset coverage
-scaffold dataset import   Import from CSV/JSON
-scaffold import-promptfoo Convert a Promptfoo config
+llmci run              Run evals and report results
+llmci migrate          Optimize prompts for a new model
+llmci init             Generate llmci.yaml interactively
+llmci dataset init     Create a new eval dataset
+llmci dataset add      Add examples interactively
+llmci dataset check    Analyze dataset coverage
+llmci dataset import   Import from CSV/JSON
+llmci import-promptfoo Convert a Promptfoo config
 ```
 
 Global flags: `-v` (verbose), `--debug` (full logging), `--version`.

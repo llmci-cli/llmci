@@ -1,6 +1,6 @@
 # PyPI publishing — `llmci`
 
-Scaffold installs from PyPI as **`llmci`**. The CLI command remains **`scaffold`**.
+Install from PyPI as **`llmci`**. The CLI command is **`llmci`**.
 
 Do not use `pip install scaffold-ai` — that name is taken by an unrelated project-scaffolding tool.
 
@@ -12,7 +12,7 @@ Do not use `pip install scaffold-ai` — that name is taken by an unrelated proj
 - [ ] `CHANGELOG` or GitHub release notes drafted for the version
 - [ ] README / docs / `action.yml` reference `llmci`
 - [ ] PyPI account created at https://pypi.org
-- [ ] Package name reserved: https://pypi.org/project/llmci/ (should 404 before first publish)
+- [ ] Package name reserved: https://pypi.org/project/llmci/
 
 ## First publish (manual)
 
@@ -29,7 +29,7 @@ Verify:
 
 ```bash
 pip install llmci
-scaffold --version
+llmci --version
 ```
 
 ## Trusted publishing (recommended for CI)
@@ -41,35 +41,11 @@ After the first manual upload, enable [PyPI trusted publishing](https://docs.pyp
 3. Add `.github/workflows/publish.yml` triggered on `release: published` or tag push `v*`
 4. GitHub repo → Settings → Environments → `pypi` (optional approval gate)
 
-Example workflow (add when ready):
-
-```yaml
-name: Publish to PyPI
-on:
-  release:
-    types: [published]
-
-jobs:
-  publish:
-    runs-on: ubuntu-latest
-    environment: pypi
-    permissions:
-      id-token: write
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: pip install build
-      - run: python -m build
-      - uses: pypa/gh-action-pypi-publish@release/v1
-```
-
 ## Version bumps
 
 1. Merge changes to `main`
 2. Bump `version` in `pyproject.toml`
-3. Tag: `git tag v0.1.1 && git push origin v0.1.1`
+3. Tag: `git tag v0.1.3 && git push origin v0.1.3`
 4. Create GitHub release from tag → triggers publish workflow
 
 ## Downstream updates after publish
@@ -79,13 +55,13 @@ jobs:
 | README / docs | `pip install llmci` |
 | `action.yml` | `pip install llmci` |
 | testbed CI | `pip install --upgrade llmci` |
-| testbed `pyproject.toml` | `llmci>=0.1.2` |
+| testbed `pyproject.toml` | `llmci>=0.1.3` |
 
-Pin in production: `llmci==0.1.0`. Use `--upgrade` only in CI dogfood jobs.
+Pin in production: `llmci==0.1.3`. Use `--upgrade` only in CI dogfood jobs.
 
 ## Git vs PyPI during active development
 
-Until `0.1.0` is on PyPI, install from GitHub:
+Until a version is on PyPI, install from GitHub:
 
 ```bash
 pip install "llmci @ git+https://github.com/alexminnaar/scaffold@main"

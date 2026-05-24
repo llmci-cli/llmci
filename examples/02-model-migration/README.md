@@ -4,7 +4,7 @@ Demonstrates automated prompt re-tuning when switching between LLM models.
 
 ## What it shows
 - Direct API mode with a prompt file
-- `scaffold migrate` command
+- `llmci migrate` command
 - Stratified dataset splitting (train/validation/holdout)
 - Iterative prompt optimization with early stopping
 
@@ -12,7 +12,7 @@ Demonstrates automated prompt re-tuning when switching between LLM models.
 ```bash
 cd examples/02-model-migration
 export OPENAI_API_KEY=your-key
-scaffold migrate --from gpt-4o --to gpt-4.5 --eval ticket-classification
+llmci migrate --from gpt-4o --to gpt-4.5 --eval ticket-classification
 ```
 
 ## How to adapt

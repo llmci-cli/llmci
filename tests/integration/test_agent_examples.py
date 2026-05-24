@@ -3,8 +3,8 @@
 import asyncio
 from pathlib import Path
 
-from scaffold.config import load_config
-from scaffold.runner import run_all_evals
+from llmci.config import load_config
+from llmci.runner import run_all_evals
 
 EXAMPLES_DIR = Path(__file__).parent.parent.parent / "examples"
 

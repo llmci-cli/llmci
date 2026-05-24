@@ -2,15 +2,15 @@
 
 from types import SimpleNamespace
 
-from scaffold.integrations.openai_agents import (
-    scaffold_input_to_agent_input,
-    scaffold_output_from_run_result,
+from llmci.integrations.openai_agents import (
+    llmci_input_to_agent_input,
+    llmci_output_from_run_result,
 )
 
 
-class TestScaffoldInputMapping:
+class TestLlmciInputMapping:
     def test_single_turn_query(self):
-        assert scaffold_input_to_agent_input({"query": "hello"}) == "hello"
+        assert llmci_input_to_agent_input({"query": "hello"}) == "hello"
 
     def test_multi_turn_messages(self):
         inp = {
@@ -20,7 +20,7 @@ class TestScaffoldInputMapping:
                 {"role": "assistant", "content": "Shipped."},
             ],
         }
-        messages = scaffold_input_to_agent_input(inp)
+        messages = llmci_input_to_agent_input(inp)
         assert isinstance(messages, list)
         assert messages[-1] == {"role": "user", "content": "Cancel it"}
         assert len(messages) == 3
@@ -41,7 +41,7 @@ class TestRunResultMapping:
             final_output="It's cloudy in London.",
         )
 
-        out = scaffold_output_from_run_result(result)
+        out = llmci_output_from_run_result(result)
         assert out["final_output"] == "It's cloudy in London."
         assert out["total_tool_calls"] == 1
         assert out["trace"][0]["tool"] == "get_weather"

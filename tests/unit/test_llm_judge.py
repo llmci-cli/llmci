@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from scaffold.judges.llm_judge import LLMJudge
+from llmci.judges.llm_judge import LLMJudge
 
 
 class MockChoice:
@@ -31,7 +31,7 @@ def _mock_acompletion(responses: list[str]):
 
 class TestLLMJudge:
     @pytest.mark.asyncio
-    @patch("scaffold.judges.llm_judge.litellm.acompletion")
+    @patch("llmci.judges.llm_judge.litellm.acompletion")
     async def test_all_criteria_pass(self, mock_llm):
         mock_llm.side_effect = _mock_acompletion([
             '{"passed": true, "reasoning": "Looks good"}',
@@ -52,7 +52,7 @@ class TestLLMJudge:
         assert mock_llm.call_count == 2
 
     @pytest.mark.asyncio
-    @patch("scaffold.judges.llm_judge.litellm.acompletion")
+    @patch("llmci.judges.llm_judge.litellm.acompletion")
     async def test_one_criterion_fails(self, mock_llm):
         mock_llm.side_effect = _mock_acompletion([
             '{"passed": true, "reasoning": "Good"}',
@@ -73,7 +73,7 @@ class TestLLMJudge:
         assert "conciseness" in result.reason
 
     @pytest.mark.asyncio
-    @patch("scaffold.judges.llm_judge.litellm.acompletion")
+    @patch("llmci.judges.llm_judge.litellm.acompletion")
     async def test_string_rubric(self, mock_llm):
         mock_llm.side_effect = _mock_acompletion([
             '{"passed": true, "reasoning": "Yes"}',
@@ -90,7 +90,7 @@ class TestLLMJudge:
         assert mock_llm.call_count == 1
 
     @pytest.mark.asyncio
-    @patch("scaffold.judges.llm_judge.litellm.acompletion")
+    @patch("llmci.judges.llm_judge.litellm.acompletion")
     async def test_malformed_response_fallback(self, mock_llm):
         mock_llm.side_effect = _mock_acompletion([
             "This is not JSON at all",
@@ -107,7 +107,7 @@ class TestLLMJudge:
         assert "parse" in result.reason.lower() or "Could not" in result.reason
 
     @pytest.mark.asyncio
-    @patch("scaffold.judges.llm_judge.litellm.acompletion")
+    @patch("llmci.judges.llm_judge.litellm.acompletion")
     async def test_llm_error_handled(self, mock_llm):
         mock_llm.side_effect = Exception("API rate limit exceeded")
 
@@ -122,7 +122,7 @@ class TestLLMJudge:
         assert "error" in result.reason.lower()
 
     @pytest.mark.asyncio
-    @patch("scaffold.judges.llm_judge.litellm.acompletion")
+    @patch("llmci.judges.llm_judge.litellm.acompletion")
     async def test_code_fence_stripped(self, mock_llm):
         mock_llm.side_effect = _mock_acompletion([
             '```json\n{"passed": true, "reasoning": "OK"}\n```',
@@ -138,7 +138,7 @@ class TestLLMJudge:
         assert result.score == 1.0
 
     @pytest.mark.asyncio
-    @patch("scaffold.judges.llm_judge.litellm.acompletion")
+    @patch("llmci.judges.llm_judge.litellm.acompletion")
     async def test_temperature_zero(self, mock_llm):
         mock_llm.side_effect = _mock_acompletion([
             '{"passed": true, "reasoning": "OK"}',

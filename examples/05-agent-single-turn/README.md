@@ -11,7 +11,7 @@ Demonstrates evaluation of a tool-using agent with constraint-based composite ju
 ## How to run
 ```bash
 cd examples/05-agent-single-turn
-scaffold run
+llmci run
 ```
 
 ## How to adapt

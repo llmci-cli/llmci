@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Scaffold eval entrypoint for OpenAI Agents SDK integration.
+"""llmci eval entrypoint for OpenAI Agents SDK integration.
 
 MOCK_LLM=1  — deterministic mock using TraceBuilder (CI, no API key)
 default     — OpenAI Agents SDK (requires OPENAI_API_KEY and pip install llmci[agents])
@@ -23,14 +23,14 @@ def run(input_data: dict) -> dict:
 
     try:
         from agent_def import build_agent
-        from scaffold.integrations.openai_agents import run_for_scaffold_sync
+        from llmci.integrations.openai_agents import run_for_llmci_sync
     except ImportError as e:
         raise SystemExit(
             "OpenAI Agents path requires: pip install 'llmci[agents]' and OPENAI_API_KEY. "
             "For CI/mock runs use MOCK_LLM=1."
         ) from e
 
-    return run_for_scaffold_sync(build_agent(), input_data)
+    return run_for_llmci_sync(build_agent(), input_data)
 
 
 def main() -> None:

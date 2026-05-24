@@ -24,7 +24,7 @@ or when there's no single "correct" summary.
 ```bash
 # Requires an OpenAI API key for the LLM judge
 export OPENAI_API_KEY=sk-...
-scaffold run
+llmci run
 ```
 
 ## Metrics
