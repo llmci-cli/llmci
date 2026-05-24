@@ -72,7 +72,7 @@ Initial public release on PyPI as [`llmci`](https://pypi.org/project/llmci/).
 **Examples**
 - Nine runnable examples: CI regression, model migration, LLM judge, custom judge, agent single/multi-turn, RAG pipeline, FastAPI service, summarization QA
 
-[0.1.3]: https://github.com/alexminnaar/scaffold/releases/tag/v0.1.3
-[0.1.2]: https://github.com/alexminnaar/scaffold/releases/tag/v0.1.2
-[0.1.1]: https://github.com/alexminnaar/scaffold/releases/tag/v0.1.1
-[0.1.0]: https://github.com/alexminnaar/scaffold/releases/tag/v0.1.0
+[0.1.3]: https://github.com/alexminnaar/llmci/releases/tag/v0.1.3
+[0.1.2]: https://github.com/alexminnaar/llmci/releases/tag/v0.1.2
+[0.1.1]: https://github.com/alexminnaar/llmci/releases/tag/v0.1.1
+[0.1.0]: https://github.com/alexminnaar/llmci/releases/tag/v0.1.0

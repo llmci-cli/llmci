@@ -30,11 +30,11 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/alexminnaar/scaffold"
-Documentation = "https://github.com/alexminnaar/scaffold#readme"
-Repository = "https://github.com/alexminnaar/scaffold"
-Issues = "https://github.com/alexminnaar/scaffold/issues"
-Changelog = "https://github.com/alexminnaar/scaffold/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/alexminnaar/llmci"
+Documentation = "https://github.com/alexminnaar/llmci#readme"
+Repository = "https://github.com/alexminnaar/llmci"
+Issues = "https://github.com/alexminnaar/llmci/issues"
+Changelog = "https://github.com/alexminnaar/llmci/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [

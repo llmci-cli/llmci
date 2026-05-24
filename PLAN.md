@@ -455,7 +455,7 @@ llmci import-promptfoo <promptfooconfig.yaml>
 ### GitHub Actions
 
 ```yaml
-# .github/workflows/scaffold.yml
+# .github/workflows/llmci.yml
 name: LLM Content Tests
 on: [pull_request]
 
