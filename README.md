@@ -9,8 +9,10 @@ Scaffold is not an observability tool — it's a **pre-merge safety gate**. Defi
 ## Installation
 
 ```bash
-pip install scaffold-ai
+pip install llmci
 ```
+
+The PyPI package is `llmci`; the CLI command is `scaffold`.
 
 Requires Python 3.11+.
 
@@ -174,13 +176,21 @@ Add to your workflow:
 Or use the CLI directly:
 
 ```yaml
-- run: pip install scaffold-ai
+- run: pip install llmci
 - run: scaffold run --compare-to=origin/main
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 When running in GitHub Actions, Scaffold automatically posts eval results as a PR comment.
+
+For **matrix CI** (multiple services in parallel), set a unique slice per job so reports merge into one comment:
+
+```yaml
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  SCAFFOLD_REPORT_SLICE: ${{ matrix.service }}/${{ matrix.config }}
+```
 
 ### Baselines
 
@@ -234,6 +244,8 @@ evals:
           weight: 2.0
 ```
 
+Your agent runs as a **command** that reads Scaffold input JSON and writes trace JSON. Use `scaffold.trace.TraceBuilder` to build output, or `scaffold.integrations.openai_agents` for the OpenAI Agents SDK — see [`examples/10-agent-openai-agents`](examples/10-agent-openai-agents/).
+
 Supports:
 - **Single-turn** and **multi-turn** conversations
 - **Constraint checking** — tool call budgets, required/forbidden tools, token limits
@@ -265,6 +277,18 @@ scaffold import-promptfoo promptfooconfig.yaml
 
 Converts providers, test assertions, and variables into Scaffold's format.
 
+## Reference integration
+
+The [`scaffold-testbed`](https://github.com/alexminnaar/scaffold-testbed) repository is a realistic customer monorepo that dogfoods `llmci` against full HTTP services, RAG pipelines, agents, and migration workflows. Each service maps to a docs case study and runs in GitHub Actions with mock LLM mode (no API cost on PRs).
+
+| Testbed path | Case study |
+|--------------|------------|
+| [`services/ticket-classifier`](https://github.com/alexminnaar/scaffold-testbed/tree/main/services/ticket-classifier) | FastAPI service |
+| [`services/rag-qa`](https://github.com/alexminnaar/scaffold-testbed/tree/main/services/rag-qa) | RAG pipeline |
+| [`services/summarizer`](https://github.com/alexminnaar/scaffold-testbed/tree/main/services/summarizer) | Summarization QA |
+| [`services/support-agent`](https://github.com/alexminnaar/scaffold-testbed/tree/main/services/support-agent) | Support agent |
+| [`migration`](https://github.com/alexminnaar/scaffold-testbed/tree/main/migration) | Model migration |
+
 ## Examples
 
 | Example | What it demonstrates |
@@ -278,6 +302,7 @@ Converts providers, test assertions, and variables into Scaffold's format.
 | [`07-pipeline-level`](examples/07-pipeline-level/) | Full RAG pipeline end-to-end |
 | [`08-fastapi-service`](examples/08-fastapi-service/) | Pre/post processing pipeline with dual-level testing |
 | [`09-summarization-qa`](examples/09-summarization-qa/) | Multi-criteria LLM judge with reference-free evaluation |
+| [`10-agent-openai-agents`](examples/10-agent-openai-agents/) | TraceBuilder + OpenAI Agents SDK adapter |
 
 ## CLI Reference
 
@@ -293,6 +318,8 @@ scaffold import-promptfoo Convert a Promptfoo config
 ```
 
 Global flags: `-v` (verbose), `--debug` (full logging), `--version`.
+
+See [CHANGELOG.md](CHANGELOG.md) for release history.
 
 ## License
 

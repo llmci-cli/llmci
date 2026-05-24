@@ -464,15 +464,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: scaffold-ai/setup@v1
+      - run: pip install llmci
       - run: scaffold run --compare-to=origin/main
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}  # if using multiple providers
-      - uses: scaffold-ai/report@v1
-        if: always()
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 The `scaffold run` command exits 0 (pass) or 1 (fail), so it works as a CI gate without any special integration. The report action is optional sugar.
@@ -485,10 +482,10 @@ The `scaffold run` command exits 0 (pass) or 1 (fail), so it works as a CI gate 
 
 **Language-agnostic by design.** While Scaffold itself is Python, the `command` target mode makes it language-agnostic. Any language, any framework, any pipeline — as long as it reads an input file and writes an output file, Scaffold can evaluate it. This is a key differentiator against DeepEval (pytest-coupled, Python-only) and DSPy (requires rewriting as DSPy programs). A Node.js service, a Go binary, a bash script — they all work.
 
-**Distribution:** PyPI (`pip install scaffold-ai`), GitHub Action wrapper, Docker image.
+**Distribution:** PyPI (`pip install llmci`), GitHub Action wrapper, Docker image.
 
 ```
-scaffold-ai/
+llmci/
 ├── pyproject.toml
 ├── src/
 │   └── scaffold/
@@ -1133,7 +1130,7 @@ This positioning avoids platform sprawl and makes adoption frictionless — Scaf
 
 ## Open Questions
 
-- [ ] PyPI package name availability (`scaffold-ai`, `evalgate`, etc.)
+- [ ] PyPI package name availability (`llmci`, `evalgate`, etc.)
 - [ ] Stretch goal (v1): `scaffold init` auto-detecting prompt files and suggesting eval structure
 - [ ] Whether to support a remote baseline service in v1 or defer to paid tier
 - [ ] Promptfoo config import: how faithful should `scaffold import-promptfoo` be? Full parity or just the most common patterns?

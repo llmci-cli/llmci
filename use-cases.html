@@ -618,14 +618,11 @@
     <span class="k">runs-on</span>: <span class="s">ubuntu-latest</span>
     <span class="k">steps</span>:
       - <span class="k">uses</span>: <span class="s">actions/checkout@v4</span>
-      - <span class="k">uses</span>: <span class="s">scaffold-ai/setup@v1</span>
+      - <span class="k">run</span>: <span class="s">pip install llmci</span>
       - <span class="k">run</span>: <span class="s">scaffold run --compare-to=origin/main</span>
         <span class="k">env</span>:
           <span class="k">OPENAI_API_KEY</span>: <span class="s">${{ secrets.OPENAI_API_KEY }}</span>
-      - <span class="k">uses</span>: <span class="s">scaffold-ai/report@v1</span>
-        <span class="k">if</span>: <span class="s">always()</span>
-        <span class="k">with</span>:
-          <span class="k">github-token</span>: <span class="s">${{ secrets.GITHUB_TOKEN }}</span></div>
+          <span class="k">GITHUB_TOKEN</span>: <span class="s">${{ secrets.GITHUB_TOKEN }}</span></div>
       </div>
 
       <div class="scenario">
@@ -634,7 +631,7 @@
       </div>
 
       <!-- TODO: Uncomment when examples are built
-      <p style="margin-top: 24px;"><strong>Try it yourself:</strong> <a href="https://github.com/scaffold-ai/scaffold/tree/main/examples/01-ci-regression" style="color: var(--accent); font-weight: 600;">examples/01-ci-regression</a> — a runnable ticket classification example with eval dataset, config, and prompt.</p>
+      <p style="margin-top: 24px;"><strong>Try it yourself:</strong> <a href="https://github.com/alexminnaar/scaffold/tree/main/examples/01-ci-regression" style="color: var(--accent); font-weight: 600;">examples/01-ci-regression</a> — a runnable ticket classification example with eval dataset, config, and prompt.</p>
       -->
     </div>
   </section>
@@ -703,7 +700,7 @@
       </div>
 
       <!-- TODO: Uncomment when examples are built
-      <p style="margin-top: 24px;"><strong>Try it yourself:</strong> <a href="https://github.com/scaffold-ai/scaffold/tree/main/examples/02-model-migration" style="color: var(--accent); font-weight: 600;">examples/02-model-migration</a> — migrate a ticket classifier from GPT-4o to GPT-4.5.</p>
+      <p style="margin-top: 24px;"><strong>Try it yourself:</strong> <a href="https://github.com/alexminnaar/scaffold/tree/main/examples/02-model-migration" style="color: var(--accent); font-weight: 600;">examples/02-model-migration</a> — migrate a ticket classifier from GPT-4o to GPT-4.5.</p>
       -->
     </div>
   </section>
@@ -786,29 +783,27 @@
       <p>Scaffold doesn't need to know the difference &mdash; it just evaluates the output trace. The mocked-vs-real distinction lives in your command, not in Scaffold's config.</p>
 
       <h3>Framework adapters</h3>
-      <p>Test-time wrappers that capture execution traces automatically during eval runs. One line to integrate, no production instrumentation required.</p>
+      <p>Agent evals run your agent as a command that reads input JSON and writes trace JSON. Use <code>TraceBuilder</code> for mocks and custom frameworks, or <code>run_for_scaffold_sync</code> for the OpenAI Agents SDK. Test-time only, never in production.</p>
 
       <div class="code-frame">
         <div class="code-tab">
           <span class="dot"></span>
           <span>Python</span>
         </div>
-        <div class="code-body"><span class="k">from</span> scaffold.integrations.openai_agents <span class="k">import</span> traced_agent
+        <div class="code-body"><span class="k">from</span> scaffold.integrations.openai_agents <span class="k">import</span> run_for_scaffold_sync
 
-<span class="c"># Wrap your agent for eval. Test-time only, never in production.</span>
-agent = traced_agent(existing_agent, trace_output=<span class="s">"./traces/"</span>)</div>
+<span class="c"># Convert RunResult to Scaffold trace JSON for eval</span>
+output = run_for_scaffold_sync(build_agent(), input_data)</div>
       </div>
 
-      <p>Supported frameworks: OpenAI Agent SDK, Claude Agent SDK, PydanticAI.</p>
+      <p>Reference adapter: OpenAI Agents SDK (<code>pip install 'llmci[agents]'</code>). Other frameworks integrate via <code>TraceBuilder</code> in your <code>run_agent.py</code> entrypoint.</p>
 
       <div class="scenario">
         <h4>Real-world scenario</h4>
         <p>Your team deploys a customer support agent built on the OpenAI Agent SDK. A developer updates the system prompt to be more concise. The change looks clean in testing. But on multi-turn conversations where the customer changes their mind mid-conversation ("actually, re-subscribe me on the basic plan"), the shorter prompt loses context and the agent re-creates the premium subscription instead. Scaffold's multi-turn eval catches this: turn 3's outcome judge fails, and the trajectory judge flags the incorrect tool call.</p>
       </div>
 
-      <!-- TODO: Uncomment when examples are built
-      <p style="margin-top: 24px;"><strong>Try it yourself:</strong> <a href="https://github.com/scaffold-ai/scaffold/tree/main/examples/05-agent-single-turn" style="color: var(--accent); font-weight: 600;">examples/05-agent-single-turn</a> and <a href="https://github.com/scaffold-ai/scaffold/tree/main/examples/06-agent-multi-turn" style="color: var(--accent); font-weight: 600;">examples/06-agent-multi-turn</a></p>
-      -->
+      <p style="margin-top: 24px;"><strong>Try it yourself:</strong> <a href="https://github.com/alexminnaar/scaffold/tree/main/examples/05-agent-single-turn" style="color: var(--accent); font-weight: 600;">examples/05-agent-single-turn</a>, <a href="https://github.com/alexminnaar/scaffold/tree/main/examples/06-agent-multi-turn" style="color: var(--accent); font-weight: 600;">examples/06-agent-multi-turn</a>, and <a href="https://github.com/alexminnaar/scaffold/tree/main/examples/10-agent-openai-agents" style="color: var(--accent); font-weight: 600;">examples/10-agent-openai-agents</a> (OpenAI Agents SDK adapter)</p>
     </div>
   </section>
 
@@ -941,7 +936,7 @@ agent = traced_agent(existing_agent, trace_output=<span class="s">"./traces/"</s
       <h2>Ready to get started?</h2>
       <p>Five-minute setup. Open source. Provider neutral.</p>
       <div class="btns">
-        <a href="https://github.com/scaffold-ai/scaffold" class="btn-primary">Get Started</a>
+        <a href="https://github.com/alexminnaar/scaffold" class="btn-primary">Get Started</a>
         <a href="index.html" class="btn-ghost">Back to Home</a>
       </div>
     </div>
@@ -951,7 +946,7 @@ agent = traced_agent(existing_agent, trace_output=<span class="s">"./traces/"</s
     <div class="container">
       <p>&copy; 2026 Scaffold</p>
       <div style="display: flex; gap: 24px;">
-        <a href="https://github.com/scaffold-ai/scaffold">GitHub</a>
+        <a href="https://github.com/alexminnaar/scaffold">GitHub</a>
         <a href="#">Docs</a>
         <a href="#">Discord</a>
       </div>

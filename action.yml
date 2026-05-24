@@ -25,7 +25,7 @@ runs:
         python-version: "3.12"
     - name: Install Scaffold
       shell: bash
-      run: pip install scaffold-ai
+      run: pip install llmci
     - name: Run evals
       shell: bash
       working-directory: ${{ inputs.working-directory }}

@@ -35,7 +35,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        example: [01-ci-regression, 04-custom-judge]
+        example: [01-ci-regression, 04-custom-judge, 10-agent-openai-agents]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -46,4 +46,5 @@ jobs:
         working-directory: examples/${{ matrix.example }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MOCK_LLM: ${{ matrix.example == '10-agent-openai-agents' && '1' || '' }}
         run: scaffold run

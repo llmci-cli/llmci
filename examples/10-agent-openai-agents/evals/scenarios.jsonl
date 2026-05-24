@@ -1,0 +1,5 @@
+{"input": {"query": "What's the weather in New York?"}, "expected": {"outcome": "weather information for New York", "constraints": {"max_tool_calls": 3, "required_tools": ["get_weather"]}}}
+{"input": {"query": "What is your refund policy?"}, "expected": {"outcome": "refund policy details", "constraints": {"max_tool_calls": 3, "required_tools": ["search_docs"]}}}
+{"input": {"query": "Is the laptop in stock?"}, "expected": {"outcome": "inventory status for laptop", "constraints": {"max_tool_calls": 2, "required_tools": ["check_inventory"]}}}
+{"input": {"query": "What's the weather in London?"}, "expected": {"outcome": "weather information for London", "constraints": {"max_tool_calls": 3, "required_tools": ["get_weather"], "forbidden_tools": ["search_docs"]}}}
+{"input": {"query": "Tell me about shipping options"}, "expected": {"outcome": "shipping information", "constraints": {"max_tool_calls": 3, "required_tools": ["search_docs"]}}}

@@ -3,12 +3,24 @@ requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "scaffold-ai"
-version = "0.1.0"
+name = "llmci"
+version = "0.1.2"
 description = "CI-native regression testing and migration for LLMs"
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.10"
+keywords = ["llm", "eval", "evaluation", "ci", "regression", "testing", "prompt"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = [
     "click>=8.1",
     "pyyaml>=6.0",
@@ -17,6 +29,13 @@ dependencies = [
     "rich>=13.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/alexminnaar/scaffold"
+Documentation = "https://github.com/alexminnaar/scaffold#readme"
+Repository = "https://github.com/alexminnaar/scaffold"
+Issues = "https://github.com/alexminnaar/scaffold/issues"
+Changelog = "https://github.com/alexminnaar/scaffold/blob/main/CHANGELOG.md"
+
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
@@ -24,6 +43,9 @@ dev = [
     "ruff>=0.4",
     "mypy>=1.10",
     "types-PyYAML>=6.0",
+]
+agents = [
+    "openai-agents>=0.2.0",
 ]
 
 [project.scripts]

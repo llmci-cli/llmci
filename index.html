@@ -281,10 +281,14 @@
 
     /* HERO */
     .hero {
-      padding: 140px 0 80px;
+      padding: 140px 0 0;
       text-align: center;
       position: relative;
       overflow: hidden;
+    }
+
+    .hero .container {
+      max-width: 1200px;
     }
 
     .hero::before {
@@ -427,86 +431,55 @@
       border-radius: 8px;
     }
 
-    /* REPORT */
-    .report-wrapper {
-      max-width: 780px;
-      margin: 72px auto 0;
-      border-radius: var(--radius);
+    /* Hero product screenshot (Linear-style) */
+    .hero-showcase {
+      margin: 56px -24px 0;
+      padding: 0 24px 80px;
+      perspective: 1200px;
+    }
+
+    .hero-showcase-inner {
+      max-width: 1080px;
+      margin: 0 auto;
+      border-radius: 14px;
       border: 1px solid var(--border);
-      overflow: hidden;
-      box-shadow: var(--shadow-lg);
       background: var(--bg);
+      box-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.03),
+        0 2px 4px rgba(0, 0, 0, 0.02),
+        0 12px 24px rgba(0, 0, 0, 0.06),
+        0 32px 64px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+      transform: rotateX(2deg);
+      transform-origin: center top;
+      transition: transform 0.4s ease;
     }
 
-    .report-bar {
-      padding: 10px 16px;
-      background: var(--bg-alt);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.75rem;
-      color: var(--text-tertiary);
+    .hero-showcase-inner:hover {
+      transform: rotateX(0deg);
     }
 
-    .report-bar .status-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--accent);
-    }
-
-    .report-bar span { color: var(--text-secondary); font-weight: 500; }
-
-    .report-inner {
-      padding: 20px;
-      overflow-x: auto;
-    }
-
-    .report-inner .label {
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--text-tertiary);
-      margin-bottom: 12px;
-    }
-
-    .rtable {
+    .hero-showcase-inner img {
+      display: block;
       width: 100%;
-      border-collapse: collapse;
-      font-size: 0.78rem;
-      font-family: 'JetBrains Mono', monospace;
-      margin-bottom: 12px;
+      height: auto;
+      vertical-align: middle;
     }
 
-    .rtable th {
-      text-align: left;
-      font-weight: 500;
-      color: var(--text-tertiary);
-      padding: 0 10px 8px 0;
-      font-size: 0.68rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      border-bottom: 1px solid var(--border);
+    .hero-showcase-fade {
+      position: relative;
     }
 
-    .rtable td {
-      padding: 8px 10px 8px 0;
-      color: var(--text-secondary);
-      border-bottom: 1px solid var(--border-light);
+    .hero-showcase-fade::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 120px;
+      background: linear-gradient(to bottom, transparent, var(--bg));
+      pointer-events: none;
     }
-
-    .rtable .pass { color: var(--accent); font-weight: 600; }
-    .rtable .fail { color: var(--red); font-weight: 600; }
-
-    .report-footer {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
-    }
-
-    .report-footer .fail { color: var(--red); font-weight: 600; }
-    .report-footer .dim { color: var(--text-tertiary); }
 
     /* SECTIONS */
     section { padding: 100px 0; position: relative; }
@@ -667,6 +640,19 @@
       font-size: 0.9375rem;
       color: var(--text-secondary);
       line-height: 1.7;
+    }
+
+    .split-text .section-desc {
+      max-width: none;
+      margin-bottom: 0;
+    }
+
+    .split.align-center {
+      align-items: center;
+    }
+
+    .split-visual .code-frame {
+      max-width: none;
     }
 
     .feature-stack {
@@ -1048,8 +1034,9 @@
       .flow-row { grid-template-columns: 1fr 1fr; }
       .cards-2x2 { grid-template-columns: 1fr; }
       .nav-links a:not(.btn-nav) { display: none; }
-      .hero { padding: 110px 0 60px; }
-      .report-wrapper { margin-top: 48px; }
+      .hero { padding: 110px 0 0; }
+      .hero-showcase { margin-top: 40px; padding-bottom: 48px; }
+      .hero-showcase-inner { transform: none; }
       .comp-table { font-size: 0.75rem; }
       .comp-table td, .comp-table th { padding: 10px 12px; }
       .pipeline-diagram { overflow-x: auto; }
@@ -1256,6 +1243,7 @@
     .hero > .container > *:nth-child(4) { animation-delay: 0.24s; }
     .hero > .container > *:nth-child(5) { animation-delay: 0.32s; }
     .hero > .container > *:nth-child(6) { animation-delay: 0.40s; }
+    .hero > .container > *:nth-child(7) { animation-delay: 0.48s; }
   </style>
 </head>
 <body>
@@ -1343,60 +1331,19 @@
         <a href="docs.html" class="btn btn-ghost">Read the Docs</a>
       </div>
       <div class="install-line">
-        <code>pip install scaffold-ai</code>
+        <code>pip install llmci</code>
       </div>
 
-      <!-- PR Report -->
-      <div class="report-wrapper">
-        <div class="report-bar">
-          <span class="status-dot"></span>
-          <span>Scaffold Eval Report</span>
-          &mdash; PR #247: Update classification prompt
-        </div>
-        <div class="report-inner">
-          <div class="label">Results</div>
-          <table class="rtable">
-            <thead>
-              <tr>
-                <th>Eval</th>
-                <th>Metric</th>
-                <th>Baseline</th>
-                <th>This PR</th>
-                <th>Threshold</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>ticket-classification</td>
-                <td>f1_macro</td>
-                <td>0.951</td>
-                <td>0.948</td>
-                <td>&ge; 0.93</td>
-                <td class="pass">&#10003; Pass</td>
-              </tr>
-              <tr>
-                <td>ticket-classification</td>
-                <td>accuracy</td>
-                <td>0.972</td>
-                <td>0.943</td>
-                <td>&le; 2% drop</td>
-                <td class="fail">&#10007; Fail</td>
-              </tr>
-              <tr>
-                <td>response-quality</td>
-                <td>rubric_pass_rate</td>
-                <td>0.912</td>
-                <td>0.901</td>
-                <td>&le; 3% drop</td>
-                <td class="pass">&#10003; Pass</td>
-              </tr>
-            </tbody>
-          </table>
-          <div class="report-footer">
-            <span class="fail">Regression detected</span>
-            <span class="dim"> &mdash; ticket-classification / accuracy dropped 2.9%</span>
-          </div>
+      <div class="hero-showcase hero-showcase-fade">
+        <div class="hero-showcase-inner">
+          <img
+            src="assets/github-pr-eval-report.png"
+            alt="GitHub pull request comment from Scaffold showing eval metrics, regressions detected, and failed examples"
+            width="1080"
+            height="auto"
+            loading="eager"
+            fetchpriority="high"
+          />
         </div>
       </div>
     </div>
@@ -1452,12 +1399,6 @@
           <p>Pass or fail. If quality degrades beyond your thresholds, the PR is blocked with a detailed regression report.</p>
         </div>
       </div>
-
-      <!-- TODO: Replace or supplement with a real screenshot of:
-           1. GitHub PR checks panel showing "Scaffold Eval — 2 passed, 1 failed"
-           2. The PR comment with the eval report table
-           3. CI log output showing `scaffold run`
-           Once the tool is built, this will be the most compelling visual on the page. -->
 
       <!-- Animated CI Pipeline Flow -->
       <div class="pipeline-diagram">
@@ -1629,19 +1570,22 @@
   <!-- 03 MIGRATION -->
   <section id="migration">
     <div class="container">
-      <div class="section-num">03</div>
-      <div class="section-label">Model Migration</div>
-      <h2>Switch models without<br>the fire drill</h2>
-      <p class="section-desc">
-        Model retired? Upgrading to the latest? Scaffold automatically tunes your prompt to achieve parity on the new model &mdash; with holdout validation and early stopping to prevent overfitting. No other eval tool offers automated migration.
-      </p>
-
-      <div class="code-frame" style="max-width: 660px;">
-        <div class="code-tab">
-          <span class="dot" style="border-color: #4b5563;"></span>
-          <span>Terminal</span>
+      <div class="split align-center">
+        <div class="split-text">
+          <div class="section-num">03</div>
+          <div class="section-label">Model Migration</div>
+          <h2>Switch models without<br>the fire drill</h2>
+          <p class="section-desc">
+            Model retired? Upgrading to the latest? Scaffold automatically tunes your prompt to achieve parity on the new model &mdash; with holdout validation and early stopping to prevent overfitting. No other eval tool offers automated migration.
+          </p>
         </div>
-        <div class="code-body">
+        <div class="split-visual">
+          <div class="code-frame">
+            <div class="code-tab">
+              <span class="dot" style="border-color: #4b5563;"></span>
+              <span>Terminal</span>
+            </div>
+            <div class="code-body">
 <span class="p">$ </span><span class="w">scaffold migrate</span> <span class="f">--from</span> gpt-4o <span class="f">--to</span> gpt-4.5 <span class="f">--eval</span> ticket-classification
 
 <span class="c">Running baseline on gpt-4o...          0.952</span>
@@ -1657,6 +1601,8 @@
 <span class="g">&#10003; Migration complete</span>
   <span class="c">Holdout score:  0.938  (baseline: 0.952)</span>
   <span class="c">Prompt diff written to ./prompts/classify.txt.migrated</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1890,27 +1836,24 @@
           </div>
         </div>
         <div class="split-text" style="padding-top: 0;">
-          <h3>Drop-in framework adapters</h3>
-          <p>Wrap your existing agent in one line. During eval runs, Scaffold captures execution traces automatically&mdash;no restructuring required. Test-time only, never in production.</p>
+          <h3>Framework adapters</h3>
+          <p>Your agent runs as a command that reads input JSON and writes trace JSON. Use <code>TraceBuilder</code> for mocks and custom frameworks, or the OpenAI Agents adapter to convert <code>RunResult</code> automatically. Test-time only, never in production.</p>
           <div class="code-frame" style="margin-top: 24px;">
             <div class="code-tab">
               <span class="dot" style="border-color: #4b5563;"></span>
               <span>Python</span>
             </div>
             <div class="code-body">
-<span class="k">from</span> scaffold.integrations.openai_agents <span class="k">import</span> traced_agent
+<span class="k">from</span> scaffold.integrations.openai_agents <span class="k">import</span> run_for_scaffold_sync
 
-<span class="c"># One line. Full trace capture.</span>
-agent = traced_agent(
-    existing_agent,
-    trace_output=<span class="s">"./traces/"</span>
-)
+<span class="c"># Convert OpenAI Agents SDK runs to Scaffold trace JSON</span>
+output = run_for_scaffold_sync(build_agent(), input_data)
+<span class="c"># output: final_output, trace[], total_tool_calls, total_tokens</span>
             </div>
           </div>
           <div class="tags">
-            <span class="tag">OpenAI Agent SDK</span>
-            <span class="tag">Claude Agent SDK</span>
-            <span class="tag">PydanticAI</span>
+            <span class="tag">OpenAI Agents SDK</span>
+            <span class="tag">TraceBuilder</span>
           </div>
         </div>
       </div>
@@ -2070,7 +2013,7 @@ agent = traced_agent(
       <h2>Ship LLM changes<br>with confidence</h2>
       <p>Open source. Provider neutral. Five-minute setup. Never merge a regression again.</p>
       <div class="hero-actions">
-        <a href="https://github.com/scaffold-ai/scaffold" class="btn btn-primary">Get Started</a>
+        <a href="https://github.com/alexminnaar/scaffold" class="btn btn-primary">Get Started</a>
         <a href="docs.html" class="btn btn-ghost">Read the Docs</a>
       </div>
     </div>
@@ -2081,7 +2024,7 @@ agent = traced_agent(
     <div class="container">
       <p>&copy; 2026 Scaffold</p>
       <div style="display: flex; gap: 24px;">
-        <a href="https://github.com/scaffold-ai/scaffold">GitHub</a>
+        <a href="https://github.com/alexminnaar/scaffold">GitHub</a>
         <a href="docs.html">Docs</a>
         <a href="#">Discord</a>
       </div>

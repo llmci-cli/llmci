@@ -92,7 +92,10 @@ def run(
 
     gh_ctx = detect_github_context()
     if gh_ctx:
-        posted = post_pr_comment(report_md, gh_ctx)
+        from scaffold.integrations.github import resolve_report_slice_key
+
+        slice_key = resolve_report_slice_key()
+        posted = post_pr_comment(report_md, gh_ctx, slice_key=slice_key)
         if verbose:
             if posted:
                 click.echo("PR comment posted/updated.")

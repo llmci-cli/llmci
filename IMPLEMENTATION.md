@@ -23,7 +23,7 @@ This document is the build guide. It specifies what to build, in what order, and
 ### 0.1 Repo Initialization
 
 ```
-scaffold-ai/
+llmci/
 ├── pyproject.toml
 ├── README.md
 ├── LICENSE                         # Apache 2.0
@@ -46,7 +46,7 @@ scaffold-ai/
 ```toml
 # pyproject.toml
 [project]
-name = "scaffold-ai"
+name = "llmci"
 version = "0.1.0"
 requires-python = ">=3.10"
 dependencies = [
@@ -770,7 +770,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - run: pip install scaffold-ai
+    - run: pip install llmci
     - run: scaffold run --compare-to=${{ inputs.compare-to }} --output=scaffold-report.md
     - run: |
         # Post comment using GitHub API
@@ -1466,7 +1466,7 @@ Similar implementations for `pydantic_ai.py` and `claude_agents.py`.
 - [ ] `scaffold import-promptfoo` converts basic Promptfoo configs
 - [ ] All 7 examples are runnable with just an API key
 - [ ] README covers installation, quickstart, and each feature
-- [ ] PyPI package `scaffold-ai` installable
+- [ ] PyPI package `llmci` installable
 - [ ] GitHub Action wrapper works end-to-end
 
 ---

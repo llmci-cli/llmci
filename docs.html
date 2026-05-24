@@ -455,7 +455,7 @@
         <h2>Installation</h2>
         <p class="section-lead">Install Scaffold from PyPI. Requires Python 3.11 or later.</p>
 
-<pre><span class="cmd">pip install scaffold-ai</span></pre>
+<pre><span class="cmd">pip install llmci</span></pre>
 
         <p>For development, install from source:</p>
 
@@ -1025,6 +1025,7 @@ Ticket: <span class="string">{input}</span></pre>
       <section class="doc-section" id="cs-fastapi">
         <h2>FastAPI Classification Service</h2>
         <p>A common pattern: a FastAPI service that classifies customer support tickets using an LLM. The service has pre-processing (text cleaning, PII redaction) and post-processing (confidence thresholds, fallback routing) around the LLM call.</p>
+        <p><strong>Full service example:</strong> <a href="https://github.com/alexminnaar/scaffold-testbed/tree/main/services/ticket-classifier">scaffold-testbed/services/ticket-classifier</a></p>
 
         <h4>The risk</h4>
         <p>Any change to the service can affect predictions — not just prompt edits. A developer updating the PII redaction regex might accidentally strip keywords the model relies on. A change to the confidence threshold logic could re-route tickets incorrectly. These bugs don't show up in unit tests.</p>
@@ -1119,6 +1120,7 @@ json.dump({<span class="string">"output"</span>: result[<span class="string">"ca
       <section class="doc-section" id="cs-rag">
         <h2>RAG Pipeline with Retrieval + Generation</h2>
         <p>A retrieval-augmented generation pipeline where a user question is embedded, matched against a vector store, and the top documents are fed as context to an LLM for answer generation.</p>
+        <p><strong>Full service example:</strong> <a href="https://github.com/alexminnaar/scaffold-testbed/tree/main/services/rag-qa">scaffold-testbed/services/rag-qa</a></p>
 
         <h4>The risk</h4>
         <p>Bugs can appear at any stage: the embedding model could be swapped (changing retrieval quality), the chunking strategy could be adjusted (changing what context the LLM sees), or the generation prompt could be edited. Each affects the final answer differently, and prompt-level testing alone won't catch retrieval-side regressions.</p>
@@ -1161,6 +1163,7 @@ json.dump({<span class="string">"output"</span>: result[<span class="string">"ca
       <section class="doc-section" id="cs-migration">
         <h2>Multi-Model Migration at Scale</h2>
         <p>An organization running GPT-4o across 12 microservices learns that pricing is changing and decides to migrate to a cheaper model. Each service has its own prompt, dataset, and quality bar.</p>
+        <p><strong>Full service example:</strong> <a href="https://github.com/alexminnaar/scaffold-testbed/tree/main/migration">scaffold-testbed/migration</a></p>
 
         <h4>The challenge</h4>
         <p>Manually tuning 12 prompts is weeks of work. Each service has different tolerance for quality drops — the billing classifier needs 98% accuracy, the FAQ summarizer can tolerate 90%.</p>
@@ -1198,6 +1201,7 @@ json.dump({<span class="string">"output"</span>: result[<span class="string">"ca
       <section class="doc-section" id="cs-agent">
         <h2>Customer Support Agent with Tool Use</h2>
         <p>A conversational agent that handles customer support: looks up orders, processes refunds, checks inventory, and escalates to humans. Built with an agent framework (OpenAI Agents, PydanticAI, etc.).</p>
+        <p><strong>Full service example:</strong> <a href="https://github.com/alexminnaar/scaffold-testbed/tree/main/services/support-agent">scaffold-testbed/services/support-agent</a></p>
 
         <h4>The risk</h4>
         <p>Agent bugs are subtle. The agent might use the wrong tool, make too many API calls (cost), call a destructive tool when it shouldn't (safety), or give correct answers via an inefficient path (latency).</p>
@@ -1242,6 +1246,9 @@ json.dump({<span class="string">"output"</span>: result[<span class="string">"ca
           <div class="callout-icon">&#x2139;</div>
           <p><strong>Weight strategy:</strong> Safety constraints get the highest weight (3.0) because a tool-use violation is worse than a suboptimal trajectory. Correctness (2.0) matters more than efficiency (1.0) because a correct-but-slow answer is better than a fast-but-wrong one.</p>
         </div>
+
+        <h4>Framework integration</h4>
+        <p>Agent evals invoke your agent as a command. Build trace JSON with <code>scaffold.trace.TraceBuilder</code>, or use <code>scaffold.integrations.openai_agents.run_for_scaffold_sync</code> for the OpenAI Agents SDK. See <code>examples/10-agent-openai-agents</code> for a runnable adapter with mock (<code>MOCK_LLM=1</code>) and real SDK paths.</p>
       </section>
 
       <hr>
@@ -1250,6 +1257,7 @@ json.dump({<span class="string">"output"</span>: result[<span class="string">"ca
       <section class="doc-section" id="cs-summarization">
         <h2>Summarization Quality Assurance</h2>
         <p>A content platform generates article summaries for newsletters, social cards, and search snippets. The summaries are produced by an LLM given the full article text. There are no "correct" summaries — quality is subjective and multi-dimensional.</p>
+        <p><strong>Full service example:</strong> <a href="https://github.com/alexminnaar/scaffold-testbed/tree/main/services/summarizer">scaffold-testbed/services/summarizer</a></p>
 
         <h4>The challenge</h4>
         <p>Exact-match judging doesn't work here. Two perfectly good summaries of the same article can share zero words. What matters is whether the summary is <em>faithful</em> to the source, <em>concise</em>, and <em>complete</em> in covering key points. These qualities require LLM-as-Judge evaluation with clearly defined rubrics.</p>
@@ -1320,6 +1328,7 @@ json.dump({<span class="string">"output"</span>: result[<span class="string">"ca
           <tr><td><code>07-pipeline-level</code></td><td>Full RAG pipeline end-to-end</td><td><a href="#cs-rag">RAG Pipeline</a></td></tr>
           <tr><td><code>08-fastapi-service</code></td><td>Pre/post processing pipeline with dual-level testing</td><td><a href="#cs-fastapi">FastAPI Service</a></td></tr>
           <tr><td><code>09-summarization-qa</code></td><td>Multi-criteria rubric with reference-free evaluation</td><td><a href="#cs-summarization">Summarization QA</a></td></tr>
+          <tr><td><code>10-agent-openai-agents</code></td><td>TraceBuilder + OpenAI Agents SDK adapter</td><td><a href="#cs-agent">Support Agent</a></td></tr>
         </table>
 
         <p>Run any example:</p>

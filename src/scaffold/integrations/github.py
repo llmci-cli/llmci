@@ -4,11 +4,20 @@ from __future__ import annotations
 
 import json
 import os
+import re
+import time
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
 COMMENT_MARKER = "<!-- scaffold-eval-report -->"
+SLICE_MARKER_PREFIX = "<!-- scaffold-eval-slice:"
+SLICE_MARKER_SUFFIX = " -->"
+SLICE_PATTERN = re.compile(
+    r"<!-- scaffold-eval-slice:([^>]+) -->\n",
+    re.MULTILINE,
+)
+MERGE_MAX_ATTEMPTS = 5
 
 
 @dataclass
@@ -43,21 +52,121 @@ def detect_github_context() -> GitHubContext | None:
     return GitHubContext(repository=repo, pr_number=pr_number, token=token)
 
 
-def post_pr_comment(report_md: str, ctx: GitHubContext) -> bool:
+def resolve_report_slice_key() -> str | None:
+    """Return CI slice key for merged PR comments, if set."""
+    value = os.environ.get("SCAFFOLD_REPORT_SLICE", "").strip()
+    return value or None
+
+
+def post_pr_comment(
+    report_md: str,
+    ctx: GitHubContext,
+    slice_key: str | None = None,
+) -> bool:
     """Post or update a PR comment with the eval report.
 
-    Identifies existing Scaffold comments by the hidden marker and updates
-    in place to avoid duplicate comments on re-runs.
+    When ``slice_key`` is set, merges this run's report into a shared comment
+    (for CI matrix jobs). Each slice is keyed by ``SCAFFOLD_REPORT_SLICE``.
+    Without a slice key, replaces the entire comment body (single-job CI).
 
     Returns True if the comment was posted/updated successfully.
     """
-    body = f"{COMMENT_MARKER}\n{report_md}"
+    if slice_key:
+        return _post_merged_slice(report_md, ctx, slice_key)
 
-    existing_id = _find_existing_comment(ctx)
-    if existing_id:
-        return _update_comment(existing_id, body, ctx)
-    else:
-        return _create_comment(body, ctx)
+    body = f"{COMMENT_MARKER}\n{report_md}"
+    existing = _find_existing_comment(ctx)
+    if existing:
+        comment_id, _ = existing
+        return _update_comment(comment_id, body, ctx)
+    return _create_comment(body, ctx)
+
+
+def build_merged_comment_body(
+    existing_body: str | None,
+    slice_key: str,
+    report_md: str,
+) -> str:
+    """Build a PR comment body with one updated report slice."""
+    slices = parse_report_slices(existing_body or "")
+    slices[slice_key] = report_md.strip()
+
+    parts = [COMMENT_MARKER, ""]
+    for key in sorted(slices.keys()):
+        parts.append(_slice_marker(key))
+        parts.append(_slice_heading(key).rstrip())
+        parts.append(slices[key])
+        parts.append("")
+    return "\n".join(parts).rstrip() + "\n"
+
+
+def parse_report_slices(body: str) -> dict[str, str]:
+    """Parse slice key -> report markdown from an existing PR comment."""
+    slices: dict[str, str] = {}
+    if COMMENT_MARKER not in body:
+        return slices
+
+    matches = list(SLICE_PATTERN.finditer(body))
+    if not matches:
+        return slices
+
+    for index, match in enumerate(matches):
+        key = match.group(1)
+        start = match.end()
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(body)
+        content = body[start:end].strip()
+        slices[key] = _strip_slice_heading(content)
+    return slices
+
+
+def _post_merged_slice(report_md: str, ctx: GitHubContext, slice_key: str) -> bool:
+    """Fetch-merge-update loop to reduce lost slices from parallel matrix jobs."""
+    for attempt in range(MERGE_MAX_ATTEMPTS):
+        existing = _find_existing_comment(ctx)
+        if existing:
+            comment_id, existing_body = existing
+            body = build_merged_comment_body(existing_body, slice_key, report_md)
+            if not _update_comment(comment_id, body, ctx):
+                time.sleep(0.2 * (attempt + 1))
+                continue
+        else:
+            body = build_merged_comment_body(None, slice_key, report_md)
+            if not _create_comment(body, ctx):
+                time.sleep(0.2 * (attempt + 1))
+                continue
+
+        verified = _find_existing_comment(ctx)
+        if verified and _slice_present(verified[1], slice_key, report_md):
+            return True
+
+        time.sleep(0.2 * (attempt + 1))
+
+    return False
+
+
+def _slice_present(body: str, slice_key: str, report_md: str) -> bool:
+    slices = parse_report_slices(body)
+    if slice_key not in slices:
+        return False
+    return slices[slice_key].strip() == report_md.strip()
+
+
+def _slice_marker(key: str) -> str:
+    return f"{SLICE_MARKER_PREFIX}{key}{SLICE_MARKER_SUFFIX}"
+
+
+def _slice_heading(key: str) -> str:
+    if "/" in key:
+        service, config = key.split("/", 1)
+        return f"### {service} · `{config}`\n"
+    return f"### {key}\n"
+
+
+def _strip_slice_heading(content: str) -> str:
+    lines = content.splitlines()
+    if lines and lines[0].startswith("### "):
+        return "\n".join(lines[1:]).strip()
+    return content
 
 
 def _extract_pr_number(event_path: str | None) -> int | None:
@@ -81,15 +190,16 @@ def _extract_pr_number(event_path: str | None) -> int | None:
     return None
 
 
-def _find_existing_comment(ctx: GitHubContext) -> int | None:
+def _find_existing_comment(ctx: GitHubContext) -> tuple[int, str] | None:
     """Find an existing Scaffold comment on the PR."""
     url = f"{ctx.server_url}/repos/{ctx.repository}/issues/{ctx.pr_number}/comments?per_page=100"
 
     try:
         data = _github_api_get(url, ctx.token)
         for comment in data:
-            if COMMENT_MARKER in comment.get("body", ""):
-                return int(comment["id"])
+            body = comment.get("body", "")
+            if COMMENT_MARKER in body:
+                return int(comment["id"]), body
     except Exception:
         pass
 
