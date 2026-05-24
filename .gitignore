@@ -32,3 +32,6 @@ Thumbs.db
 
 # llmci runtime artifacts (baselines are committed; cache is not)
 .llmci/cache/
+
+# Internal planning docs (not for the public repo)
+TESTBED*.md
