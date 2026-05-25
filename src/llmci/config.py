@@ -11,8 +11,8 @@ from pydantic import ValidationError
 from llmci.errors import ConfigError
 from llmci.models import (
     EvalConfig,
-    RubricCriterion,
     LlmciConfig,
+    RubricCriterion,
 )
 
 
@@ -58,12 +58,6 @@ def _normalize_config(raw: dict[str, Any]) -> dict[str, Any]:
                         "but does not have a composite judge. "
                         "Agent evals require judge type: composite."
                     )
-
-            if isinstance(eval_raw.get("dataset"), dict):
-                raise ConfigError(
-                    f"Eval '{eval_raw.get('name', '?')}' uses a remote dataset source, "
-                    "which is not supported in v1. Use a local file path."
-                )
 
     return raw
 

@@ -71,7 +71,9 @@ def llmci_output_from_run_result(result: Any) -> dict[str, Any]:
     return builder.to_dict()
 
 
-async def run_for_llmci(agent: Any, input_data: dict[str, Any], **run_kwargs: Any) -> dict[str, Any]:
+async def run_for_llmci(
+    agent: Any, input_data: dict[str, Any], **run_kwargs: Any
+) -> dict[str, Any]:
     """Run an OpenAI Agents agent and return llmci-compatible output."""
     from agents import Runner
 

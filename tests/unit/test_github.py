@@ -74,7 +74,9 @@ class TestExtractPrNumber:
 
 class TestReportSliceMerging:
     def test_build_single_slice(self):
-        body = build_merged_comment_body(None, "json-api/llmci.yaml", "## llmci Eval Report\n\n| ok |")
+        body = build_merged_comment_body(
+            None, "json-api/llmci.yaml", "## llmci Eval Report\n\n| ok |"
+        )
         assert COMMENT_MARKER in body
         assert "<!-- llmci-eval-slice:json-api/llmci.yaml -->" in body
         assert "### json-api · `llmci.yaml`" in body
