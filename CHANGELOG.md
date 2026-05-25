@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-05-25
+
+### Fixed
+- S3 dataset URI validation runs before the optional `boto3` import.
+- PyPI publish workflow grants `contents: read` so checkout works alongside trusted publishing.
+
 ## [0.1.4] - 2026-05-25
 
 ### Added
@@ -82,6 +88,7 @@ Initial public release on PyPI as [`llmci`](https://pypi.org/project/llmci/).
 **Examples**
 - Nine runnable examples: CI regression, model migration, LLM judge, custom judge, agent single/multi-turn, RAG pipeline, FastAPI service, summarization QA
 
+[0.1.5]: https://github.com/llmci-cli/llmci/releases/tag/v0.1.5
 [0.1.4]: https://github.com/llmci-cli/llmci/releases/tag/v0.1.4
 [0.1.3]: https://github.com/llmci-cli/llmci/releases/tag/v0.1.3
 [0.1.2]: https://github.com/llmci-cli/llmci/releases/tag/v0.1.2
