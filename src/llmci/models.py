@@ -60,7 +60,7 @@ class JudgeConfig(BaseModel):
 
 
 class DatasetSource(BaseModel):
-    """Remote dataset source (v2). V1 uses plain string paths only."""
+    """Remote dataset source (S3 or HTTPS)."""
 
     source: str
     cache: bool = True

@@ -6,12 +6,15 @@ import json
 import random
 from pathlib import Path
 
+from llmci.dataset.remote import resolve_dataset_path
 from llmci.errors import DatasetError
-from llmci.models import AgentScenario, EvalExample
+from llmci.models import AgentScenario, DatasetSource, EvalExample
+
+DatasetRef = str | Path | DatasetSource
 
 
 def load_dataset(
-    path: str | Path,
+    path: DatasetRef,
     smoke_size: int | None = None,
     seed: int = 42,
     require_expected: bool = True,
@@ -23,7 +26,7 @@ def load_dataset(
     for LLM-as-judge evals that only need input + output.
     Additional fields are preserved in the 'extra' dict.
     """
-    path = Path(path)
+    path = resolve_dataset_path(path)
     if not path.exists():
         raise DatasetError(
             f"Dataset not found: {path}\n\n"
@@ -90,7 +93,7 @@ def load_dataset(
 
 
 def load_agent_scenarios(
-    path: str | Path,
+    path: DatasetRef,
     smoke_size: int | None = None,
     seed: int = 42,
 ) -> list[AgentScenario]:
@@ -100,7 +103,7 @@ def load_agent_scenarios(
     - (input + expected) for single-turn scenarios
     - (turns) for multi-turn scenarios
     """
-    path = Path(path)
+    path = resolve_dataset_path(path)
     if not path.exists():
         raise DatasetError(f"Agent dataset not found: {path}")
 

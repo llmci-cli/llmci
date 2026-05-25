@@ -164,7 +164,7 @@ Each metric supports two threshold modes:
 Add to your workflow:
 
 ```yaml
-- uses: alexminnaar/llmci@main
+- uses: llmci-cli/llmci@main
   with:
     compare-to: origin/main
   env:
@@ -277,15 +277,15 @@ Converts providers, test assertions, and variables into llmci's format.
 
 ## Reference integration
 
-The [`llmci-testbed`](https://github.com/alexminnaar/llmci-testbed) repository is a realistic customer monorepo that dogfoods `llmci` against full HTTP services, RAG pipelines, agents, and migration workflows. Each service maps to a docs case study and runs in GitHub Actions with mock LLM mode (no API cost on PRs).
+The [`llmci-testbed`](https://github.com/llmci-cli/llmci-testbed) repository is a realistic customer monorepo that dogfoods `llmci` against full HTTP services, RAG pipelines, agents, and migration workflows. Each service maps to a docs case study and runs in GitHub Actions with mock LLM mode (no API cost on PRs).
 
 | Testbed path | Case study |
 |--------------|------------|
-| [`services/ticket-classifier`](https://github.com/alexminnaar/llmci-testbed/tree/main/services/ticket-classifier) | FastAPI service |
-| [`services/rag-qa`](https://github.com/alexminnaar/llmci-testbed/tree/main/services/rag-qa) | RAG pipeline |
-| [`services/summarizer`](https://github.com/alexminnaar/llmci-testbed/tree/main/services/summarizer) | Summarization QA |
-| [`services/support-agent`](https://github.com/alexminnaar/llmci-testbed/tree/main/services/support-agent) | Support agent |
-| [`migration`](https://github.com/alexminnaar/llmci-testbed/tree/main/migration) | Model migration |
+| [`services/ticket-classifier`](https://github.com/llmci-cli/llmci-testbed/tree/main/services/ticket-classifier) | FastAPI service |
+| [`services/rag-qa`](https://github.com/llmci-cli/llmci-testbed/tree/main/services/rag-qa) | RAG pipeline |
+| [`services/summarizer`](https://github.com/llmci-cli/llmci-testbed/tree/main/services/summarizer) | Summarization QA |
+| [`services/support-agent`](https://github.com/llmci-cli/llmci-testbed/tree/main/services/support-agent) | Support agent |
+| [`migration`](https://github.com/llmci-cli/llmci-testbed/tree/main/migration) | Model migration |
 
 ## Examples
 

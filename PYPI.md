@@ -37,7 +37,7 @@ llmci --version
 After the first manual upload, enable [PyPI trusted publishing](https://docs.pypi.org/trusted-publishers/):
 
 1. PyPI → `llmci` → Publishing → Add trusted publisher
-2. Owner: `alexminnaar`, repo: `llmci`, workflow: `publish.yml`, environment: `pypi`
+2. Owner: `llmci-cli`, repo: `llmci`, workflow: `publish.yml`, environment: `pypi`
 3. Add `.github/workflows/publish.yml` triggered on `release: published` or tag push `v*`
 4. GitHub repo → Settings → Environments → `pypi` (optional approval gate)
 
@@ -64,7 +64,7 @@ Pin in production: `llmci==0.1.3`. Use `--upgrade` only in CI dogfood jobs.
 Until a version is on PyPI, install from GitHub:
 
 ```bash
-pip install "llmci @ git+https://github.com/alexminnaar/llmci@main"
+pip install "llmci @ git+https://github.com/llmci-cli/llmci@main"
 ```
 
 After publish, switch testbed and examples to `pip install llmci`.

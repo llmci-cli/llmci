@@ -5,6 +5,16 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [0.1.4] - 2026-05-25
+
+### Added
+- **Remote eval datasets** — `dataset` accepts `s3://` and `https://` URIs (string or `{source, cache}`). S3 requires `pip install 'llmci[s3]'`. Cached under `.llmci/cache/datasets/` by default.
+
+### Changed
+- Repository and package metadata URLs updated for the `llmci-cli` GitHub organization.
+
 ## [0.1.3] - 2026-05-24
 
 ### Changed
@@ -72,7 +82,8 @@ Initial public release on PyPI as [`llmci`](https://pypi.org/project/llmci/).
 **Examples**
 - Nine runnable examples: CI regression, model migration, LLM judge, custom judge, agent single/multi-turn, RAG pipeline, FastAPI service, summarization QA
 
-[0.1.3]: https://github.com/alexminnaar/llmci/releases/tag/v0.1.3
-[0.1.2]: https://github.com/alexminnaar/llmci/releases/tag/v0.1.2
-[0.1.1]: https://github.com/alexminnaar/llmci/releases/tag/v0.1.1
-[0.1.0]: https://github.com/alexminnaar/llmci/releases/tag/v0.1.0
+[0.1.4]: https://github.com/llmci-cli/llmci/releases/tag/v0.1.4
+[0.1.3]: https://github.com/llmci-cli/llmci/releases/tag/v0.1.3
+[0.1.2]: https://github.com/llmci-cli/llmci/releases/tag/v0.1.2
+[0.1.1]: https://github.com/llmci-cli/llmci/releases/tag/v0.1.1
+[0.1.0]: https://github.com/llmci-cli/llmci/releases/tag/v0.1.0

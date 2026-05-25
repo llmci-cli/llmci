@@ -72,14 +72,10 @@ async def run_eval(
     if eval_config.level == "agent":
         return await _run_agent_eval(eval_config, target_config, settings, smoke, seed)
 
-    dataset_path = eval_config.dataset
-    if not isinstance(dataset_path, str):
-        raise ValueError("Remote dataset sources are not supported in v1")
-
     smoke_size = settings.smoke_test_size if smoke else None
     require_expected = eval_config.judge.type not in ("llm", "composite")
     examples = load_dataset(
-        dataset_path, smoke_size=smoke_size, seed=seed,
+        eval_config.dataset, smoke_size=smoke_size, seed=seed,
         require_expected=require_expected,
     )
 
@@ -119,12 +115,10 @@ async def _run_agent_eval(
     from llmci.judges.composite import CompositeAgentJudge
     from llmci.targets.agent import run_agent_target
 
-    dataset_path = eval_config.dataset
-    if not isinstance(dataset_path, str):
-        raise ValueError("Remote dataset sources are not supported")
-
     smoke_size = settings.smoke_test_size if smoke else None
-    scenarios = load_agent_scenarios(dataset_path, smoke_size=smoke_size, seed=seed)
+    scenarios = load_agent_scenarios(
+        eval_config.dataset, smoke_size=smoke_size, seed=seed,
+    )
 
     target = resolve_target(eval_config, target_config)
     if not target.is_command_mode:

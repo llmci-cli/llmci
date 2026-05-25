@@ -7,6 +7,7 @@ import yaml
 
 from llmci.config import _normalize_judge, load_config
 from llmci.errors import ConfigError
+from llmci.models import DatasetSource
 
 
 @pytest.fixture
@@ -114,6 +115,38 @@ class TestLoadConfig:
         config = load_config(path)
         assert config.settings.parallelism == 5
         assert config.settings.timeout_per_call == 60
+
+    def test_remote_dataset_source(self, tmp_config):
+        path = tmp_config({
+            "version": 1,
+            "target": {"command": "echo"},
+            "evals": [{
+                "name": "remote-eval",
+                "dataset": {
+                    "source": "s3://company-evals/tickets.jsonl",
+                    "cache": True,
+                },
+                "metrics": [],
+            }],
+        })
+        config = load_config(path)
+        dataset = config.evals[0].dataset
+        assert isinstance(dataset, DatasetSource)
+        assert dataset.source == "s3://company-evals/tickets.jsonl"
+        assert dataset.cache is True
+
+    def test_remote_dataset_s3_string(self, tmp_config):
+        path = tmp_config({
+            "version": 1,
+            "target": {"command": "echo"},
+            "evals": [{
+                "name": "remote-eval",
+                "dataset": "s3://company-evals/tickets.jsonl",
+                "metrics": [],
+            }],
+        })
+        config = load_config(path)
+        assert config.evals[0].dataset == "s3://company-evals/tickets.jsonl"
 
 
 class TestNormalizeJudge:

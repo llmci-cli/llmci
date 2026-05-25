@@ -157,12 +157,7 @@ def migrate(
         sys.exit(1)
 
     original_prompt = Path(config.target.prompt_file).read_text()
-    dataset_path = eval_cfg.dataset
-    if not isinstance(dataset_path, str):
-        click.echo("Error: Remote datasets not supported for migration.", err=True)
-        sys.exit(1)
-
-    examples = load_dataset(dataset_path)
+    examples = load_dataset(eval_cfg.dataset)
     split = split_dataset(examples)
     primary_metric = eval_cfg.metrics[0].name if eval_cfg.metrics else "accuracy"
 

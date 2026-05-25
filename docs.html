@@ -68,41 +68,17 @@
     }
 
     .logo {
-      font-size: 1rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      color: var(--text);
       display: flex;
       align-items: center;
-      gap: 8px;
       text-decoration: none;
+      flex-shrink: 0;
     }
 
-    .logo-text {
-      display: flex;
-      flex-direction: column;
-      line-height: 1.1;
-      gap: 1px;
+    .logo-img {
+      height: 26px;
+      width: auto;
+      display: block;
     }
-
-    .logo-name {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.9375rem;
-      font-weight: 700;
-      letter-spacing: -0.03em;
-    }
-
-    .logo-tag {
-      font-family: 'Inter', sans-serif;
-      font-size: 0.5625rem;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--text-tertiary);
-    }
-
-    .logo-mark { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; }
-    .logo-mark svg { width: 26px; height: 26px; }
 
     .nav-links { display: flex; gap: 24px; align-items: center; }
     .nav-links a {
@@ -402,23 +378,13 @@
   <header class="top-nav">
     <div class="top-nav-inner">
       <a href="index.html" class="logo">
-        <div class="logo-mark">
-          <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="10" y="70" width="80" height="10" rx="3" fill="#059669"/>
-            <rect x="20" y="50" width="60" height="10" rx="3" fill="#059669" opacity="0.7"/>
-            <rect x="30" y="30" width="40" height="10" rx="3" fill="#059669" opacity="0.45"/>
-          </svg>
-        </div>
-        <div class="logo-text">
-          <span class="logo-name">llmci</span>
-          <span class="logo-tag">LLM CI</span>
-        </div>
+        <img src="assets/llmci-logo.png" alt="llmci" class="logo-img">
       </a>
       <div class="nav-links">
         <a href="index.html">Home</a>
         <a href="use-cases.html">Use Cases</a>
         <a href="docs.html" class="active">Docs</a>
-        <a href="https://github.com/alexminnaar/llmci" class="btn-nav">
+        <a href="https://github.com/llmci-cli/llmci" class="btn-nav">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
           GitHub
         </a>
@@ -489,7 +455,7 @@
 
         <p>For development, install from source:</p>
 
-<pre><span class="cmd">git clone https://github.com/alexminnaar/llmci.git</span>
+<pre><span class="cmd">git clone https://github.com/llmci-cli/llmci.git</span>
 <span class="cmd">cd llmci</span>
 <span class="cmd">pip install -e ".[dev]"</span></pre>
 
@@ -599,6 +565,20 @@
   <span class="key">parallelism</span>: <span class="string">5</span>
   <span class="key">timeout_per_call</span>: <span class="string">30</span>
   <span class="key">retries</span>: <span class="string">1</span></pre>
+
+        <h3>Remote datasets (S3 / HTTPS)</h3>
+        <p>Datasets can live outside the repo. Use a URI string or the object form with optional caching:</p>
+
+<pre><span class="key">evals</span>:
+  - <span class="key">name</span>: <span class="string">ticket-classification</span>
+    <span class="key">dataset</span>: <span class="string">s3://company-evals/tickets.jsonl</span>
+
+  - <span class="key">name</span>: <span class="string">response-quality</span>
+    <span class="key">dataset</span>:
+      <span class="key">source</span>: <span class="string">https://example.com/evals/quality.jsonl</span>
+      <span class="key">cache</span>: <span class="string">true</span></pre>
+
+        <p>S3 downloads use your normal AWS credentials (env vars, <code>~/.aws/credentials</code>, or IAM role in CI). Install the optional extra: <code>pip install 'llmci[s3]'</code>. Cached files are stored in <code>.llmci/cache/datasets/</code>.</p>
 
         <table>
           <tr><th>Field</th><th>Type</th><th>Description</th></tr>
@@ -860,7 +840,7 @@ Ticket: <span class="string">{input}</span></pre>
       - <span class="key">uses</span>: <span class="string">actions/checkout@v4</span>
         <span class="key">with</span>:
           <span class="key">fetch-depth</span>: <span class="string">0</span>   <span class="comment"># required for --compare-to git baselines</span>
-      - <span class="key">uses</span>: <span class="string">alexminnaar/llmci@main</span>
+      - <span class="key">uses</span>: <span class="string">llmci-cli/llmci@main</span>
         <span class="key">with</span>:
           <span class="key">compare-to</span>: <span class="string">origin/main</span>
         <span class="key">env</span>:
@@ -886,7 +866,7 @@ Ticket: <span class="string">{input}</span></pre>
       <span class="key">LLMCI_REPORT_SLICE</span>: <span class="string">${{ matrix.service }}/${{ matrix.config }}</span>
     <span class="key">run</span>: <span class="string">llmci run --config ${{ matrix.config }} --compare-to=origin/main</span></pre>
 
-        <p>On <code>main</code> pushes, use <code>--update-baseline</code> instead of <code>--compare-to</code>. See the full pattern in <a href="https://github.com/alexminnaar/llmci-testbed/blob/main/.github/workflows/llmci.yml">llmci-testbed</a>.</p>
+        <p>On <code>main</code> pushes, use <code>--update-baseline</code> instead of <code>--compare-to</code>. See the full pattern in <a href="https://github.com/llmci-cli/llmci-testbed/blob/main/.github/workflows/llmci.yml">llmci-testbed</a>.</p>
 
         <div class="callout callout-tip">
           <div class="callout-icon">&#x2713;</div>
@@ -981,7 +961,7 @@ output = tb.to_dict()   <span class="comment"># write to {output_file}</span></p
 result = run_for_llmci_sync(build_agent(), {<span class="string">"query"</span>: <span class="string">"Weather in Tokyo?"</span>})
 <span class="comment"># result: final_output, trace, total_tool_calls, total_tokens</span></pre>
 
-        <p>Requires <code>pip install 'llmci[agents]'</code> and <code>OPENAI_API_KEY</code>. For CI without an API key, use <code>MOCK_LLM=1</code> with a TraceBuilder mock — see <a href="https://github.com/alexminnaar/llmci/tree/main/examples/10-agent-openai-agents"><code>examples/10-agent-openai-agents</code></a>.</p>
+        <p>Requires <code>pip install 'llmci[agents]'</code> and <code>OPENAI_API_KEY</code>. For CI without an API key, use <code>MOCK_LLM=1</code> with a TraceBuilder mock — see <a href="https://github.com/llmci-cli/llmci/tree/main/examples/10-agent-openai-agents"><code>examples/10-agent-openai-agents</code></a>.</p>
 
         <h3>Composite Judge Criteria</h3>
         <table>
@@ -1059,7 +1039,7 @@ result = run_for_llmci_sync(build_agent(), {<span class="string">"query"</span>:
         <h2>GitHub Action</h2>
         <p class="section-lead">Drop llmci into any GitHub Actions workflow.</p>
 
-<pre><span class="key">- uses</span>: <span class="string">alexminnaar/llmci@main</span>
+<pre><span class="key">- uses</span>: <span class="string">llmci-cli/llmci@main</span>
   <span class="key">with</span>:
     <span class="key">compare-to</span>: <span class="string">origin/main</span>       <span class="comment"># baseline branch</span>
     <span class="key">smoke</span>: <span class="string">false</span>                   <span class="comment"># run full dataset</span>
@@ -1106,7 +1086,7 @@ result = run_for_llmci_sync(build_agent(), {<span class="string">"query"</span>:
       <section class="doc-section" id="cs-fastapi">
         <h2>FastAPI Classification Service</h2>
         <p>A common pattern: a FastAPI service that classifies customer support tickets using an LLM. The service has pre-processing (text cleaning, PII redaction) and post-processing (confidence thresholds, fallback routing) around the LLM call.</p>
-        <p><strong>Full service example:</strong> <a href="https://github.com/alexminnaar/llmci-testbed/tree/main/services/ticket-classifier">llmci-testbed/services/ticket-classifier</a></p>
+        <p><strong>Full service example:</strong> <a href="https://github.com/llmci-cli/llmci-testbed/tree/main/services/ticket-classifier">llmci-testbed/services/ticket-classifier</a></p>
 
         <h4>The risk</h4>
         <p>Any change to the service can affect predictions — not just prompt edits. A developer updating the PII redaction regex might accidentally strip keywords the model relies on. A change to the confidence threshold logic could re-route tickets incorrectly. These bugs don't show up in unit tests.</p>
@@ -1201,7 +1181,7 @@ json.dump({<span class="string">"output"</span>: result[<span class="string">"ca
       <section class="doc-section" id="cs-rag">
         <h2>RAG Pipeline with Retrieval + Generation</h2>
         <p>A retrieval-augmented generation pipeline where a user question is embedded, matched against a vector store, and the top documents are fed as context to an LLM for answer generation.</p>
-        <p><strong>Full service example:</strong> <a href="https://github.com/alexminnaar/llmci-testbed/tree/main/services/rag-qa">llmci-testbed/services/rag-qa</a></p>
+        <p><strong>Full service example:</strong> <a href="https://github.com/llmci-cli/llmci-testbed/tree/main/services/rag-qa">llmci-testbed/services/rag-qa</a></p>
 
         <h4>The risk</h4>
         <p>Bugs can appear at any stage: the embedding model could be swapped (changing retrieval quality), the chunking strategy could be adjusted (changing what context the LLM sees), or the generation prompt could be edited. Each affects the final answer differently, and prompt-level testing alone won't catch retrieval-side regressions.</p>
@@ -1244,7 +1224,7 @@ json.dump({<span class="string">"output"</span>: result[<span class="string">"ca
       <section class="doc-section" id="cs-migration">
         <h2>Multi-Model Migration at Scale</h2>
         <p>An organization running GPT-4o across 12 microservices learns that pricing is changing and decides to migrate to a cheaper model. Each service has its own prompt, dataset, and quality bar.</p>
-        <p><strong>Full service example:</strong> <a href="https://github.com/alexminnaar/llmci-testbed/tree/main/migration">llmci-testbed/migration</a></p>
+        <p><strong>Full service example:</strong> <a href="https://github.com/llmci-cli/llmci-testbed/tree/main/migration">llmci-testbed/migration</a></p>
 
         <h4>The challenge</h4>
         <p>Manually tuning 12 prompts is weeks of work. Each service has different tolerance for quality drops — the billing classifier needs 98% accuracy, the FAQ summarizer can tolerate 90%.</p>
@@ -1282,7 +1262,7 @@ json.dump({<span class="string">"output"</span>: result[<span class="string">"ca
       <section class="doc-section" id="cs-agent">
         <h2>Customer Support Agent with Tool Use</h2>
         <p>A conversational agent that handles customer support: looks up orders, processes refunds, checks inventory, and escalates to humans. Built with an agent framework (OpenAI Agents, PydanticAI, etc.).</p>
-        <p><strong>Full service example:</strong> <a href="https://github.com/alexminnaar/llmci-testbed/tree/main/services/support-agent">llmci-testbed/services/support-agent</a></p>
+        <p><strong>Full service example:</strong> <a href="https://github.com/llmci-cli/llmci-testbed/tree/main/services/support-agent">llmci-testbed/services/support-agent</a></p>
 
         <h4>The risk</h4>
         <p>Agent bugs are subtle. The agent might use the wrong tool, make too many API calls (cost), call a destructive tool when it shouldn't (safety), or give correct answers via an inefficient path (latency).</p>
@@ -1329,7 +1309,7 @@ json.dump({<span class="string">"output"</span>: result[<span class="string">"ca
         </div>
 
         <h4>Framework integration</h4>
-        <p>See <a href="#agents">Agent Evaluation</a> for TraceBuilder, the OpenAI Agents adapter, and <a href="https://github.com/alexminnaar/llmci/tree/main/examples/10-agent-openai-agents"><code>examples/10-agent-openai-agents</code></a>.</p>
+        <p>See <a href="#agents">Agent Evaluation</a> for TraceBuilder, the OpenAI Agents adapter, and <a href="https://github.com/llmci-cli/llmci/tree/main/examples/10-agent-openai-agents"><code>examples/10-agent-openai-agents</code></a>.</p>
       </section>
 
       <hr>
@@ -1338,7 +1318,7 @@ json.dump({<span class="string">"output"</span>: result[<span class="string">"ca
       <section class="doc-section" id="cs-summarization">
         <h2>Summarization Quality Assurance</h2>
         <p>A content platform generates article summaries for newsletters, social cards, and search snippets. The summaries are produced by an LLM given the full article text. There are no "correct" summaries — quality is subjective and multi-dimensional.</p>
-        <p><strong>Full service example:</strong> <a href="https://github.com/alexminnaar/llmci-testbed/tree/main/services/summarizer">llmci-testbed/services/summarizer</a></p>
+        <p><strong>Full service example:</strong> <a href="https://github.com/llmci-cli/llmci-testbed/tree/main/services/summarizer">llmci-testbed/services/summarizer</a></p>
 
         <h4>The challenge</h4>
         <p>Exact-match judging doesn't work here. Two perfectly good summaries of the same article can share zero words. What matters is whether the summary is <em>faithful</em> to the source, <em>concise</em>, and <em>complete</em> in covering key points. These qualities require LLM-as-Judge evaluation with clearly defined rubrics.</p>
