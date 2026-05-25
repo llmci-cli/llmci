@@ -97,7 +97,7 @@ def _filename_from_uri(source: str) -> str:
 
 def _download_s3(uri: str, dest: Path) -> None:
     try:
-        import boto3
+        import boto3  # type: ignore[import-not-found,import-untyped]
     except ImportError as e:
         raise DatasetError(
             "S3 datasets require boto3.\n\n"

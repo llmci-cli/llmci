@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, cast
 
 from llmci.trace import TraceBuilder
 
@@ -53,8 +53,8 @@ def llmci_output_from_run_result(result: Any) -> dict[str, Any]:
         elif item_type == "tool_call_output_item":
             raw = getattr(item, "raw_item", None)
             output = getattr(item, "output", None)
-            call_id, name = _extract_tool_output_ref(raw)
-            key = call_id or name
+            output_call_id, output_name = _extract_tool_output_ref(raw)
+            key = output_call_id or output_name
             if key and key in pending_calls:
                 # Attach result text to the last matching tool step if empty
                 _attach_tool_result(builder, pending_calls[key]["name"], _stringify(output))
@@ -75,19 +75,19 @@ async def run_for_llmci(
     agent: Any, input_data: dict[str, Any], **run_kwargs: Any
 ) -> dict[str, Any]:
     """Run an OpenAI Agents agent and return llmci-compatible output."""
-    from agents import Runner
+    from agents import Runner  # type: ignore[import-not-found]
 
     agent_input = llmci_input_to_agent_input(input_data)
-    result = await Runner.run(agent, agent_input, **run_kwargs)
+    result = await Runner.run(agent, cast(Any, agent_input), **run_kwargs)
     return llmci_output_from_run_result(result)
 
 
 def run_for_llmci_sync(agent: Any, input_data: dict[str, Any], **run_kwargs: Any) -> dict[str, Any]:
     """Synchronous wrapper around :func:`run_for_llmci`."""
-    from agents import Runner
+    from agents import Runner  # type: ignore[import-not-found]
 
     agent_input = llmci_input_to_agent_input(input_data)
-    result = Runner.run_sync(agent, agent_input, **run_kwargs)
+    result = Runner.run_sync(agent, cast(Any, agent_input), **run_kwargs)
     return llmci_output_from_run_result(result)
 
 
@@ -131,9 +131,9 @@ def _attach_tool_result(builder: TraceBuilder, tool_name: str, result: str) -> N
 
 def _extract_message_text(items: list[Any]) -> str:
     try:
-        from agents.items import ItemHelpers
+        from agents.items import ItemHelpers  # type: ignore[import-not-found]
 
-        return ItemHelpers.extract_last_text(items)
+        return str(ItemHelpers.extract_last_text(cast(Any, items)))
     except Exception:
         pass
 
