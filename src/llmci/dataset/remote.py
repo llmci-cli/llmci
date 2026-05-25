@@ -96,14 +96,6 @@ def _filename_from_uri(source: str) -> str:
 
 
 def _download_s3(uri: str, dest: Path) -> None:
-    try:
-        import boto3  # type: ignore[import-not-found,import-untyped]
-    except ImportError as e:
-        raise DatasetError(
-            "S3 datasets require boto3.\n\n"
-            "Fix: pip install 'llmci[s3]'"
-        ) from e
-
     parsed = urlparse(uri)
     bucket = parsed.netloc
     key = parsed.path.lstrip("/")
@@ -112,6 +104,14 @@ def _download_s3(uri: str, dest: Path) -> None:
             f"Invalid S3 URI: {uri}\n\n"
             "Fix: Use s3://bucket-name/path/to/dataset.jsonl"
         )
+
+    try:
+        import boto3  # type: ignore[import-not-found,import-untyped]
+    except ImportError as e:
+        raise DatasetError(
+            "S3 datasets require boto3.\n\n"
+            "Fix: pip install 'llmci[s3]'"
+        ) from e
 
     dest.parent.mkdir(parents=True, exist_ok=True)
     boto3.client("s3").download_file(bucket, key, str(dest))

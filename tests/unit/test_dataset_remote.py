@@ -1,5 +1,6 @@
 """Tests for remote dataset resolution."""
 
+import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -118,15 +119,17 @@ class TestFetchRemoteDataset:
     def test_s3_download(self, tmp_path):
         cache_dir = tmp_path / "cache"
         mock_client = MagicMock()
+        mock_boto3 = MagicMock()
+        mock_boto3.client.return_value = mock_client
 
-        with patch("boto3.client", return_value=mock_client) as client:
+        with patch.dict(sys.modules, {"boto3": mock_boto3}):
             path = fetch_remote_dataset(
                 "s3://my-bucket/path/tickets.jsonl",
                 cache_dir,
                 use_cache=True,
             )
 
-        client.assert_called_once_with("s3")
+        mock_boto3.client.assert_called_once_with("s3")
         mock_client.download_file.assert_called_once_with(
             "my-bucket",
             "path/tickets.jsonl",
