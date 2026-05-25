@@ -591,8 +591,6 @@ Each example is self-contained and runnable. A user clones the repo, `cd`s into 
 
 ## Competitive Landscape
 
-*See `COMPETITIVE_ANALYSIS.md` for full profiles and feature gap analysis.*
-
 ### Market Map
 
 | | Primary Use | CI Gate | Migration | Agent Eval | Dataset Gen |
