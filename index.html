@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>llmci — CI-Native Regression Testing for LLMs</title>
-  <meta name="description" content="llmci is an open-source CI quality gate for LLMs. One YAML file, one CLI command, exit 0 or 1. No account, no dashboard, no observability platform.">
+  <title>llmci — CI Quality Gate for LLM-Powered Services</title>
+  <meta name="description" content="llmci is the missing CI quality gate for LLM-powered services. Run black-box evals in CI, compare against a baseline, and block PRs when behavior regresses.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -17,6 +17,7 @@
       --bg-code: #111827;
       --border: #e5e7eb;
       --border-light: #f0f1f3;
+      --border-strong: #d8dee4;
       --text: #111827;
       --text-secondary: #4b5563;
       --text-tertiary: #9ca3af;
@@ -50,7 +51,7 @@
       z-index: -2;
       background-image: radial-gradient(circle, #d1d5db 1px, transparent 1px);
       background-size: 24px 24px;
-      opacity: 0.45;
+      opacity: 0.24;
       pointer-events: none;
     }
 
@@ -94,12 +95,12 @@
     }
 
     .logo-img {
-      height: 26px;
+      height: 23px;
       width: auto;
       display: block;
     }
 
-    .nav-links { display: flex; gap: 28px; align-items: center; }
+    .nav-links { display: flex; gap: 26px; align-items: center; }
     .nav-links a {
       color: var(--text-secondary);
       text-decoration: none;
@@ -275,7 +276,7 @@
 
     /* HERO */
     .hero {
-      padding: 140px 0 0;
+      padding: 118px 0 0;
       text-align: center;
       position: relative;
       overflow: hidden;
@@ -283,76 +284,6 @@
 
     .hero .container {
       max-width: 1200px;
-    }
-
-    .hero::before {
-      content: '';
-      position: absolute;
-      top: -120px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 900px;
-      height: 600px;
-      background: radial-gradient(ellipse at center,
-        rgba(5, 150, 105, 0.10) 0%,
-        rgba(5, 150, 105, 0.04) 35%,
-        transparent 70%
-      );
-      pointer-events: none;
-      z-index: -1;
-    }
-
-    .hero::after {
-      content: '';
-      position: absolute;
-      top: 60px;
-      left: 25%;
-      width: 500px;
-      height: 400px;
-      background: radial-gradient(ellipse at center,
-        rgba(59, 130, 246, 0.06) 0%,
-        transparent 65%
-      );
-      pointer-events: none;
-      z-index: -1;
-    }
-
-    .hero-orb {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(80px);
-      pointer-events: none;
-      z-index: -1;
-    }
-
-    .hero-orb-1 {
-      width: 400px;
-      height: 400px;
-      top: -60px;
-      right: 10%;
-      background: rgba(5, 150, 105, 0.08);
-      animation: orb-drift-1 12s ease-in-out infinite alternate;
-    }
-
-    .hero-orb-2 {
-      width: 300px;
-      height: 300px;
-      top: 120px;
-      left: 5%;
-      background: rgba(59, 130, 246, 0.06);
-      animation: orb-drift-2 15s ease-in-out infinite alternate;
-    }
-
-    @keyframes orb-drift-1 {
-      0% { transform: translate(0, 0) scale(1); }
-      50% { transform: translate(-30px, 25px) scale(1.08); }
-      100% { transform: translate(20px, -15px) scale(0.95); }
-    }
-
-    @keyframes orb-drift-2 {
-      0% { transform: translate(0, 0) scale(1); }
-      50% { transform: translate(25px, -20px) scale(1.05); }
-      100% { transform: translate(-15px, 30px) scale(0.97); }
     }
 
     .hero-badge {
@@ -366,7 +297,7 @@
       font-size: 0.75rem;
       font-weight: 600;
       color: var(--accent);
-      margin-bottom: 32px;
+      margin-bottom: 24px;
       letter-spacing: 0.01em;
     }
 
@@ -380,9 +311,9 @@
     h1 {
       font-size: clamp(2.75rem, 5.5vw, 4.25rem);
       font-weight: 900;
-      letter-spacing: -0.04em;
+      letter-spacing: 0;
       line-height: 1.05;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       color: var(--text);
     }
 
@@ -393,8 +324,8 @@
     .hero-desc {
       font-size: 1.125rem;
       color: var(--text-secondary);
-      max-width: 560px;
-      margin: 0 auto 16px;
+      max-width: 680px;
+      margin: 0 auto 12px;
       line-height: 1.7;
     }
 
@@ -402,7 +333,7 @@
       font-size: 0.9375rem;
       color: var(--text-tertiary);
       max-width: 480px;
-      margin: 0 auto 28px;
+      margin: 0 auto 22px;
       line-height: 1.6;
       font-style: italic;
     }
@@ -412,7 +343,7 @@
       gap: 8px;
       justify-content: center;
       flex-wrap: wrap;
-      margin-bottom: 32px;
+      margin-bottom: 26px;
     }
 
     .hero-pill {
@@ -444,7 +375,7 @@
       align-items: center;
       justify-content: center;
       gap: 10px;
-      margin-top: 32px;
+      margin-top: 26px;
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.8125rem;
       color: var(--text-tertiary);
@@ -475,62 +406,413 @@
       border-radius: 4px;
     }
 
-    /* Hero product screenshot (Linear-style) */
+    /* HERO PR GATE VISUAL */
     .hero-showcase {
-      margin: 56px -24px 0;
-      padding: 0 24px 80px;
+      margin: 42px -24px 0;
+      padding: 0 24px 64px;
       perspective: 1200px;
     }
 
     .hero-showcase-inner {
-      max-width: 1080px;
+      max-width: 960px;
       margin: 0 auto;
-      border-radius: 14px;
-      border: 1px solid var(--border);
+      border-radius: 8px;
+      border: 1px solid var(--border-strong);
       background: var(--bg);
       box-shadow:
         0 0 0 1px rgba(0, 0, 0, 0.03),
-        0 2px 4px rgba(0, 0, 0, 0.02),
-        0 12px 24px rgba(0, 0, 0, 0.06),
-        0 32px 64px rgba(0, 0, 0, 0.08);
+        0 10px 28px rgba(17, 24, 39, 0.08),
+        0 28px 60px rgba(17, 24, 39, 0.08);
       overflow: hidden;
       transform: rotateX(2deg);
       transform-origin: center top;
       transition: transform 0.4s ease;
+      text-align: left;
     }
 
     .hero-showcase-inner:hover {
       transform: rotateX(0deg);
     }
 
-    .hero-showcase-inner img {
-      display: block;
-      width: 100%;
-      height: auto;
-      vertical-align: middle;
+    .pr-gate {
+      padding: 22px 26px 26px;
     }
 
-    .hero-showcase-fade {
+    .pr-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: flex-start;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-light);
+      margin-bottom: 18px;
+    }
+
+    .pr-title {
+      font-size: 0.96rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: var(--text);
+    }
+
+    .pr-meta {
+      font-size: 0.76rem;
+      color: var(--text-tertiary);
+    }
+
+    .pr-status {
+      flex-shrink: 0;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(220, 38, 38, 0.06);
+      border: 1px solid rgba(220, 38, 38, 0.18);
+      color: var(--red);
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .gate-flow {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .gate-step {
+      min-height: 88px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #f6f8fa;
       position: relative;
     }
 
-    .hero-showcase-fade::after {
+    .gate-step:not(:last-child)::after {
       content: '';
       position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      height: 120px;
-      background: linear-gradient(to bottom, transparent, var(--bg));
-      pointer-events: none;
+      right: -8px;
+      top: 42px;
+      width: 8px;
+      height: 2px;
+      background: var(--border);
+    }
+
+    .gate-step .num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.62rem;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .gate-step h3 {
+      font-size: 0.76rem;
+      font-weight: 700;
+      margin-bottom: 5px;
+      line-height: 1.35;
+    }
+
+    .gate-step p {
+      font-size: 0.68rem;
+      color: var(--text-secondary);
+      line-height: 1.45;
+    }
+
+    .gate-step.fail {
+      background: #fff5f5;
+      border-color: rgba(220, 38, 38, 0.2);
+    }
+
+    .gate-step.fail .num,
+    .gate-step.fail h3 {
+      color: var(--red);
+    }
+
+    .check-run {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    .check-run-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: center;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .check-run-row:last-child { border-bottom: none; }
+
+    .check-name {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .check-detail {
+      font-size: 0.72rem;
+      color: var(--text-tertiary);
+      margin-top: 2px;
+    }
+
+    .check-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--accent);
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(5, 150, 105, 0.07);
+    }
+
+    .check-badge.fail {
+      color: var(--red);
+      background: rgba(220, 38, 38, 0.07);
+    }
+
+    /* PAIN GRID */
+    .pain-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-top: 36px;
+    }
+
+    .pain-item {
+      padding: 20px;
+      background: var(--bg);
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .pain-item span {
+      display: block;
+      margin-top: 6px;
+      font-size: 0.75rem;
+      font-weight: 400;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+
+    /* BLACK BOX FLOW */
+    .blackbox-flow {
+      display: grid;
+      grid-template-columns: 0.9fr 1.25fr 0.9fr 1.1fr 0.9fr;
+      gap: 18px;
+      align-items: center;
+      margin-top: 42px;
+      padding: 0;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+    }
+
+    .blackbox-node {
+      min-height: 132px;
+      padding: 22px 20px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      text-align: left;
+      position: relative;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .blackbox-node:not(.core)::after {
+      content: '→';
+      position: absolute;
+      right: -23px;
+      top: 50%;
+      width: 30px;
+      height: 20px;
+      margin-top: -10px;
+      color: #8b949e;
+      background: transparent;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      font-weight: 600;
+      line-height: 20px;
+      text-align: center;
+      z-index: 2;
+    }
+
+    .blackbox-node:last-child::after { display: none; }
+
+    .blackbox-node h3 {
+      font-size: 0.86rem;
+      font-weight: 700;
+      margin-bottom: 7px;
+    }
+
+    .blackbox-node p {
+      font-size: 0.74rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .blackbox-node.core {
+      min-height: 170px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      text-align: center;
+      border-color: rgba(5, 150, 105, 0.28);
+      background:
+        linear-gradient(180deg, rgba(5, 150, 105, 0.08), rgba(5, 150, 105, 0.03)),
+        var(--bg);
+      box-shadow: 0 14px 34px rgba(17, 24, 39, 0.08);
+    }
+
+    .blackbox-node.core::after {
+      content: '→';
+      position: absolute;
+      top: 50%;
+      width: 30px;
+      height: 20px;
+      margin-top: -10px;
+      color: #8b949e;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      font-weight: 600;
+      line-height: 20px;
+      text-align: center;
+    }
+
+    .blackbox-node.core::after { right: -23px; }
+
+    .blackbox-eyebrow {
+      display: inline-flex;
+      align-self: center;
+      margin-bottom: 14px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: rgba(5, 150, 105, 0.08);
+      border: 1px solid var(--accent-border);
+      color: #327c66;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.66rem;
+      font-weight: 600;
+    }
+
+    /* PLATFORM SECTION */
+    .platform-panel {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      overflow: visible;
+      margin-top: 42px;
+    }
+
+    .platform-cell {
+      padding: 30px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .bg-alt .platform-cell { background: var(--bg-alt); }
+
+    .platform-cell.owned {
+      border-color: rgba(5, 150, 105, 0.22);
+      background:
+        linear-gradient(180deg, rgba(5, 150, 105, 0.055), rgba(255, 255, 255, 0)),
+        var(--bg);
+    }
+
+    .platform-cell h3 {
+      font-size: 1.05rem;
+      font-weight: 800;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .platform-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      color: var(--text-tertiary);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.64rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .platform-cell.owned .platform-badge {
+      background: rgba(5, 150, 105, 0.08);
+      border-color: var(--accent-border);
+      color: #327c66;
+    }
+
+    .platform-cell ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .platform-cell li {
+      display: flex;
+      gap: 10px;
+      align-items: start;
+      font-size: 0.86rem;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+
+    .platform-cell li::before {
+      content: '✓';
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      display: inline-flex;
+      flex: 0 0 auto;
+      align-items: center;
+      justify-content: center;
+      background: rgba(5, 150, 105, 0.07);
+      color: var(--accent);
+      font-size: 0.72rem;
+      font-weight: 800;
+      margin-top: 1px;
+    }
+
+    .platform-cell.keep li::before {
+      content: '•';
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      color: var(--text-tertiary);
+      font-size: 0.95rem;
+      line-height: 1;
+    }
+
+    .platform-cell li strong {
+      color: var(--text);
     }
 
     /* SECTIONS */
-    section { padding: 100px 0; position: relative; }
+    section {
+      padding: 92px 0;
+      position: relative;
+      scroll-margin-top: 72px;
+    }
     .bg-alt {
       background-color: var(--bg-alt);
-      background-image: radial-gradient(circle, #d1d5db 1px, transparent 1px);
-      background-size: 24px 24px;
       border-top: 1px solid var(--border-light);
       border-bottom: 1px solid var(--border-light);
     }
@@ -539,7 +821,7 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: rgba(250, 251, 252, 0.78);
+      background: rgba(250, 251, 252, 0.9);
       pointer-events: none;
     }
 
@@ -547,9 +829,9 @@
 
     .section-num {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
+      font-size: 0.64rem;
       font-weight: 500;
-      color: var(--text-tertiary);
+      color: #c3c8d0;
       margin-bottom: 8px;
       letter-spacing: 0.04em;
     }
@@ -559,14 +841,14 @@
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.06em;
-      color: var(--accent);
+      color: #327c66;
       margin-bottom: 16px;
     }
 
     h2 {
       font-size: clamp(1.75rem, 3.5vw, 2.5rem);
       font-weight: 800;
-      letter-spacing: -0.035em;
+      letter-spacing: 0;
       line-height: 1.1;
       margin-bottom: 16px;
     }
@@ -576,7 +858,7 @@
       color: var(--text-secondary);
       max-width: 520px;
       line-height: 1.7;
-      margin-bottom: 56px;
+      margin-bottom: 44px;
     }
 
     /* STEPS */
@@ -608,7 +890,7 @@
       font-size: 1rem;
       font-weight: 700;
       margin-bottom: 8px;
-      letter-spacing: -0.01em;
+      letter-spacing: 0;
     }
 
     .step-cell p {
@@ -677,7 +959,7 @@
       font-size: 1.125rem;
       font-weight: 700;
       margin-bottom: 12px;
-      letter-spacing: -0.01em;
+      letter-spacing: 0;
     }
 
     .split-text > p {
@@ -894,18 +1176,21 @@
       border: 1px solid var(--border);
       border-radius: var(--radius);
       overflow: hidden;
-      margin-top: 56px;
+      margin-top: 40px;
+      background: var(--bg);
+      box-shadow: var(--shadow-sm);
     }
 
     .comp-table {
       width: 100%;
-      border-collapse: collapse;
-      font-size: 0.8125rem;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 0.875rem;
     }
 
     .comp-table thead th {
       text-align: left;
-      padding: 12px 20px;
+      padding: 14px 24px;
       background: var(--bg-alt);
       font-size: 0.75rem;
       font-weight: 600;
@@ -913,20 +1198,29 @@
       border-bottom: 1px solid var(--border);
     }
 
-    .comp-table thead th.hl { color: var(--accent); }
+    .comp-table thead th.hl { color: #327c66; }
 
     .comp-table td {
-      padding: 12px 20px;
+      padding: 17px 24px;
       color: var(--text-secondary);
       border-bottom: 1px solid var(--border-light);
+      vertical-align: middle;
+    }
+
+    .comp-table td:first-child {
+      color: var(--text);
+      font-weight: 500;
     }
 
     .comp-table tbody tr:last-child td { border-bottom: none; }
 
+    .comp-table tbody tr.fit-row td {
+      background: rgba(5, 150, 105, 0.035);
+    }
+
     .comp-table .hl-cell {
-      color: var(--text);
-      font-weight: 500;
-      background: rgba(5, 150, 105, 0.02);
+      color: #036b52;
+      font-weight: 700;
     }
 
     .comp-table .ck { color: var(--accent); font-weight: 600; }
@@ -935,8 +1229,9 @@
     /* CONTRAST BAR */
     .contrast-bar {
       text-align: center;
-      padding: 40px 24px;
+      padding: 34px 24px;
       border-bottom: 1px solid var(--border-light);
+      background: rgba(255, 255, 255, 0.78);
     }
 
     .contrast-bar .contrast-title {
@@ -944,7 +1239,7 @@
       font-weight: 700;
       color: var(--text);
       margin-bottom: 16px;
-      letter-spacing: -0.01em;
+      letter-spacing: 0;
     }
 
     .contrast-items {
@@ -1231,23 +1526,6 @@
       overflow: hidden;
     }
 
-    .cta-section::before {
-      content: '';
-      position: absolute;
-      bottom: -80px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 800px;
-      height: 500px;
-      background: radial-gradient(ellipse at center,
-        rgba(5, 150, 105, 0.08) 0%,
-        rgba(5, 150, 105, 0.03) 40%,
-        transparent 70%
-      );
-      pointer-events: none;
-      z-index: 0;
-    }
-
     .cta-section > * { position: relative; z-index: 1; }
 
     .cta-section h2 { margin-bottom: 16px; }
@@ -1284,33 +1562,50 @@
 
     /* RESPONSIVE */
     @media (max-width: 768px) {
-      .steps-grid, .cards-3, .also-grid { grid-template-columns: 1fr; }
+      .steps-grid, .cards-3, .also-grid, .pain-grid, .platform-panel { grid-template-columns: 1fr; }
+      .gate-flow, .blackbox-flow { grid-template-columns: 1fr; }
+      .gate-step:not(:last-child)::after,
+      .blackbox-node::after { display: none !important; }
+      .pr-gate { padding: 20px; }
+      .pr-header { flex-direction: column; }
+      .blackbox-node.core { min-height: 150px; }
       .example-layout { grid-template-columns: 1fr; }
       .example-grid { grid-template-columns: 1fr; }
       .split { grid-template-columns: 1fr; gap: 40px; }
       .flow-row { grid-template-columns: 1fr 1fr; }
       .cards-2x2 { grid-template-columns: 1fr; }
       .nav-links a:not(.btn-nav) { display: none; }
-      .hero { padding: 110px 0 0; }
-      .hero-showcase { margin-top: 40px; padding-bottom: 48px; }
+      .nav-links a[href="docs.html"] { display: inline-flex; }
+      .nav-links { gap: 14px; }
+      .hero { padding: 96px 0 0; }
+      .hero-showcase { margin-top: 34px; padding-bottom: 48px; }
       .hero-showcase-inner { transform: none; }
       .comp-table { font-size: 0.75rem; }
-      .comp-table td, .comp-table th { padding: 10px 12px; }
+      .comp-table td, .comp-table th { padding: 13px 14px; }
       .pipeline-diagram { overflow-x: auto; }
       .trace-verdict .breakdown { flex-wrap: wrap; gap: 8px; }
+    }
+
+    @media (min-width: 769px) and (max-width: 1120px) {
+      .blackbox-flow {
+        grid-template-columns: repeat(5, minmax(160px, 1fr));
+        overflow-x: auto;
+        padding: 0 0 8px;
+      }
     }
 
     @media (max-width: 480px) {
       .flow-row { grid-template-columns: 1fr; }
       h1 { font-size: 2.25rem; }
+      .check-run-row { grid-template-columns: 1fr; gap: 8px; }
     }
 
     /* CI PIPELINE DIAGRAM */
     .pipeline-diagram {
-      margin-top: 56px;
-      padding: 40px 24px 24px;
+      margin-top: 42px;
+      padding: 34px 24px 24px;
       border: 1px solid var(--border);
-      border-radius: var(--radius);
+      border-radius: 8px;
       background: var(--bg);
       overflow-x: auto;
     }
@@ -1512,51 +1807,9 @@
         <img src="assets/llmci-logo.png" alt="llmci" class="logo-img">
       </a>
       <div class="nav-links">
-        <a href="#how-it-works">How It Works</a>
+        <a href="#how-it-works">How it works</a>
         <a href="#example">Example</a>
-        <a href="#features">Features</a>
-        <div class="nav-dropdown">
-          <a href="use-cases.html">Use Cases <svg class="chevron" viewBox="0 0 12 12" fill="none"><path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-          <div class="dropdown-menu">
-            <a class="dropdown-item" href="use-cases.html#ci-regression">
-              <div class="dd-icon">&#x2713;</div>
-              <div>
-                <h4>CI Regression Testing</h4>
-                <p>Gate every PR with eval checks. Catch quality drops before they merge.</p>
-              </div>
-            </a>
-            <a class="dropdown-item" href="use-cases.html#model-migration">
-              <div class="dd-icon">&#x21C4;</div>
-              <div>
-                <h4>Model Migration</h4>
-                <p>Switch models with automated prompt tuning. Holdout validation and early stopping.</p>
-              </div>
-            </a>
-            <a class="dropdown-item" href="use-cases.html#agent-testing">
-              <div class="dd-icon">&#x2192;</div>
-              <div>
-                <h4>Agent Testing</h4>
-                <p>Evaluate multi-turn trajectories, tool use, cost budgets, and outcome correctness.</p>
-              </div>
-            </a>
-            <a class="dropdown-item" href="use-cases.html#dataset-creation">
-              <div class="dd-icon">&#x2606;</div>
-              <div>
-                <h4>Dataset Creation</h4>
-                <p>Manual curation with coverage analysis, plus automated generation from logs and specs.</p>
-              </div>
-            </a>
-            <a class="dropdown-item" href="use-cases.html#promptfoo-migration">
-              <div class="dd-icon">&#x27A1;</div>
-              <div>
-                <h4>Migrating from Promptfoo</h4>
-                <p>Provider-neutral alternative with config import and features Promptfoo never had.</p>
-              </div>
-            </a>
-            <div class="dropdown-divider"></div>
-            <a class="dropdown-footer" href="use-cases.html">View all use cases &rarr;</a>
-          </div>
-        </div>
+        <a href="#why-llmci">Why llmci</a>
         <a href="#compare">Compare</a>
         <a href="docs.html">Docs</a>
         <a href="https://github.com/llmci-cli/llmci" class="btn btn-nav">
@@ -1569,19 +1822,17 @@
 
   <!-- HERO -->
   <section class="hero">
-    <div class="hero-orb hero-orb-1"></div>
-    <div class="hero-orb hero-orb-2"></div>
     <div class="container">
-      <div class="hero-badge"><span class="dot"></span> PyPI &middot; Open Source &middot; Provider Neutral</div>
-      <h1>Stop merging PRs that<br><span class="accent">break your LLMs</span></h1>
+      <div class="hero-badge"><span class="dot"></span> Missing CI quality gate for LLM-powered services</div>
+      <h1>Stop merging code that silently<br><span class="accent">degrades your LLM app</span></h1>
       <p class="hero-desc">
-        <strong>llmci</strong> is a CI quality gate for LLM apps. One YAML file, one CLI command, exit&nbsp;0 or 1. Point it at any script — JSON in, JSON out — and gate every PR.
+        <strong>llmci</strong> runs black-box evals against your app in CI, compares behavior against a baseline, and blocks PRs when quality regresses.
       </p>
-      <p class="hero-hook">Someone changed the prompt. Production quality tanked. Nobody noticed for a week.</p>
+      <p class="hero-hook">The prompt did not change. A refactor changed context formatting. The model still answered, but the product got worse.</p>
       <div class="hero-pills">
-        <span class="hero-pill pos">No account</span>
-        <span class="hero-pill pos">No dashboard</span>
-        <span class="hero-pill neg">Not observability</span>
+        <span class="hero-pill pos">Pre-merge protection</span>
+        <span class="hero-pill pos">Baseline comparison</span>
+        <span class="hero-pill neg">Not a platform</span>
         <span class="hero-pill neg">Any stack</span>
       </div>
       <div class="hero-actions">
@@ -1595,14 +1846,65 @@
 
       <div class="hero-showcase hero-showcase-fade">
         <div class="hero-showcase-inner">
-          <img
-            src="assets/github-pr-eval-report.png"
-            alt="GitHub pull request comment from llmci showing eval metrics, regressions detected, and failed examples"
-            width="1080"
-            height="auto"
-            loading="eager"
-            fetchpriority="high"
-          />
+          <div class="pr-gate" aria-label="GitHub pull request check showing llmci blocking a regression">
+            <div class="pr-header">
+              <div>
+                <div class="pr-title">Pull request #184: refactor answer pipeline</div>
+                <div class="pr-meta">llmci / eval gate compares this branch to origin/main</div>
+              </div>
+              <div class="pr-status">Merge blocked</div>
+            </div>
+            <div class="gate-flow">
+              <div class="gate-step">
+                <div class="num">01</div>
+                <h3>PR opened</h3>
+                <p>Ordinary code change touches retrieval and parsing.</p>
+              </div>
+              <div class="gate-step">
+                <div class="num">02</div>
+                <h3>llmci evals run</h3>
+                <p>Dataset inputs hit your actual app boundary.</p>
+              </div>
+              <div class="gate-step">
+                <div class="num">03</div>
+                <h3>Baseline compared</h3>
+                <p>Scores are measured against main, not vibes.</p>
+              </div>
+              <div class="gate-step fail">
+                <div class="num">04</div>
+                <h3>Regression found</h3>
+                <p>Factual pass rate dropped beyond threshold.</p>
+              </div>
+              <div class="gate-step fail">
+                <div class="num">05</div>
+                <h3>Merge blocked</h3>
+                <p>CI fails before the behavior ships.</p>
+              </div>
+            </div>
+            <div class="check-run">
+              <div class="check-run-row">
+                <div>
+                  <div class="check-name">ticket-classification</div>
+                  <div class="check-detail">accuracy 0.94 vs baseline 0.95</div>
+                </div>
+                <div class="check-badge">pass</div>
+              </div>
+              <div class="check-run-row">
+                <div>
+                  <div class="check-name">answer-quality</div>
+                  <div class="check-detail">rubric pass rate regressed by 8.2%</div>
+                </div>
+                <div class="check-badge fail">fail</div>
+              </div>
+              <div class="check-run-row">
+                <div>
+                  <div class="check-name">failed examples posted to PR</div>
+                  <div class="check-detail">review the changed outputs before merging</div>
+                </div>
+                <div class="check-badge fail">required</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1610,41 +1912,52 @@
 
   <!-- CONTRAST BAR -->
   <div class="contrast-bar">
-    <p class="contrast-title">A test suite, not a dashboard</p>
+    <p class="contrast-title">A CI check, not an eval platform</p>
     <div class="contrast-items">
       <span class="contrast-item pos">CI quality gate</span>
-      <span class="contrast-item neg">Not observability</span>
       <span class="contrast-item neg">Not a platform</span>
+      <span class="contrast-item neg">Not observability</span>
       <span class="contrast-item neg">Not vendor-owned</span>
     </div>
     <p class="contrast-sub">Works with any provider via litellm. Your keys, your infra, your repo.</p>
   </div>
 
-  <!-- PROMPTFOO MIGRATION CALLOUT -->
-  <div style="padding: 0 24px;">
-    <div class="migrate-banner">
-      <div class="migrate-icon">&#x21C4;</div>
-      <div>
-        <h4>Migrating from Promptfoo?</h4>
-        <p><strong>llmci</strong> is provider-neutral, open source, and not owned by any model provider. Drop-in CI gating with model migration, agentic eval, and more. <a href="use-cases.html#promptfoo-migration">Migration guide &rarr;</a></p>
-      </div>
-    </div>
-  </div>
-
-  <!-- 01 HOW IT WORKS -->
-  <section id="how-it-works">
+  <!-- 01 REGRESSION PAIN -->
+  <section id="why-llmci">
     <div class="container">
       <div class="section-num">01</div>
+      <div class="section-label">Why llmci</div>
+      <h2>LLM regressions do not only come from prompt changes.</h2>
+      <p class="section-desc">
+        LLM behavior can degrade from ordinary engineering work: the kind of changes that look safe in code review and still change what users experience.
+      </p>
+      <div class="pain-grid">
+        <div class="pain-item">Retrieval changes<span>Different chunks, ranking, filters, or missing documents.</span></div>
+        <div class="pain-item">Context formatting<span>Small template shifts that change what the model attends to.</span></div>
+        <div class="pain-item">Truncation<span>Token limits silently drop the evidence the answer needs.</span></div>
+        <div class="pain-item">Preprocessing<span>Normalization and cleaning change the task before the prompt.</span></div>
+        <div class="pain-item">Output parsing<span>A stricter parser turns acceptable answers into failures.</span></div>
+        <div class="pain-item">Thresholds<span>Confidence, routing, or fallback thresholds drift over time.</span></div>
+        <div class="pain-item">Model swaps<span>The provider or model changes, but product behavior must hold.</span></div>
+        <div class="pain-item">Refactors<span>Dependencies and app code move, and nobody reruns behavioral checks.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 HOW IT WORKS -->
+  <section id="how-it-works" class="bg-alt">
+    <div class="container">
+      <div class="section-num">02</div>
       <div class="section-label">How It Works</div>
       <h2>Set up in five minutes.<br>Protected on every PR.</h2>
       <p class="section-desc">
-        No platform to sign up for. No SDK to integrate. No data leaving your infrastructure. A CLI that reads a YAML file and exits 0 or 1. Your first eval runs in under five minutes.
+        Add a YAML file and one CI step. llmci runs your evals, compares against your main-branch baseline, and exits 0 or 1.
       </p>
       <div class="steps-grid">
         <div class="step-cell">
           <div class="num">01</div>
           <h3>Define your evals</h3>
-          <p>Add a <code style="background: var(--bg-alt); padding: 1px 5px; border-radius: 4px; font-size: 0.82em;">llmci.yaml</code> to your repo. Point it at your eval dataset, pick metrics, set thresholds.</p>
+          <p>Add a <code style="background: var(--bg-alt); padding: 1px 5px; border-radius: 4px; font-size: 0.82em;">llmci.yaml</code> to your repo. Point it at your dataset, target command, metrics, and thresholds.</p>
         </div>
         <div class="step-cell">
           <div class="num">02</div>
@@ -1654,7 +1967,7 @@
         <div class="step-cell">
           <div class="num">03</div>
           <h3>Gate every PR</h3>
-          <p>Pass or fail. If quality degrades beyond your thresholds, the PR is blocked with a detailed regression report.</p>
+          <p>If behavior degrades beyond your thresholds, the required check fails and the PR is blocked with a regression report.</p>
         </div>
       </div>
 
@@ -1669,68 +1982,73 @@
           <line x1="748" y1="62" x2="808" y2="74" stroke="#d1d5db" stroke-width="2.5" stroke-dasharray="6 4" />
 
           <!-- Animated pulses traveling along connectors -->
-          <circle r="5" fill="#059669">
+          <circle r="5" fill="#059669" opacity="0">
             <animateMotion dur="2.5s" repeatCount="indefinite" begin="0s"><mpath href="#path1"/></animateMotion>
             <animate attributeName="opacity" values="0;1;1;1;0" dur="2.5s" repeatCount="indefinite" />
           </circle>
           <path id="path1" d="M148,52 L218,52" fill="none" stroke="none"/>
 
-          <circle r="5" fill="#059669">
+          <circle r="5" fill="#059669" opacity="0">
             <animateMotion dur="2.5s" repeatCount="indefinite" begin="0.5s"><mpath href="#path2"/></animateMotion>
             <animate attributeName="opacity" values="0;1;1;1;0" dur="2.5s" repeatCount="indefinite" begin="0.5s"/>
           </circle>
           <path id="path2" d="M348,52 L418,52" fill="none" stroke="none"/>
 
-          <circle r="5" fill="#059669">
+          <circle r="5" fill="#059669" opacity="0">
             <animateMotion dur="2.5s" repeatCount="indefinite" begin="1s"><mpath href="#path3"/></animateMotion>
             <animate attributeName="opacity" values="0;1;1;1;0" dur="2.5s" repeatCount="indefinite" begin="1s"/>
           </circle>
           <path id="path3" d="M548,52 L618,52" fill="none" stroke="none"/>
 
-          <circle r="5" fill="#059669">
+          <circle r="5" fill="#059669" opacity="0">
             <animateMotion dur="2.5s" repeatCount="indefinite" begin="1.5s"><mpath href="#path4a"/></animateMotion>
             <animate attributeName="opacity" values="0;1;1;1;0" dur="2.5s" repeatCount="indefinite" begin="1.5s"/>
           </circle>
           <path id="path4a" d="M748,42 L808,30" fill="none" stroke="none"/>
 
-          <circle r="5" fill="#dc2626">
+          <circle r="5" fill="#dc2626" opacity="0">
             <animateMotion dur="2.5s" repeatCount="indefinite" begin="1.5s"><mpath href="#path4b"/></animateMotion>
             <animate attributeName="opacity" values="0;1;1;1;0" dur="2.5s" repeatCount="indefinite" begin="1.5s"/>
           </circle>
           <path id="path4b" d="M748,62 L808,74" fill="none" stroke="none"/>
 
-          <!-- Node 1: git push -->
+          <!-- Node 1: GitHub PR -->
           <rect x="28" y="18" width="120" height="68" rx="14" fill="rgba(5,150,105,0.04)" stroke="#059669" stroke-width="1.5" />
-          <g transform="translate(75, 38)">
-            <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9l-7-7z" stroke="#059669" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="scale(0.9)"/>
-            <path d="M13 2v7h7" stroke="#059669" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="scale(0.9)"/>
+          <g transform="translate(76, 40) scale(0.75)">
+            <path fill="#059669" d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.21 11.39.6.11.79-.26.79-.58v-2.23c-3.34.73-4.03-1.42-4.03-1.42-.55-1.39-1.33-1.76-1.33-1.76-1.09-.74.08-.73.08-.73 1.21.08 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.49.99.11-.77.42-1.3.76-1.6-2.66-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23A11.5 11.5 0 0112 5.8c1.02 0 2.05.14 3 .4 2.29-1.55 3.3-1.23 3.3-1.23.65 1.66.24 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.62-5.48 5.92.43.37.82 1.1.82 2.22v3.3c0 .32.19.69.8.58A12.01 12.01 0 0024 12c0-6.63-5.37-12-12-12z"/>
           </g>
-          <text x="88" y="116" text-anchor="middle" fill="#4b5563" font-family="Inter, sans-serif" font-size="12" font-weight="600">git push</text>
+          <text x="88" y="116" text-anchor="middle" fill="#4b5563" font-family="Inter, sans-serif" font-size="12" font-weight="600">GitHub PR</text>
 
-          <!-- Node 2: CI Trigger -->
+          <!-- Node 2: CI Check -->
           <rect x="218" y="18" width="130" height="68" rx="14" fill="rgba(5,150,105,0.04)" stroke="#059669" stroke-width="1.5" />
-          <g transform="translate(270, 38)">
-            <circle cx="8" cy="8" r="7" stroke="#059669" stroke-width="1.8" fill="none"/>
-            <path d="M8 4v4l2.5 1.5" stroke="#059669" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+          <g transform="translate(271, 40)">
+            <rect x="2" y="3" width="20" height="18" rx="5" stroke="#059669" stroke-width="1.8" fill="none"/>
+            <path d="M7 12l3 3 7-7" stroke="#059669" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
           </g>
-          <text x="283" y="116" text-anchor="middle" fill="#4b5563" font-family="Inter, sans-serif" font-size="12" font-weight="600">CI Trigger</text>
+          <text x="283" y="116" text-anchor="middle" fill="#4b5563" font-family="Inter, sans-serif" font-size="12" font-weight="600">CI Check</text>
 
           <!-- Node 3: llmci run -->
           <rect x="418" y="18" width="130" height="68" rx="14" fill="rgba(5,150,105,0.04)" stroke="#059669" stroke-width="1.5" />
-          <g transform="translate(471, 38)">
-            <polyline points="16,5 7.5,14 3,9.5" stroke="#059669" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <g transform="translate(471, 40)">
+            <rect x="1.5" y="4" width="23" height="16" rx="4" stroke="#059669" stroke-width="1.8" fill="none"/>
+            <path d="M6.5 9l3 3-3 3" stroke="#059669" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M13 15h5" stroke="#059669" stroke-width="1.8" stroke-linecap="round"/>
           </g>
           <text x="483" y="116" text-anchor="middle" fill="#4b5563" font-family="Inter, sans-serif" font-size="12" font-weight="600">llmci run</text>
 
-          <!-- Node 4: Compare Baseline -->
+          <!-- Node 4: Baseline Diff -->
           <rect x="618" y="18" width="130" height="68" rx="14" fill="rgba(5,150,105,0.04)" stroke="#059669" stroke-width="1.5" />
-          <g transform="translate(670, 36)">
-            <rect x="0" y="0" width="14" height="18" rx="2" stroke="#059669" stroke-width="1.6" fill="none"/>
-            <line x1="3.5" y1="5" x2="10.5" y2="5" stroke="#059669" stroke-width="1.4"/>
-            <line x1="3.5" y1="9" x2="10.5" y2="9" stroke="#059669" stroke-width="1.4"/>
-            <line x1="3.5" y1="13" x2="8" y2="13" stroke="#059669" stroke-width="1.4"/>
+          <g transform="translate(671, 40)">
+            <path d="M5 5v14" stroke="#059669" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M19 5v14" stroke="#059669" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M8 8h6l2 2" stroke="#059669" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M8 16h6l2-2" stroke="#059669" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="5" cy="5" r="2.5" fill="#059669"/>
+            <circle cx="5" cy="19" r="2.5" fill="#059669"/>
+            <circle cx="19" cy="5" r="2.5" fill="#059669"/>
+            <circle cx="19" cy="19" r="2.5" fill="#059669"/>
           </g>
-          <text x="683" y="116" text-anchor="middle" fill="#4b5563" font-family="Inter, sans-serif" font-size="12" font-weight="600">Compare Baseline</text>
+          <text x="683" y="116" text-anchor="middle" fill="#4b5563" font-family="Inter, sans-serif" font-size="12" font-weight="600">Baseline diff</text>
 
           <!-- Node 5a: Pass -->
           <rect x="808" y="10" width="110" height="40" rx="10" fill="rgba(5,150,105,0.08)" stroke="rgba(5,150,105,0.3)" stroke-width="1.5" />
@@ -1746,14 +2064,49 @@
     </div>
   </section>
 
-  <!-- 02 REAL EXAMPLE -->
+  <!-- 03 BLACK BOX -->
+  <section id="black-box">
+    <div class="container">
+      <div class="section-num">03</div>
+      <div class="section-label">Black-Box Evaluation</div>
+      <h2>Test the system boundary your users actually hit.</h2>
+      <p class="section-desc">
+        llmci does not care whether your app uses RAG, agents, LangChain, custom services, OpenAI, Anthropic, or local models. Give it inputs, run your existing app, judge the outputs.
+      </p>
+      <div class="blackbox-flow">
+        <div class="blackbox-node">
+          <h3>eval input</h3>
+          <p>JSONL examples from your repo or object storage.</p>
+        </div>
+        <div class="blackbox-node core">
+          <span class="blackbox-eyebrow">system boundary</span>
+          <h3>your app / script / service</h3>
+          <p>The real code path, wrapped by a thin command contract.</p>
+        </div>
+        <div class="blackbox-node">
+          <h3>actual output</h3>
+          <p>What the branch produced for each example.</p>
+        </div>
+        <div class="blackbox-node">
+          <h3>judge + metrics</h3>
+          <p>Exact match, F1, accuracy, or LLM-as-judge rubrics.</p>
+        </div>
+        <div class="blackbox-node">
+          <h3>pass/fail CI</h3>
+          <p>Block unsafe regressions before merge.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 REAL EXAMPLE -->
   <section id="example" class="bg-alt">
     <div class="container">
-      <div class="section-num">02</div>
+      <div class="section-num">04</div>
       <div class="section-label">Real Example</div>
       <h2>Ticket classifier CI in four files.</h2>
       <p class="section-desc">
-        A support app routes tickets into hardware, billing, account, or software. Here&rsquo;s what you add to your existing repo — your app code stays unchanged, wrapped by a thin eval script.
+        This is not a new platform. These are just files added to your existing repo. Your app code stays unchanged, wrapped by a thin eval script.
       </p>
 
       <div class="example-layout">
@@ -1855,15 +2208,47 @@ json.dump({<span class="s">"output"</span>: result}, open(args.output, <span cla
     </div>
   </section>
 
-  <!-- 03 FEATURES -->
-  <section id="features">
+  <!-- 05 NOT A PLATFORM -->
+  <section id="not-platform">
+    <div class="container">
+      <div class="section-num">05</div>
+      <div class="section-label">Not A Platform</div>
+      <h2>Not a platform.<br>A CI check.</h2>
+      <p class="section-desc">
+        llmci does not want to own your prompts, traces, datasets, or production logs. It lives in your repo, runs in your CI, and exits 0 or 1.
+      </p>
+      <div class="platform-panel">
+        <div class="platform-cell owned">
+          <h3>llmci owns <span class="platform-badge">CI gate</span></h3>
+          <ul>
+            <li><span><strong>A required check</strong> for pull requests</span></li>
+            <li><span><strong>A config file</strong> committed with your code</span></li>
+            <li><span><strong>A regression report</strong> posted where engineers review changes</span></li>
+            <li><span><strong>An exit code</strong> your CI already understands</span></li>
+          </ul>
+        </div>
+        <div class="platform-cell keep">
+          <h3>You keep <span class="platform-badge">your repo</span></h3>
+          <ul>
+            <li><span><strong>Your app architecture</strong> stays in your framework and deployment path</span></li>
+            <li><span><strong>Your eval data</strong> stays in your repo, bucket, or private storage</span></li>
+            <li><span><strong>Your production logs</strong> stay in your observability stack</span></li>
+            <li><span><strong>Your model providers</strong> stay with your keys and infrastructure</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 CONFIG -->
+  <section id="features" class="bg-alt">
     <div class="container">
       <div class="split">
         <div class="split-text">
-          <div class="section-num">03</div>
+          <div class="section-num">06</div>
           <div class="section-label">Config as Code</div>
           <h2>Your LLM quality,<br>version-controlled</h2>
-          <p>One YAML file defines everything. Deterministic metrics for classification. LLM-as-judge for open-ended generation. Your pipeline runs as a subprocess — any language, any framework.</p>
+          <p>One YAML file defines the eval gate. Deterministic metrics for classification. LLM-as-judge for open-ended generation. Your pipeline runs as a subprocess: any language, any framework.</p>
           <ul class="feature-stack">
             <li>
               <div class="f-icon">&#8646;</div>
@@ -1941,124 +2326,85 @@ json.dump({<span class="s">"output"</span>: result}, open(args.output, <span cla
     </div>
   </section>
 
-  <!-- 04 ALSO SUPPORTS -->
-  <section id="also-supports" class="bg-alt">
+  <!-- 07 ALSO SUPPORTS -->
+  <section id="also-supports">
     <div class="container">
-      <div class="section-num">04</div>
-      <div class="section-label">Beyond the basics</div>
-      <h2>Same CLI. More when you need it.</h2>
+      <div class="section-num">07</div>
+      <div class="section-label">Optional Workflows</div>
+      <h2>Built on the same eval gate.</h2>
       <p class="section-desc">
-        The core workflow is YAML + <code>llmci run</code> in CI. These are optional capabilities — each documented in depth on the use cases page.
+        Once your eval suite is running in CI, you can reuse it for migration and dataset workflows without changing the core adoption story.
       </p>
       <div class="also-grid">
         <a class="also-card" href="use-cases.html#model-migration">
-          <h3>Model migration <span>&rarr;</span></h3>
-          <p>Automatically re-tune prompts when switching models. Holdout validation and early stopping built in.</p>
+          <h3>Model/prompt migration <span>&rarr;</span></h3>
+          <p>Use the same protected eval suite to compare models, tune prompts, and validate migration candidates.</p>
         </a>
         <a class="also-card" href="use-cases.html#agent-testing">
-          <h3>Agent testing <span>&rarr;</span></h3>
-          <p>Evaluate trajectories, tool budgets, and outcomes — not just final output. Same black-box command contract.</p>
+          <h3>Agent trajectory checks <span>&rarr;</span></h3>
+          <p>Evaluate tool use, cost budgets, and outcomes with the same black-box command contract.</p>
         </a>
         <a class="also-card" href="use-cases.html#dataset-creation">
-          <h3>Dataset tools <span>&rarr;</span></h3>
-          <p>Start with 10 hand-picked examples. Use <code>dataset add</code>, <code>check</code>, and <code>import</code> to grow coverage over time.</p>
+          <h3>Dataset augmentation <span>&rarr;</span></h3>
+          <p>Start with hand-picked examples, then grow coverage with import, check, and augmentation tools.</p>
         </a>
       </div>
-      <p class="also-footer"><a href="use-cases.html">View all use cases &rarr;</a></p>
+      <div class="migrate-banner">
+        <div class="migrate-icon">&#x21C4;</div>
+        <div>
+          <h4>Coming from Promptfoo?</h4>
+          <p>Keep the homepage focus on CI gating. When you need migration details, see the <a href="use-cases.html#promptfoo-migration">Promptfoo migration guide &rarr;</a></p>
+        </div>
+      </div>
     </div>
   </section>
 
-  <!-- 05 COMPARE -->
-  <section id="compare">
+  <!-- 08 COMPARE -->
+  <section id="compare" class="bg-alt">
     <div class="container">
-      <div class="section-num">05</div>
-      <div class="section-label">Why llmci</div>
-      <h2>Not another dashboard. Not observability.</h2>
+      <div class="section-num">08</div>
+      <div class="section-label">Compare</div>
+      <h2>Use the focused tool for the job.</h2>
       <p class="section-desc">
-        Langfuse and Braintrust monitor production. llmci gates PRs. No account, no platform, no SDK instrumentation — just a CLI that reads YAML and exits 0 or 1.
+        llmci is not trying to replace observability, prompt workbenches, RAG evaluators, or Python test libraries. It is best when the job is blocking LLM regressions before merge.
       </p>
 
       <div class="comp-table-wrap">
         <table class="comp-table">
           <thead>
             <tr>
-              <th style="width: 22%"></th>
-              <th class="hl" style="width: 19.5%">llmci</th>
-              <th style="width: 19.5%">Promptfoo <span style="font-weight: 400; font-size: 0.65rem; color: var(--text-tertiary); display: block;">now owned by OpenAI</span></th>
-              <th style="width: 19.5%">Langfuse</th>
-              <th style="width: 19.5%">DeepEval</th>
+              <th style="width: 50%">Need</th>
+              <th class="hl">Best fit</th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>Primary purpose</td>
-              <td class="hl-cell">CI quality gate</td>
-              <td>Prompt comparison</td>
-              <td>Observability</td>
-              <td>Automated eval CI</td>
+            <tr class="fit-row">
+              <td>Block PRs when LLM behavior regresses</td>
+              <td class="hl-cell">llmci</td>
             </tr>
             <tr>
-              <td>Runs in CI natively</td>
-              <td class="hl-cell ck">&#10003; Built for it</td>
-              <td>Partial</td>
-              <td>Limited</td>
-              <td class="ck">&#10003;</td>
+              <td>Trace production LLM calls</td>
+              <td>Langfuse / Opik / Braintrust</td>
             </tr>
             <tr>
-              <td>Blocks PRs on regression</td>
-              <td class="hl-cell ck">&#10003;</td>
-              <td>Partial</td>
-              <td class="cx">&#10007;</td>
-              <td class="ck">&#10003;</td>
+              <td>Compare prompts and models interactively</td>
+              <td>Promptfoo / Braintrust</td>
             </tr>
             <tr>
-              <td>Not observability / no dashboard</td>
-              <td class="hl-cell ck">&#10003;</td>
-              <td>Partial</td>
-              <td class="cx">&#10007;</td>
-              <td class="ck">&#10003;</td>
+              <td>Red-team for jailbreaks</td>
+              <td>Promptfoo / Giskard</td>
             </tr>
             <tr>
-              <td>Black-box testing (any stack)</td>
-              <td class="hl-cell ck">&#10003;</td>
-              <td>Partial</td>
-              <td class="cx">&#10007;</td>
-              <td class="cx">&#10007;</td>
+              <td>Evaluate RAG quality</td>
+              <td>Ragas / DeepEval</td>
             </tr>
             <tr>
-              <td>Auto model migration</td>
-              <td class="hl-cell ck">&#10003;</td>
-              <td class="cx">&#10007;</td>
-              <td class="cx">&#10007;</td>
-              <td class="cx">&#10007;</td>
+              <td>Write Pythonic LLM tests</td>
+              <td>DeepEval</td>
             </tr>
-            <tr>
-              <td>Agentic workflow testing</td>
-              <td class="hl-cell ck">&#10003;</td>
-              <td class="cx">&#10007;</td>
-              <td>Tracing only</td>
-              <td class="cx">&#10007;</td>
-            </tr>
-            <tr>
-              <td>Pipeline-level testing</td>
-              <td class="hl-cell ck">&#10003;</td>
-              <td>Prompt-level only</td>
-              <td>N/A</td>
-              <td>Prompt-level only</td>
-            </tr>
-            <tr>
-              <td>Provider neutral</td>
-              <td class="hl-cell ck">&#10003; Community-owned</td>
-              <td style="color: var(--red);">Owned by OpenAI</td>
-              <td class="ck">&#10003;</td>
-              <td class="ck">&#10003;</td>
-            </tr>
-            <tr>
-              <td>Setup time</td>
-              <td class="hl-cell">5 minutes</td>
-              <td>~30 minutes</td>
-              <td>Hours</td>
-              <td>~30 minutes</td>
+            <tr class="fit-row">
+              <td>Run black-box evals against any app boundary in CI</td>
+              <td class="hl-cell">llmci</td>
             </tr>
           </tbody>
         </table>
@@ -2069,8 +2415,8 @@ json.dump({<span class="s">"output"</span>: result}, open(args.output, <span cla
   <!-- CTA -->
   <section class="cta-section">
     <div class="container">
-      <h2>Ship LLM changes<br>with confidence</h2>
-      <p>A test suite for your LLMs. Open source on PyPI. Five-minute setup. Never merge a regression again.</p>
+      <h2>Make LLM regressions<br>a failed check</h2>
+      <p>Run black-box evals in CI, compare against baseline, and block unsafe PRs before they merge.</p>
       <div class="hero-actions">
         <a href="docs.html#quickstart" class="btn btn-primary">Get Started</a>
         <a href="docs.html" class="btn btn-ghost">Read the Docs</a>
