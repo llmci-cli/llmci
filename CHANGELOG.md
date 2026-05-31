@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-05-31
+
 ### Added
 - `llmci run --config <path>` to run evals from an alternate config file.
 
@@ -91,6 +93,7 @@ Initial public release on PyPI as [`llmci`](https://pypi.org/project/llmci/).
 **Examples**
 - Nine runnable examples: CI regression, model migration, LLM judge, custom judge, agent single/multi-turn, RAG pipeline, FastAPI service, summarization QA
 
+[0.1.6]: https://github.com/llmci-cli/llmci/releases/tag/v0.1.6
 [0.1.5]: https://github.com/llmci-cli/llmci/releases/tag/v0.1.5
 [0.1.4]: https://github.com/llmci-cli/llmci/releases/tag/v0.1.4
 [0.1.3]: https://github.com/llmci-cli/llmci/releases/tag/v0.1.3
