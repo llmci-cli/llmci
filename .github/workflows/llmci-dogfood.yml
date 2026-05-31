@@ -46,5 +46,6 @@ jobs:
         working-directory: examples/${{ matrix.example }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LLMCI_REPORT_SLICE: ${{ matrix.example }}/llmci.yaml
           MOCK_LLM: ${{ matrix.example == '10-agent-openai-agents' && '1' || '' }}
         run: llmci run

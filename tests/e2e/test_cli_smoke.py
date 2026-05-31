@@ -32,6 +32,8 @@ def test_run_help():
     assert "--all" in result.output
     assert "--config" in result.output
     assert "--compare-to" in result.output
+    assert "--exclude" in result.output
+    assert "--include" in result.output
     assert "--root" in result.output
     assert "--smoke" in result.output
     assert "--update-baseline" in result.output
@@ -97,6 +99,28 @@ def test_discover_lists_configs_and_skips_ignored_dirs():
         ]
 
 
+def test_discover_filters_configs():
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        write_service_config(Path("services/api"), "llmci.yaml", "api-service")
+        write_service_config(Path("services/agent"), "llmci-agent.yaml", "agent-service")
+        write_service_config(Path("migration"), "llmci.yaml", "migration")
+
+        result = runner.invoke(
+            cli,
+            [
+                "discover",
+                "--include",
+                "services/**",
+                "--exclude",
+                "services/agent/*",
+            ],
+        )
+
+        assert result.exit_code == 0
+        assert result.output.splitlines() == ["services/api/llmci.yaml"]
+
+
 def test_run_all_discovered_configs():
     runner = CliRunner()
     with runner.isolated_filesystem():
@@ -110,6 +134,32 @@ def test_run_all_discovered_configs():
         assert "### services/api/llmci.yaml" in result.output
         assert "agent-service" in result.output
         assert "api-service" in result.output
+
+
+def test_run_all_filters_configs():
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        write_service_config(Path("services/api"), "llmci.yaml", "api-service")
+        write_service_config(Path("services/agent"), "llmci-agent.yaml", "agent-service")
+        write_service_config(Path("migration"), "llmci.yaml", "migration")
+
+        result = runner.invoke(
+            cli,
+            [
+                "run",
+                "--all",
+                "--include",
+                "services/**",
+                "--exclude",
+                "services/agent/*",
+            ],
+        )
+
+        assert result.exit_code == 0
+        assert "### services/api/llmci.yaml" in result.output
+        assert "api-service" in result.output
+        assert "agent-service" not in result.output
+        assert "migration" not in result.output
 
 
 def test_run_all_uses_root_option():
@@ -147,6 +197,8 @@ def test_discover_help():
     runner = CliRunner()
     result = runner.invoke(cli, ["discover", "--help"])
     assert result.exit_code == 0
+    assert "--exclude" in result.output
+    assert "--include" in result.output
     assert "--root" in result.output
 
 

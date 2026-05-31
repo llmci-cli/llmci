@@ -101,6 +101,7 @@ For monorepos, discover configs and run them all:
 llmci discover
 llmci run --all
 llmci run --all --root services/ticket-classifier
+llmci run --all --include "services/**" --exclude "services/summarizer/llmci.yaml"
 ```
 
 ### Target Modes

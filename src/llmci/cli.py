@@ -6,6 +6,7 @@ import asyncio
 import json
 import os
 import sys
+from fnmatch import fnmatch
 from pathlib import Path
 
 import click
@@ -31,7 +32,17 @@ IGNORED_CONFIG_DIRS = {
 }
 
 
-def discover_config_files(root: Path = Path(".")) -> list[Path]:
+def _matches_any(path: Path, patterns: tuple[str, ...]) -> bool:
+    """Return whether a path matches any shell-style pattern."""
+    path_text = path.as_posix()
+    return any(fnmatch(path_text, pattern) for pattern in patterns)
+
+
+def discover_config_files(
+    root: Path = Path("."),
+    include: tuple[str, ...] = (),
+    exclude: tuple[str, ...] = (),
+) -> list[Path]:
     """Find llmci config files under root."""
     root = root.resolve()
     if not root.exists():
@@ -46,9 +57,16 @@ def discover_config_files(root: Path = Path(".")) -> list[Path]:
         if any(part in IGNORED_CONFIG_DIRS for part in rel_to_root.parts[:-1]):
             continue
         try:
-            configs.append(path.relative_to(cwd))
+            config_path = path.relative_to(cwd)
         except ValueError:
-            configs.append(path)
+            config_path = path
+
+        if include and not _matches_any(config_path, include):
+            continue
+        if exclude and _matches_any(config_path, exclude):
+            continue
+
+        configs.append(config_path)
 
     return sorted(configs, key=lambda p: str(p))
 
@@ -184,6 +202,16 @@ def _run_config(
     type=click.Path(exists=False, file_okay=False, path_type=Path),
     help="Directory to search when using --all.",
 )
+@click.option(
+    "--include",
+    multiple=True,
+    help="Only run discovered config paths matching this glob. May be used multiple times.",
+)
+@click.option(
+    "--exclude",
+    multiple=True,
+    help="Skip discovered config paths matching this glob. May be used multiple times.",
+)
 @click.option("--compare-to", default=None, help="Branch to compare baselines against.")
 @click.option("--smoke", is_flag=True, help="Run on a subset of the dataset.")
 @click.option("--output", default=None, type=click.Path(), help="Write report to file.")
@@ -197,6 +225,8 @@ def run(
     config_path: Path,
     run_all_configs: bool,
     root: Path,
+    include: tuple[str, ...],
+    exclude: tuple[str, ...],
     compare_to: str | None,
     smoke: bool,
     output: str | None,
@@ -210,7 +240,7 @@ def run(
 
     if run_all_configs:
         try:
-            config_paths = discover_config_files(root)
+            config_paths = discover_config_files(root, include=include, exclude=exclude)
         except Exception as e:
             click.echo(f"Error: {e}", err=True)
             sys.exit(1)
@@ -258,10 +288,25 @@ def run(
     help="Directory to search.",
 )
 @click.option("--json", "json_output", is_flag=True, help="Output config paths as JSON.")
-def discover(root: Path, json_output: bool) -> None:
+@click.option(
+    "--include",
+    multiple=True,
+    help="Only list config paths matching this glob. May be used multiple times.",
+)
+@click.option(
+    "--exclude",
+    multiple=True,
+    help="Skip config paths matching this glob. May be used multiple times.",
+)
+def discover(
+    root: Path,
+    json_output: bool,
+    include: tuple[str, ...],
+    exclude: tuple[str, ...],
+) -> None:
     """Discover llmci config files in a repository."""
     try:
-        config_paths = discover_config_files(root)
+        config_paths = discover_config_files(root, include=include, exclude=exclude)
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
