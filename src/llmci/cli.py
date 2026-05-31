@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 import sys
 from pathlib import Path
 
@@ -24,6 +25,13 @@ def cli(ctx: click.Context, verbose: bool, debug: bool) -> None:
 
 
 @cli.command()
+@click.option(
+    "--config",
+    "config_path",
+    default="llmci.yaml",
+    type=click.Path(exists=False, dir_okay=False, path_type=Path),
+    help="Path to llmci config file.",
+)
 @click.option("--compare-to", default=None, help="Branch to compare baselines against.")
 @click.option("--smoke", is_flag=True, help="Run on a subset of the dataset.")
 @click.option("--output", default=None, type=click.Path(), help="Write report to file.")
@@ -34,6 +42,7 @@ def cli(ctx: click.Context, verbose: bool, debug: bool) -> None:
 @click.pass_context
 def run(
     ctx: click.Context,
+    config_path: Path,
     compare_to: str | None,
     smoke: bool,
     output: str | None,
@@ -47,62 +56,91 @@ def run(
     from llmci.report import format_report
     from llmci.runner import run_all_evals
 
-    try:
-        config = load_config()
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+    original_cwd = Path.cwd()
+    resolved_config_path = (
+        config_path if config_path.is_absolute() else original_cwd / config_path
+    ).resolve()
+    config_dir = resolved_config_path.parent
+    config_name = Path(resolved_config_path.name)
+    output_path = (
+        (Path(output) if Path(output).is_absolute() else original_cwd / output).resolve()
+        if output
+        else None
+    )
+    exit_code = 1
+
+    if not resolved_config_path.exists():
+        click.echo(
+            f"Error: Config file not found: {config_path}\n\n"
+            "Fix: Run 'llmci init' to create a llmci.yaml, "
+            "or create one manually.",
+            err=True,
+        )
         sys.exit(1)
 
-    verbose = ctx.obj.get("verbose", False)
-    if verbose:
-        click.echo(f"Running {len(config.evals)} eval(s)...")
-
     try:
-        results = asyncio.run(run_all_evals(config, smoke=smoke, seed=seed))
-    except Exception as e:
-        click.echo(f"Error during eval: {e}", err=True)
-        sys.exit(1)
+        os.chdir(config_dir)
 
-    if update_baseline:
-        for result in results:
-            path = save_baseline(result)
-            if verbose:
-                click.echo(f"Baseline saved: {path}")
-        click.echo(f"Updated baselines for {len(results)} eval(s).")
+        try:
+            config = load_config(config_name)
+        except Exception as e:
+            click.echo(f"Error: {e}", err=True)
+            sys.exit(1)
 
-    baselines = None
-    if compare_to:
-        eval_names = [r.eval_name for r in results]
-        raw_baselines = load_all_baselines(eval_names, ref=compare_to)
-        if raw_baselines:
-            baselines = raw_baselines
-            if verbose:
-                click.echo(f"Loaded {len(baselines)} baseline(s) from {compare_to}")
-        elif verbose:
-            click.echo(f"No baselines found on {compare_to}")
-
-    report_md, passed = format_report(results, config.evals, baselines=baselines)
-
-    if output:
-        Path(output).write_text(report_md)
+        verbose = ctx.obj.get("verbose", False)
         if verbose:
-            click.echo(f"Report written to {output}")
-    else:
-        click.echo(report_md)
+            click.echo(f"Running {len(config.evals)} eval(s)...")
 
-    gh_ctx = detect_github_context()
-    if gh_ctx:
-        from llmci.integrations.github import resolve_report_slice_key
+        try:
+            results = asyncio.run(run_all_evals(config, smoke=smoke, seed=seed))
+        except Exception as e:
+            click.echo(f"Error during eval: {e}", err=True)
+            sys.exit(1)
 
-        slice_key = resolve_report_slice_key()
-        posted = post_pr_comment(report_md, gh_ctx, slice_key=slice_key)
-        if verbose:
-            if posted:
-                click.echo("PR comment posted/updated.")
-            else:
-                click.echo("Failed to post PR comment.", err=True)
+        if update_baseline:
+            for result in results:
+                path = save_baseline(result)
+                if verbose:
+                    click.echo(f"Baseline saved: {path}")
+            click.echo(f"Updated baselines for {len(results)} eval(s).")
 
-    sys.exit(0 if passed else 1)
+        baselines = None
+        if compare_to:
+            eval_names = [r.eval_name for r in results]
+            raw_baselines = load_all_baselines(eval_names, ref=compare_to)
+            if raw_baselines:
+                baselines = raw_baselines
+                if verbose:
+                    click.echo(f"Loaded {len(baselines)} baseline(s) from {compare_to}")
+            elif verbose:
+                click.echo(f"No baselines found on {compare_to}")
+
+        report_md, passed = format_report(results, config.evals, baselines=baselines)
+
+        if output_path:
+            output_path.write_text(report_md)
+            if verbose:
+                click.echo(f"Report written to {output_path}")
+        else:
+            click.echo(report_md)
+
+        gh_ctx = detect_github_context()
+        if gh_ctx:
+            from llmci.integrations.github import resolve_report_slice_key
+
+            slice_key = resolve_report_slice_key()
+            posted = post_pr_comment(report_md, gh_ctx, slice_key=slice_key)
+            if verbose:
+                if posted:
+                    click.echo("PR comment posted/updated.")
+                else:
+                    click.echo("Failed to post PR comment.", err=True)
+
+        exit_code = 0 if passed else 1
+    finally:
+        os.chdir(original_cwd)
+
+    sys.exit(exit_code)
 
 
 @cli.command()

@@ -89,6 +89,12 @@ settings:
   retries: 1
 ```
 
+Use `--config` when your eval config has a different name or lives in a service directory:
+
+```bash
+llmci run --config llmci-prompt-level.yaml
+```
+
 ### Target Modes
 
 **Command mode** — wrap any script, any language:
@@ -178,6 +184,12 @@ Or use the CLI directly:
 - run: llmci run --compare-to=origin/main
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+For monorepos, pass the service config explicitly:
+
+```yaml
+- run: llmci run --config services/api/llmci.yaml --compare-to=origin/main
 ```
 
 When running in GitHub Actions, llmci automatically posts eval results as a PR comment.
