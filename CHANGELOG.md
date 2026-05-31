@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `llmci discover` to list config files in a repository.
+- `llmci run --all` to run every discovered config.
+
 ## [0.1.6] - 2026-05-31
 
 ### Added

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import sys
 from pathlib import Path
@@ -10,6 +11,46 @@ from pathlib import Path
 import click
 
 from llmci import __version__
+
+IGNORED_CONFIG_DIRS = {
+    ".git",
+    ".hg",
+    ".llmci",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+    "env",
+    "node_modules",
+    "venv",
+}
+
+
+def discover_config_files(root: Path = Path(".")) -> list[Path]:
+    """Find llmci config files under root."""
+    root = root.resolve()
+    if not root.exists():
+        raise FileNotFoundError(f"Root not found: {root}")
+    if not root.is_dir():
+        raise NotADirectoryError(f"Root is not a directory: {root}")
+
+    cwd = Path.cwd().resolve()
+    configs: list[Path] = []
+    for path in root.rglob("llmci*.yaml"):
+        rel_to_root = path.relative_to(root)
+        if any(part in IGNORED_CONFIG_DIRS for part in rel_to_root.parts[:-1]):
+            continue
+        try:
+            configs.append(path.relative_to(cwd))
+        except ValueError:
+            configs.append(path)
+
+    return sorted(configs, key=lambda p: str(p))
 
 
 @click.group()
@@ -24,23 +65,7 @@ def cli(ctx: click.Context, verbose: bool, debug: bool) -> None:
     ctx.obj["debug"] = debug
 
 
-@cli.command()
-@click.option(
-    "--config",
-    "config_path",
-    default="llmci.yaml",
-    type=click.Path(exists=False, dir_okay=False, path_type=Path),
-    help="Path to llmci config file.",
-)
-@click.option("--compare-to", default=None, help="Branch to compare baselines against.")
-@click.option("--smoke", is_flag=True, help="Run on a subset of the dataset.")
-@click.option("--output", default=None, type=click.Path(), help="Write report to file.")
-@click.option(
-    "--update-baseline", is_flag=True, help="Update stored baselines (run on main branch)."
-)
-@click.option("--seed", default=42, type=int, help="Random seed for smoke sampling.")
-@click.pass_context
-def run(
+def _run_config(
     ctx: click.Context,
     config_path: Path,
     compare_to: str | None,
@@ -48,8 +73,9 @@ def run(
     output: str | None,
     update_baseline: bool,
     seed: int,
-) -> None:
-    """Run evals and compare against baselines."""
+    post_github: bool = True,
+) -> int:
+    """Run a single config and return the process exit code."""
     from llmci.baseline import load_all_baselines, save_baseline
     from llmci.config import load_config
     from llmci.integrations.github import detect_github_context, post_pr_comment
@@ -76,7 +102,7 @@ def run(
             "or create one manually.",
             err=True,
         )
-        sys.exit(1)
+        return 1
 
     try:
         os.chdir(config_dir)
@@ -85,7 +111,7 @@ def run(
             config = load_config(config_name)
         except Exception as e:
             click.echo(f"Error: {e}", err=True)
-            sys.exit(1)
+            return 1
 
         verbose = ctx.obj.get("verbose", False)
         if verbose:
@@ -95,7 +121,7 @@ def run(
             results = asyncio.run(run_all_evals(config, smoke=smoke, seed=seed))
         except Exception as e:
             click.echo(f"Error during eval: {e}", err=True)
-            sys.exit(1)
+            return 1
 
         if update_baseline:
             for result in results:
@@ -124,7 +150,7 @@ def run(
         else:
             click.echo(report_md)
 
-        gh_ctx = detect_github_context()
+        gh_ctx = detect_github_context() if post_github else None
         if gh_ctx:
             from llmci.integrations.github import resolve_report_slice_key
 
@@ -140,7 +166,117 @@ def run(
     finally:
         os.chdir(original_cwd)
 
-    sys.exit(exit_code)
+    return exit_code
+
+
+@cli.command()
+@click.option(
+    "--config",
+    "config_path",
+    default="llmci.yaml",
+    type=click.Path(exists=False, dir_okay=False, path_type=Path),
+    help="Path to llmci config file.",
+)
+@click.option("--all", "run_all_configs", is_flag=True, help="Run all discovered configs.")
+@click.option(
+    "--root",
+    default=".",
+    type=click.Path(exists=False, file_okay=False, path_type=Path),
+    help="Directory to search when using --all.",
+)
+@click.option("--compare-to", default=None, help="Branch to compare baselines against.")
+@click.option("--smoke", is_flag=True, help="Run on a subset of the dataset.")
+@click.option("--output", default=None, type=click.Path(), help="Write report to file.")
+@click.option(
+    "--update-baseline", is_flag=True, help="Update stored baselines (run on main branch)."
+)
+@click.option("--seed", default=42, type=int, help="Random seed for smoke sampling.")
+@click.pass_context
+def run(
+    ctx: click.Context,
+    config_path: Path,
+    run_all_configs: bool,
+    root: Path,
+    compare_to: str | None,
+    smoke: bool,
+    output: str | None,
+    update_baseline: bool,
+    seed: int,
+) -> None:
+    """Run evals and compare against baselines."""
+    if run_all_configs and output:
+        click.echo("Error: --output cannot be used with --all.", err=True)
+        sys.exit(1)
+
+    if run_all_configs:
+        try:
+            config_paths = discover_config_files(root)
+        except Exception as e:
+            click.echo(f"Error: {e}", err=True)
+            sys.exit(1)
+
+        if not config_paths:
+            click.echo("No llmci config files found.", err=True)
+            sys.exit(1)
+
+        exit_code = 0
+        for index, path in enumerate(config_paths):
+            if index:
+                click.echo()
+            click.echo(f"### {path}")
+            result_code = _run_config(
+                ctx,
+                path,
+                compare_to=compare_to,
+                smoke=smoke,
+                output=None,
+                update_baseline=update_baseline,
+                seed=seed,
+                post_github=False,
+            )
+            if result_code != 0:
+                exit_code = result_code
+
+        sys.exit(exit_code)
+
+    sys.exit(_run_config(
+        ctx,
+        config_path,
+        compare_to=compare_to,
+        smoke=smoke,
+        output=output,
+        update_baseline=update_baseline,
+        seed=seed,
+    ))
+
+
+@cli.command()
+@click.option(
+    "--root",
+    default=".",
+    type=click.Path(exists=False, file_okay=False, path_type=Path),
+    help="Directory to search.",
+)
+@click.option("--json", "json_output", is_flag=True, help="Output config paths as JSON.")
+def discover(root: Path, json_output: bool) -> None:
+    """Discover llmci config files in a repository."""
+    try:
+        config_paths = discover_config_files(root)
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+    path_strings = [str(path) for path in config_paths]
+    if json_output:
+        click.echo(json.dumps(path_strings, indent=2))
+        return
+
+    if not path_strings:
+        click.echo("No llmci config files found.")
+        return
+
+    for path in path_strings:
+        click.echo(path)
 
 
 @cli.command()
