@@ -95,6 +95,14 @@ Use `--config` when your eval config has a different name or lives in a service 
 llmci run --config llmci-prompt-level.yaml
 ```
 
+For monorepos, discover configs and run them all:
+
+```bash
+llmci discover
+llmci run --all
+llmci run --all --root services/ticket-classifier
+```
+
 ### Target Modes
 
 **Command mode** — wrap any script, any language:
