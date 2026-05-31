@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `--include` and `--exclude` filters for `llmci discover` and `llmci run --all`.
+
 ## [0.1.7] - 2026-05-31
 
 ### Added
