@@ -1,3 +1,3 @@
 """llmci: CI-native regression testing and migration for LLMs."""
 
-__version__ = "0.1.6"
+__version__ = "0.1.7"
