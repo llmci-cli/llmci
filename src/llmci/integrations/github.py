@@ -21,6 +21,14 @@ MERGE_MAX_ATTEMPTS = 5
 
 
 @dataclass
+class GitHubComment:
+    """Existing GitHub issue comment containing an llmci report."""
+
+    id: int
+    body: str
+
+
+@dataclass
 class GitHubContext:
     """Parsed GitHub Actions environment."""
 
@@ -77,8 +85,10 @@ def post_pr_comment(
     body = f"{COMMENT_MARKER}\n{report_md}"
     existing = _find_existing_comment(ctx)
     if existing:
-        comment_id, _ = existing
-        return _update_comment(comment_id, body, ctx)
+        if not _update_comment(existing.id, body, ctx):
+            return False
+        _delete_duplicate_comments([existing.id], ctx)
+        return True
     return _create_comment(body, ctx)
 
 
@@ -122,11 +132,12 @@ def parse_report_slices(body: str) -> dict[str, str]:
 def _post_merged_slice(report_md: str, ctx: GitHubContext, slice_key: str) -> bool:
     """Fetch-merge-update loop to reduce lost slices from parallel matrix jobs."""
     for attempt in range(MERGE_MAX_ATTEMPTS):
-        existing = _find_existing_comment(ctx)
+        existing_comments = _find_existing_comments(ctx)
+        existing = _select_canonical_comment(existing_comments)
         if existing:
-            comment_id, existing_body = existing
+            existing_body = _merge_existing_comment_bodies(existing_comments)
             body = build_merged_comment_body(existing_body, slice_key, report_md)
-            if not _update_comment(comment_id, body, ctx):
+            if not _update_comment(existing.id, body, ctx):
                 time.sleep(0.2 * (attempt + 1))
                 continue
         else:
@@ -136,12 +147,35 @@ def _post_merged_slice(report_md: str, ctx: GitHubContext, slice_key: str) -> bo
                 continue
 
         verified = _find_existing_comment(ctx)
-        if verified and _slice_present(verified[1], slice_key, report_md):
+        if verified and _slice_present(verified.body, slice_key, report_md):
+            _delete_duplicate_comments([verified.id], ctx)
             return True
 
         time.sleep(0.2 * (attempt + 1))
 
     return False
+
+
+def _merge_existing_comment_bodies(comments: list[GitHubComment]) -> str | None:
+    """Merge report slices from duplicate comments into one synthetic body."""
+    if not comments:
+        return None
+
+    merged_slices: dict[str, str] = {}
+    for comment in comments:
+        merged_slices.update(parse_report_slices(comment.body))
+
+    if not merged_slices:
+        canonical = _select_canonical_comment(comments)
+        return canonical.body if canonical else None
+
+    parts = [COMMENT_MARKER, ""]
+    for key in sorted(merged_slices.keys()):
+        parts.append(_slice_marker(key))
+        parts.append(_slice_heading(key).rstrip())
+        parts.append(merged_slices[key])
+        parts.append("")
+    return "\n".join(parts).rstrip() + "\n"
 
 
 def _slice_present(body: str, slice_key: str, report_md: str) -> bool:
@@ -190,20 +224,43 @@ def _extract_pr_number(event_path: str | None) -> int | None:
     return None
 
 
-def _find_existing_comment(ctx: GitHubContext) -> tuple[int, str] | None:
+def _find_existing_comment(ctx: GitHubContext) -> GitHubComment | None:
     """Find an existing llmci comment on the PR."""
+    comments = _find_existing_comments(ctx)
+    return _select_canonical_comment(comments)
+
+
+def _find_existing_comments(ctx: GitHubContext) -> list[GitHubComment]:
+    """Find all existing llmci comments on the PR."""
     url = f"{ctx.server_url}/repos/{ctx.repository}/issues/{ctx.pr_number}/comments?per_page=100"
 
     try:
         data = _github_api_get(url, ctx.token)
+        comments = []
         for comment in data:
             body = comment.get("body", "")
             if COMMENT_MARKER in body:
-                return int(comment["id"]), body
+                comments.append(GitHubComment(id=int(comment["id"]), body=body))
+        return comments
     except Exception:
         pass
 
-    return None
+    return []
+
+
+def _select_canonical_comment(comments: list[GitHubComment]) -> GitHubComment | None:
+    """Choose the comment to keep when duplicate llmci comments exist."""
+    if not comments:
+        return None
+    return max(comments, key=lambda comment: len(parse_report_slices(comment.body)))
+
+
+def _delete_duplicate_comments(keep_ids: list[int], ctx: GitHubContext) -> None:
+    """Best-effort cleanup for stale duplicate llmci PR comments."""
+    keep = set(keep_ids)
+    for comment in _find_existing_comments(ctx):
+        if comment.id not in keep:
+            _delete_comment(comment.id, ctx)
 
 
 def _create_comment(body: str, ctx: GitHubContext) -> bool:
@@ -221,6 +278,16 @@ def _update_comment(comment_id: int, body: str, ctx: GitHubContext) -> bool:
     url = f"{ctx.server_url}/repos/{ctx.repository}/issues/comments/{comment_id}"
     try:
         _github_api_patch(url, {"body": body}, ctx.token)
+        return True
+    except Exception:
+        return False
+
+
+def _delete_comment(comment_id: int, ctx: GitHubContext) -> bool:
+    """Delete an existing PR comment."""
+    url = f"{ctx.server_url}/repos/{ctx.repository}/issues/comments/{comment_id}"
+    try:
+        _github_api_delete(url, ctx.token)
         return True
     except Exception:
         return False
@@ -272,3 +339,17 @@ def _github_api_patch(url: str, data: dict, token: str) -> dict:
     with urllib.request.urlopen(req, timeout=15) as resp:
         result: dict = json.loads(resp.read())
         return result
+
+
+def _github_api_delete(url: str, token: str) -> None:
+    """Make a DELETE request to the GitHub API."""
+    req = urllib.request.Request(
+        url,
+        headers={
+            "Authorization": f"token {token}",
+            "Accept": "application/vnd.github.v3+json",
+        },
+        method="DELETE",
+    )
+    with urllib.request.urlopen(req, timeout=15):
+        return None
