@@ -5,6 +5,7 @@ from __future__ import annotations
 import difflib
 import re
 from dataclasses import dataclass, field
+from typing import Callable
 
 import litellm
 
@@ -31,6 +32,25 @@ Rules:
 - Prefer rewording existing instructions over adding new ones.
 - Explain your reasoning in <reasoning> tags, then output the full \
 modified prompt in <prompt> tags."""
+
+
+@dataclass
+class MigrationProgressEvent:
+    """Structured progress update from the migration optimizer."""
+
+    phase: str
+    iteration: int | None = None
+    max_iterations: int | None = None
+    original_score: float | None = None
+    train_score: float | None = None
+    val_score: float | None = None
+    holdout_score: float | None = None
+    failure_count: int | None = None
+    accepted: bool | None = None
+    reason: str | None = None
+
+
+ProgressCallback = Callable[[MigrationProgressEvent], None]
 
 
 @dataclass
@@ -67,11 +87,16 @@ async def optimize_prompt(
     max_iterations: int = 20,
     max_edit_distance: int | None = None,
     base_url: str | None = None,
+    progress_callback: ProgressCallback | None = None,
 ) -> OptimizationResult:
     """Run the optimization loop to adapt a prompt from one model to another."""
     original_score = await _evaluate_prompt(
         original_prompt, from_model, split.holdout, eval_config, primary_metric,
         base_url=base_url,
+    )
+    _emit_progress(
+        progress_callback,
+        MigrationProgressEvent(phase="baseline_complete", original_score=original_score),
     )
 
     current_prompt = original_prompt
@@ -79,19 +104,45 @@ async def optimize_prompt(
         current_prompt, to_model, split.train, eval_config, primary_metric,
         base_url=base_url,
     )
+    _emit_progress(
+        progress_callback,
+        MigrationProgressEvent(phase="initial_train_complete", train_score=train_score),
+    )
 
     stopper = EarlyStopping(patience=patience, min_improvement=min_improvement)
     best_prompt = current_prompt
     best_val_score = 0.0
     steps: list[OptimizationStep] = []
+    failures: list[dict] = []
 
     for iteration in range(1, max_iterations + 1):
         failures = await _get_failures(
             current_prompt, to_model, split.train, eval_config,
             base_url=base_url,
         )
+        _emit_progress(
+            progress_callback,
+            MigrationProgressEvent(
+                phase="iteration_start",
+                iteration=iteration,
+                max_iterations=max_iterations,
+                train_score=train_score,
+                failure_count=len(failures),
+            ),
+        )
 
         if not failures:
+            _emit_progress(
+                progress_callback,
+                MigrationProgressEvent(
+                    phase="iteration_skipped",
+                    iteration=iteration,
+                    max_iterations=max_iterations,
+                    train_score=train_score,
+                    failure_count=0,
+                    reason="converged",
+                ),
+            )
             break
 
         new_prompt = await _suggest_modification(
@@ -104,11 +155,33 @@ async def optimize_prompt(
         )
 
         if not new_prompt or new_prompt == current_prompt:
+            _emit_progress(
+                progress_callback,
+                MigrationProgressEvent(
+                    phase="iteration_skipped",
+                    iteration=iteration,
+                    max_iterations=max_iterations,
+                    train_score=train_score,
+                    failure_count=len(failures),
+                    reason="no_prompt_change",
+                ),
+            )
             continue
 
         if max_edit_distance is not None:
             dist = _edit_distance(current_prompt, new_prompt)
             if dist > max_edit_distance:
+                _emit_progress(
+                    progress_callback,
+                    MigrationProgressEvent(
+                        phase="iteration_skipped",
+                        iteration=iteration,
+                        max_iterations=max_iterations,
+                        train_score=train_score,
+                        failure_count=len(failures),
+                        reason="max_edit_distance",
+                    ),
+                )
                 continue
 
         new_train_score = await _evaluate_prompt(
@@ -129,9 +202,23 @@ async def optimize_prompt(
             diff=diff,
         ))
 
+        accepted = new_val_score > best_val_score
         if new_val_score > best_val_score:
             best_val_score = new_val_score
             best_prompt = new_prompt
+
+        _emit_progress(
+            progress_callback,
+            MigrationProgressEvent(
+                phase="iteration_complete",
+                iteration=iteration,
+                max_iterations=max_iterations,
+                train_score=new_train_score,
+                val_score=new_val_score,
+                failure_count=len(failures),
+                accepted=accepted,
+            ),
+        )
 
         current_prompt = new_prompt
         train_score = new_train_score
@@ -149,6 +236,10 @@ async def optimize_prompt(
         best_prompt, to_model, split.holdout, eval_config, primary_metric,
         base_url=base_url,
     )
+    _emit_progress(
+        progress_callback,
+        MigrationProgressEvent(phase="complete", holdout_score=holdout_score),
+    )
 
     return OptimizationResult(
         best_prompt=best_prompt,
@@ -160,6 +251,14 @@ async def optimize_prompt(
         steps=steps,
         stopped_reason=stopped_reason,
     )
+
+
+def _emit_progress(
+    progress_callback: ProgressCallback | None,
+    event: MigrationProgressEvent,
+) -> None:
+    if progress_callback is not None:
+        progress_callback(event)
 
 
 async def _evaluate_prompt(

@@ -355,7 +355,7 @@ def migrate(
     """Run prompt migration optimization."""
     from llmci.config import find_eval, load_config
     from llmci.dataset.loader import load_dataset
-    from llmci.migrate.optimizer import optimize_prompt
+    from llmci.migrate.optimizer import MigrationProgressEvent, optimize_prompt
     from llmci.migrate.report import format_migration_report
     from llmci.migrate.splitter import split_dataset
 
@@ -380,15 +380,36 @@ def migrate(
     split = split_dataset(examples)
     primary_metric = eval_cfg.metrics[0].name if eval_cfg.metrics else "accuracy"
 
-    verbose = ctx.obj.get("verbose", False)
-    if verbose:
-        click.echo(
-            f"Migrating {from_model} → {to_model}\n"
-            f"Eval: {eval_name} (metric: {primary_metric})\n"
-            f"Split: {len(split.train)} train / {len(split.validation)} val / "
-            f"{len(split.holdout)} holdout\n"
-            f"Optimizer: {optimizer_model}\n"
-        )
+    click.echo(
+        f"Migrating {from_model} → {to_model}\n"
+        f"Eval: {eval_name} (metric: {primary_metric})\n"
+        f"Split: {len(split.train)} train / {len(split.validation)} val / "
+        f"{len(split.holdout)} holdout\n"
+        f"Optimizer: {optimizer_model}\n"
+    )
+
+    def report_progress(event: MigrationProgressEvent) -> None:
+        if event.phase == "baseline_complete" and event.original_score is not None:
+            click.echo(f"Baseline holdout on old model: {event.original_score:.3f}")
+        elif event.phase == "initial_train_complete" and event.train_score is not None:
+            click.echo(f"Initial train score on target model: {event.train_score:.3f}")
+        elif event.phase == "iteration_start":
+            click.echo(
+                f"\nIteration {event.iteration}/{event.max_iterations}\n"
+                f"  failures: {event.failure_count}\n"
+                f"  current train: {_format_optional_score(event.train_score)}"
+            )
+        elif event.phase == "iteration_complete":
+            accepted = "yes" if event.accepted else "no"
+            click.echo(
+                f"  train: {_format_optional_score(event.train_score)}\n"
+                f"  val: {_format_optional_score(event.val_score)}\n"
+                f"  accepted: {accepted}"
+            )
+        elif event.phase == "iteration_skipped":
+            click.echo(f"  skipped: {event.reason or 'unknown'}")
+        elif event.phase == "complete" and event.holdout_score is not None:
+            click.echo(f"\nFinal holdout on target model: {event.holdout_score:.3f}\n")
 
     try:
         result = asyncio.run(optimize_prompt(
@@ -404,6 +425,7 @@ def migrate(
             max_iterations=max_iterations,
             max_edit_distance=max_edit_distance,
             base_url=config.target.base_url,
+            progress_callback=report_progress,
         ))
     except Exception as e:
         click.echo(f"Error during migration: {e}", err=True)
@@ -416,6 +438,10 @@ def migrate(
         if click.confirm("\nWrite optimized prompt to disk?"):
             prompt_path.write_text(result.best_prompt)
             click.echo(f"Prompt written to {prompt_path}")
+
+
+def _format_optional_score(score: float | None) -> str:
+    return "n/a" if score is None else f"{score:.3f}"
 
 
 @cli.group()
