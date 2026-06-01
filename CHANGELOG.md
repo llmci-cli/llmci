@@ -7,10 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.9] - 2026-05-31
+
 ### Added
 - Release metadata consistency check for package version, action install version, and changelog links.
 - Manual real-LLM example workflow for API-key-dependent examples.
 - GitHub Action inputs for explicit config paths, discovered config runs, and baseline updates.
+
+### Fixed
+- Duplicate llmci PR comments from parallel matrix jobs are merged into one canonical comment and stale duplicates are cleaned up.
 
 ## [0.1.8] - 2026-05-31
 
@@ -109,6 +114,7 @@ Initial public release on PyPI as [`llmci`](https://pypi.org/project/llmci/).
 **Examples**
 - Nine runnable examples: CI regression, model migration, LLM judge, custom judge, agent single/multi-turn, RAG pipeline, FastAPI service, summarization QA
 
+[0.1.9]: https://github.com/llmci-cli/llmci/releases/tag/v0.1.9
 [0.1.8]: https://github.com/llmci-cli/llmci/releases/tag/v0.1.8
 [0.1.7]: https://github.com/llmci-cli/llmci/releases/tag/v0.1.7
 [0.1.6]: https://github.com/llmci-cli/llmci/releases/tag/v0.1.6

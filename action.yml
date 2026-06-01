@@ -36,7 +36,7 @@ inputs:
     default: "."
   llmci-version:
     description: "Exact llmci version to install"
-    default: "0.1.8"
+    default: "0.1.9"
 runs:
   using: "composite"
   steps:
