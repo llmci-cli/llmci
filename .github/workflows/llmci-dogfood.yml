@@ -15,6 +15,7 @@ jobs:
       - run: pip install -e ".[dev]"
       - run: ruff check src/ tests/
       - run: mypy src/
+      - run: python scripts/check_release.py
 
   test:
     runs-on: ubuntu-latest
@@ -35,7 +36,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        example: [01-ci-regression, 04-custom-judge, 10-agent-openai-agents]
+        example:
+          - 01-ci-regression
+          - 04-custom-judge
+          - 05-agent-single-turn
+          - 06-agent-multi-turn
+          - 07-pipeline-level
+          - 08-fastapi-service
+          - 10-agent-openai-agents
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

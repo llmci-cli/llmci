@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Release metadata consistency check for package version, action install version, and changelog links.
+- Manual real-LLM example workflow for API-key-dependent examples.
+- GitHub Action inputs for explicit config paths, discovered config runs, and baseline updates.
+
 ## [0.1.8] - 2026-05-31
 
 ### Added
