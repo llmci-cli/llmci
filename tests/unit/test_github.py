@@ -6,7 +6,12 @@ from unittest.mock import patch
 
 from llmci.integrations.github import (
     COMMENT_MARKER,
+    GitHubComment,
+    GitHubContext,
+    _delete_duplicate_comments,
     _extract_pr_number,
+    _merge_existing_comment_bodies,
+    _select_canonical_comment,
     build_merged_comment_body,
     detect_github_context,
     parse_report_slices,
@@ -109,3 +114,57 @@ class TestReportSliceMerging:
     def test_resolve_report_slice_key_empty(self):
         with patch.dict(os.environ, {"LLMCI_REPORT_SLICE": "  "}, clear=True):
             assert resolve_report_slice_key() is None
+
+    def test_select_canonical_comment_prefers_most_slices(self):
+        single = GitHubComment(
+            id=1,
+            body=build_merged_comment_body(None, "01-ci-regression/llmci.yaml", "report-a"),
+        )
+        merged = GitHubComment(
+            id=2,
+            body=build_merged_comment_body(
+                single.body,
+                "04-custom-judge/llmci.yaml",
+                "report-b",
+            ),
+        )
+
+        assert _select_canonical_comment([single, merged]) == merged
+
+    def test_merge_existing_comment_bodies_preserves_slices_from_duplicates(self):
+        first = GitHubComment(
+            id=1,
+            body=build_merged_comment_body(None, "01-ci-regression/llmci.yaml", "report-a"),
+        )
+        second = GitHubComment(
+            id=2,
+            body=build_merged_comment_body(None, "04-custom-judge/llmci.yaml", "report-b"),
+        )
+
+        merged_body = _merge_existing_comment_bodies([first, second])
+
+        assert merged_body is not None
+        assert parse_report_slices(merged_body) == {
+            "01-ci-regression/llmci.yaml": "report-a",
+            "04-custom-judge/llmci.yaml": "report-b",
+        }
+
+    def test_delete_duplicate_comments_keeps_canonical_id(self):
+        ctx = GitHubContext(repository="owner/repo", pr_number=1, token="token")
+        comments = [
+            GitHubComment(id=1, body=f"{COMMENT_MARKER}\nstale"),
+            GitHubComment(id=2, body=f"{COMMENT_MARKER}\ncanonical"),
+        ]
+        deleted: list[int] = []
+
+        def record_deleted(comment_id: int, ctx: GitHubContext) -> bool:
+            deleted.append(comment_id)
+            return True
+
+        with (
+            patch("llmci.integrations.github._find_existing_comments", return_value=comments),
+            patch("llmci.integrations.github._delete_comment", side_effect=record_deleted),
+        ):
+            _delete_duplicate_comments([2], ctx)
+
+        assert deleted == [1]
