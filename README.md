@@ -182,6 +182,7 @@ Add to your workflow:
 - uses: llmci-cli/llmci@main
   with:
     compare-to: origin/main
+    llmci-version: 0.1.8
   env:
     OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 ```
@@ -198,7 +199,23 @@ Or use the CLI directly:
 For monorepos, pass the service config explicitly:
 
 ```yaml
-- run: llmci run --config services/api/llmci.yaml --compare-to=origin/main
+- uses: llmci-cli/llmci@main
+  with:
+    config: services/api/llmci.yaml
+    compare-to: origin/main
+    llmci-version: 0.1.8
+```
+
+Or run every discovered config:
+
+```yaml
+- uses: llmci-cli/llmci@main
+  with:
+    all: "true"
+    include: "services/**"
+    exclude: "services/experimental/**"
+    compare-to: origin/main
+    llmci-version: 0.1.8
 ```
 
 When running in GitHub Actions, llmci automatically posts eval results as a PR comment.

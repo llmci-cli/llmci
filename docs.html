@@ -542,7 +542,7 @@
 
       <hr>
 
-      <!-- SCAFFOLD.YAML -->
+      <!-- LLMCI.YAML -->
       <section class="doc-section" id="config-file">
         <h2>llmci.yaml</h2>
         <p class="section-lead">The config file defines your target, evals, and settings.</p>
@@ -803,6 +803,14 @@ Ticket: <span class="string">{input}</span></pre>
           <div class="callout-icon">&#x2139;</div>
           <p><code>max_regression</code> thresholds require a stored baseline. Run <code>llmci run --update-baseline</code> on your main branch first.</p>
         </div>
+
+        <h3>Monorepos and multiple configs</h3>
+        <p>Use <code>llmci discover</code> to find every <code>llmci.yaml</code> in a repo, then run all discovered configs with one command:</p>
+<pre><span class="cmd">llmci discover</span>
+<span class="cmd">llmci run --all</span>
+<span class="cmd">llmci run --all --root services/ticket-classifier</span>
+<span class="cmd">llmci run --all --include "services/**" --exclude "services/summarizer/llmci.yaml"</span></pre>
+        <p>Filters are matched against discovered config paths and can be repeated when you need to include or exclude several service folders.</p>
       </section>
 
       <hr>
@@ -843,6 +851,7 @@ Ticket: <span class="string">{input}</span></pre>
       - <span class="key">uses</span>: <span class="string">llmci-cli/llmci@main</span>
         <span class="key">with</span>:
           <span class="key">compare-to</span>: <span class="string">origin/main</span>
+          <span class="key">llmci-version</span>: <span class="string">0.1.8</span>
         <span class="key">env</span>:
           <span class="key">OPENAI_API_KEY</span>: <span class="string">${{ secrets.OPENAI_API_KEY }}</span></pre>
 
@@ -1011,6 +1020,10 @@ result = run_for_llmci_sync(build_agent(), {<span class="string">"query"</span>:
         <table>
           <tr><th>Command</th><th>Description</th></tr>
           <tr><td><code>llmci run</code></td><td>Run evals and report results</td></tr>
+          <tr><td><code>llmci discover</code></td><td>List discovered llmci config files</td></tr>
+          <tr><td><code>llmci run --all</code></td><td>Run every discovered config</td></tr>
+          <tr><td><code>llmci run --all --include "services/**"</code></td><td>Run only discovered configs matching a glob</td></tr>
+          <tr><td><code>llmci run --all --exclude "legacy/**"</code></td><td>Skip discovered configs matching a glob</td></tr>
           <tr><td><code>llmci run --smoke</code></td><td>Run on a subset of the dataset</td></tr>
           <tr><td><code>llmci run --update-baseline</code></td><td>Save current scores as baseline</td></tr>
           <tr><td><code>llmci run --compare-to=main</code></td><td>Compare against a baseline branch</td></tr>
@@ -1044,16 +1057,26 @@ result = run_for_llmci_sync(build_agent(), {<span class="string">"query"</span>:
     <span class="key">compare-to</span>: <span class="string">origin/main</span>       <span class="comment"># baseline branch</span>
     <span class="key">smoke</span>: <span class="string">false</span>                   <span class="comment"># run full dataset</span>
     <span class="key">working-directory</span>: <span class="string">.</span>           <span class="comment"># dir with llmci.yaml</span>
+    <span class="key">llmci-version</span>: <span class="string">0.1.8</span>            <span class="comment"># exact package version</span>
   <span class="key">env</span>:
     <span class="key">OPENAI_API_KEY</span>: <span class="string">${{ secrets.OPENAI_API_KEY }}</span></pre>
+
+        <p>For monorepos, use <code>config</code> to point at one service config, or set <code>all: "true"</code> with optional <code>include</code> / <code>exclude</code> globs to run every discovered config.</p>
 
         <table>
           <tr><th>Input</th><th>Default</th><th>Description</th></tr>
           <tr><td><code>compare-to</code></td><td><code>origin/main</code></td><td>Branch to load baselines from</td></tr>
           <tr><td><code>smoke</code></td><td><code>false</code></td><td>Run on a dataset subset</td></tr>
+          <tr><td><code>update-baseline</code></td><td><code>false</code></td><td>Save current scores as baselines</td></tr>
+          <tr><td><code>config</code></td><td>(none)</td><td>Path to a specific llmci config file</td></tr>
+          <tr><td><code>all</code></td><td><code>false</code></td><td>Run all discovered config files</td></tr>
+          <tr><td><code>root</code></td><td><code>.</code></td><td>Directory to search when <code>all</code> is true</td></tr>
+          <tr><td><code>include</code></td><td>(none)</td><td>Newline-separated globs of discovered config paths to include</td></tr>
+          <tr><td><code>exclude</code></td><td>(none)</td><td>Newline-separated globs of discovered config paths to exclude</td></tr>
           <tr><td><code>working-directory</code></td><td><code>.</code></td><td>Directory containing llmci.yaml</td></tr>
           <tr><td><code>output</code></td><td>(none)</td><td>Write report to a file path</td></tr>
           <tr><td><code>github-token</code></td><td><code>github.token</code></td><td>Token for posting PR comments</td></tr>
+          <tr><td><code>llmci-version</code></td><td><code>0.1.8</code></td><td>Exact llmci package version to install</td></tr>
         </table>
       </section>
 

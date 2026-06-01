@@ -1,0 +1,27 @@
+name: llmci Real LLM Examples
+
+on:
+  workflow_dispatch:
+
+jobs:
+  real-llm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        example:
+          - 02-model-migration
+          - 03-llm-as-judge
+          - 09-summarization-qa
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e .
+      - name: Run eval with real LLM
+        working-directory: examples/${{ matrix.example }}
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: llmci run

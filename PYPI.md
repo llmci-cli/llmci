@@ -51,6 +51,7 @@ Job-level `permissions` replace workflow-level permissions entirely. If `content
 ruff check src/ tests/
 mypy src/
 pytest tests/ -v
+python scripts/check_release.py
 ```
 
 Wait for the **llmci Dogfood** workflow to pass on `main` before tagging.
@@ -126,7 +127,7 @@ llmci --version
 | Location | What to update |
 |----------|----------------|
 | README / docs | `pip install llmci` or pin `llmci==X.Y.Z` in examples |
-| `action.yml` | `pip install llmci` (or pin if you want reproducible CI) |
+| `action.yml` | `llmci-version` default |
 | `llmci-testbed` CI | `pip install --upgrade llmci` |
 | `llmci-testbed` `pyproject.toml` | `llmci>=X.Y.Z` |
 
@@ -166,8 +167,9 @@ PyPI will prompt for credentials. Use an API token scoped to `llmci` (Account se
 - [ ] `ruff check src/ tests/` clean
 - [ ] `mypy src/` clean
 - [ ] `pytest tests/ -v` green
+- [ ] `python scripts/check_release.py` clean
 - [ ] Dogfood workflow green on `main`
-- [ ] Version bumped in `pyproject.toml` and `src/llmci/__init__.py`
+- [ ] Version bumped in `pyproject.toml`, `src/llmci/__init__.py`, and `action.yml`
 - [ ] `CHANGELOG.md` updated with release date and link
 - [ ] Tag pushed: `vX.Y.Z`
 - [ ] GitHub release **published** (not draft)

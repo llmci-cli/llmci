@@ -615,9 +615,7 @@
         <p>Your team runs a support ticket classifier. A developer updates the system prompt to improve handling of billing questions. The PR passes code review. llmci runs 243 eval examples and finds that while billing accuracy improved by 4%, hardware classification accuracy dropped 8%. The PR is blocked with a report showing the 7 specific examples that regressed, so the developer can fix the prompt before merging.</p>
       </div>
 
-      <!-- TODO: Uncomment when examples are built
       <p style="margin-top: 24px;"><strong>Try it yourself:</strong> <a href="https://github.com/llmci-cli/llmci/tree/main/examples/01-ci-regression" style="color: var(--accent); font-weight: 600;">examples/01-ci-regression</a> — a runnable ticket classification example with eval dataset, config, and prompt.</p>
-      -->
     </div>
   </section>
 
@@ -684,9 +682,7 @@
         <p>Your company uses GPT-4o across 12 classification prompts. OpenAI announces GPT-4o is being retired in 60 days. Instead of a month of manual prompt engineering, you run <code>llmci migrate</code> for each prompt. 10 of 12 converge to within 1% of the original baseline. The remaining 2 require minor manual adjustments flagged in the migration report. The entire migration takes 2 days instead of 4 weeks.</p>
       </div>
 
-      <!-- TODO: Uncomment when examples are built
       <p style="margin-top: 24px;"><strong>Try it yourself:</strong> <a href="https://github.com/llmci-cli/llmci/tree/main/examples/02-model-migration" style="color: var(--accent); font-weight: 600;">examples/02-model-migration</a> — migrate a ticket classifier from GPT-4o to GPT-4.5.</p>
-      -->
     </div>
   </section>
 

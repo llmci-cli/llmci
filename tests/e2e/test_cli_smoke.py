@@ -176,6 +176,17 @@ def test_run_all_uses_root_option():
         assert "agent-service" not in result.output
 
 
+def test_run_all_rejects_output_option():
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        write_service_config(Path("services/api"), "llmci.yaml", "api-service")
+
+        result = runner.invoke(cli, ["run", "--all", "--output", "report.md"])
+
+        assert result.exit_code == 1
+        assert "--output cannot be used with --all" in result.output
+
+
 def test_migrate_help():
     runner = CliRunner()
     result = runner.invoke(cli, ["migrate", "--help"])

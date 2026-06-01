@@ -10,12 +10,33 @@ inputs:
   smoke:
     description: "Run on a subset of the dataset"
     default: "false"
+  update-baseline:
+    description: "Update stored baselines instead of only comparing"
+    default: "false"
+  config:
+    description: "Path to a specific llmci config file"
+    default: ""
+  all:
+    description: "Run all discovered llmci config files"
+    default: "false"
+  root:
+    description: "Directory to search when all is true"
+    default: "."
+  include:
+    description: "Newline-separated globs of discovered config paths to include"
+    default: ""
+  exclude:
+    description: "Newline-separated globs of discovered config paths to exclude"
+    default: ""
   output:
     description: "Write report to this file path"
     default: ""
   working-directory:
     description: "Directory containing llmci.yaml"
     default: "."
+  llmci-version:
+    description: "Exact llmci version to install"
+    default: "0.1.8"
 runs:
   using: "composite"
   steps:
@@ -25,18 +46,60 @@ runs:
         python-version: "3.12"
     - name: Install llmci
       shell: bash
-      run: pip install llmci
+      run: pip install "llmci==${{ inputs.llmci-version }}"
     - name: Run evals
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
+        INPUT_ALL: ${{ inputs.all }}
+        INPUT_COMPARE_TO: ${{ inputs.compare-to }}
+        INPUT_CONFIG: ${{ inputs.config }}
+        INPUT_EXCLUDE: ${{ inputs.exclude }}
+        INPUT_INCLUDE: ${{ inputs.include }}
+        INPUT_OUTPUT: ${{ inputs.output }}
+        INPUT_ROOT: ${{ inputs.root }}
+        INPUT_SMOKE: ${{ inputs.smoke }}
+        INPUT_UPDATE_BASELINE: ${{ inputs.update-baseline }}
       run: |
-        ARGS="--compare-to=${{ inputs.compare-to }}"
-        if [ "${{ inputs.smoke }}" = "true" ]; then
-          ARGS="$ARGS --smoke"
+        set -euo pipefail
+
+        args=()
+
+        add_patterns() {
+          local flag="$1"
+          local patterns="$2"
+          local pattern
+          while IFS= read -r pattern; do
+            if [ -n "$pattern" ]; then
+              args+=("$flag" "$pattern")
+            fi
+          done <<< "$patterns"
+        }
+
+        if [ "$INPUT_ALL" = "true" ]; then
+          args+=("--all" "--root" "$INPUT_ROOT")
+          add_patterns "--include" "$INPUT_INCLUDE"
+          add_patterns "--exclude" "$INPUT_EXCLUDE"
+          if [ -n "$INPUT_OUTPUT" ]; then
+            echo "The output input cannot be used when all is true." >&2
+            exit 1
+          fi
+        elif [ -n "$INPUT_CONFIG" ]; then
+          args+=("--config" "$INPUT_CONFIG")
         fi
-        if [ -n "${{ inputs.output }}" ]; then
-          ARGS="$ARGS --output=${{ inputs.output }}"
+
+        if [ -n "$INPUT_COMPARE_TO" ]; then
+          args+=("--compare-to=$INPUT_COMPARE_TO")
         fi
-        llmci run $ARGS
+        if [ "$INPUT_SMOKE" = "true" ]; then
+          args+=("--smoke")
+        fi
+        if [ "$INPUT_UPDATE_BASELINE" = "true" ]; then
+          args+=("--update-baseline")
+        fi
+        if [ -n "$INPUT_OUTPUT" ]; then
+          args+=("--output=$INPUT_OUTPUT")
+        fi
+
+        llmci run "${args[@]}"
