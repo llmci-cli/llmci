@@ -471,6 +471,132 @@
       font-weight: 700;
     }
 
+    .github-comment {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      overflow: hidden;
+    }
+
+    .comment-chrome {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-light);
+      background: #f6f8fa;
+    }
+
+    .comment-author {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+    }
+
+    .bot-avatar {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #24292f;
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.68rem;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .bot-badge {
+      padding: 1px 5px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: var(--text-tertiary);
+      background: var(--bg);
+    }
+
+    .comment-kebab {
+      color: var(--text-tertiary);
+      font-weight: 700;
+      letter-spacing: 2px;
+    }
+
+    .comment-body {
+      padding: 18px 18px 16px;
+    }
+
+    .report-slice-title {
+      font-size: 0.86rem;
+      font-weight: 800;
+      margin-bottom: 14px;
+    }
+
+    .report-title {
+      font-size: 1rem;
+      font-weight: 800;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-light);
+      margin-bottom: 14px;
+    }
+
+    .report-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.76rem;
+      margin-bottom: 16px;
+    }
+
+    .report-table th,
+    .report-table td {
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      vertical-align: middle;
+    }
+
+    .report-table th {
+      background: #f6f8fa;
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: var(--text-secondary);
+    }
+
+    .report-table td {
+      color: var(--text);
+    }
+
+    .report-table .muted {
+      color: var(--text-tertiary);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+    }
+
+    .status-cell {
+      text-align: center;
+      font-size: 0.82rem;
+    }
+
+    .failed-title {
+      font-size: 0.86rem;
+      font-weight: 800;
+      margin: 4px 0 8px;
+    }
+
+    .failed-summary {
+      font-size: 0.76rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text-secondary);
+    }
+
+    .failed-table {
+      margin-bottom: 0;
+    }
+
     .gate-flow {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
@@ -1580,6 +1706,8 @@
       .hero { padding: 96px 0 0; }
       .hero-showcase { margin-top: 34px; padding-bottom: 48px; }
       .hero-showcase-inner { transform: none; }
+      .comment-body { overflow-x: auto; }
+      .report-table { min-width: 640px; }
       .comp-table { font-size: 0.75rem; }
       .comp-table td, .comp-table th { padding: 13px 14px; }
       .pipeline-diagram { overflow-x: auto; }
@@ -1854,54 +1982,83 @@
               </div>
               <div class="pr-status">Merge blocked</div>
             </div>
-            <div class="gate-flow">
-              <div class="gate-step">
-                <div class="num">01</div>
-                <h3>PR opened</h3>
-                <p>Ordinary code change touches retrieval and parsing.</p>
-              </div>
-              <div class="gate-step">
-                <div class="num">02</div>
-                <h3>llmci evals run</h3>
-                <p>Dataset inputs hit your actual app boundary.</p>
-              </div>
-              <div class="gate-step">
-                <div class="num">03</div>
-                <h3>Baseline compared</h3>
-                <p>Scores are measured against main, not vibes.</p>
-              </div>
-              <div class="gate-step fail">
-                <div class="num">04</div>
-                <h3>Regression found</h3>
-                <p>Factual pass rate dropped beyond threshold.</p>
-              </div>
-              <div class="gate-step fail">
-                <div class="num">05</div>
-                <h3>Merge blocked</h3>
-                <p>CI fails before the behavior ships.</p>
-              </div>
-            </div>
-            <div class="check-run">
-              <div class="check-run-row">
-                <div>
-                  <div class="check-name">ticket-classification</div>
-                  <div class="check-detail">accuracy 0.94 vs baseline 0.95</div>
+            <div class="github-comment">
+              <div class="comment-chrome">
+                <div class="comment-author">
+                  <span class="bot-avatar">GH</span>
+                  <strong>github-actions</strong>
+                  <span class="bot-badge">bot</span>
+                  <span>commented just now</span>
                 </div>
-                <div class="check-badge">pass</div>
+                <div class="comment-kebab">...</div>
               </div>
-              <div class="check-run-row">
-                <div>
-                  <div class="check-name">answer-quality</div>
-                  <div class="check-detail">rubric pass rate regressed by 8.2%</div>
-                </div>
-                <div class="check-badge fail">fail</div>
-              </div>
-              <div class="check-run-row">
-                <div>
-                  <div class="check-name">failed examples posted to PR</div>
-                  <div class="check-detail">review the changed outputs before merging</div>
-                </div>
-                <div class="check-badge fail">required</div>
+              <div class="comment-body">
+                <div class="report-slice-title">08-fastapi-service · <code>llmci.yaml</code></div>
+                <div class="report-title">llmci Eval Report</div>
+                <table class="report-table">
+                  <thead>
+                    <tr>
+                      <th>Eval</th>
+                      <th>Metric</th>
+                      <th>Score</th>
+                      <th>Baseline</th>
+                      <th>Threshold</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>service-classification</td>
+                      <td>accuracy</td>
+                      <td>0.792</td>
+                      <td class="muted">0.950</td>
+                      <td>≥ 0.90</td>
+                      <td class="status-cell">❌</td>
+                    </tr>
+                    <tr>
+                      <td>service-classification</td>
+                      <td>f1_weighted</td>
+                      <td>0.877</td>
+                      <td class="muted">0.940</td>
+                      <td>≥ 0.85</td>
+                      <td class="status-cell">✅</td>
+                    </tr>
+                    <tr>
+                      <td>service-classification</td>
+                      <td>error_rate</td>
+                      <td>0.000</td>
+                      <td class="muted">0.000</td>
+                      <td>≤ 0.01</td>
+                      <td class="status-cell">✅</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="failed-title">Failed Examples</div>
+                <div class="failed-summary">▼ service-classification: 5 failed</div>
+                <table class="report-table failed-table">
+                  <thead>
+                    <tr>
+                      <th>Input (truncated)</th>
+                      <th>Expected</th>
+                      <th>Got</th>
+                      <th>Reason</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>My printer keeps jamming every time I try to pr...</td>
+                      <td>hardware</td>
+                      <td>general</td>
+                      <td>Hardware keywords were lost after preprocessing, so the classifier fell back to general.</td>
+                    </tr>
+                    <tr>
+                      <td>Dark mode is broken — text is invisible on seve...</td>
+                      <td>software</td>
+                      <td>general</td>
+                      <td>Regression: app bug report no longer routes to software after the refactor.</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
