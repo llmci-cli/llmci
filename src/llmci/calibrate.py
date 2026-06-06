@@ -17,6 +17,7 @@ import json
 import math
 import statistics
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
 
 from llmci.errors import DatasetError
@@ -260,6 +261,10 @@ def snapshot_path(eval_name: str, snapshot_dir: Path | None = None) -> Path:
     return (snapshot_dir or SNAPSHOT_DIR) / f"{eval_name}.json"
 
 
+def history_path(eval_name: str, snapshot_dir: Path | None = None) -> Path:
+    return (snapshot_dir or SNAPSHOT_DIR) / f"{eval_name}-history.jsonl"
+
+
 def load_snapshot(eval_name: str, snapshot_dir: Path | None = None) -> dict | None:
     path = snapshot_path(eval_name, snapshot_dir)
     if not path.exists():
@@ -269,6 +274,69 @@ def load_snapshot(eval_name: str, snapshot_dir: Path | None = None) -> dict | No
     except (json.JSONDecodeError, OSError):
         return None
     return data if isinstance(data, dict) else None
+
+
+def _history_entry(result: CalibrationResult) -> dict:
+    """Serialize a calibration run for the trend history log."""
+    entry: dict = {
+        "timestamp": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "model": result.model,
+        "n": result.n,
+        "agreement_rate": result.agreement_rate,
+        "cohens_kappa": result.cohens_kappa,
+        "mae": result.mae,
+        "pearson": result.pearson,
+    }
+    if result.per_criterion:
+        entry["per_criterion"] = {
+            crit: {
+                "agreement_rate": cr.agreement_rate,
+                "cohens_kappa": cr.cohens_kappa,
+                "mae": cr.mae,
+            }
+            for crit, cr in result.per_criterion.items()
+        }
+    return entry
+
+
+def load_history(
+    eval_name: str,
+    snapshot_dir: Path | None = None,
+    *,
+    limit: int = 20,
+) -> list[dict]:
+    """Load prior calibration runs newest-last (chronological order)."""
+    path = history_path(eval_name, snapshot_dir)
+    if not path.exists():
+        return []
+    entries: list[dict] = []
+    try:
+        with path.open() as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                row = json.loads(line)
+                if isinstance(row, dict):
+                    entries.append(row)
+    except (OSError, json.JSONDecodeError):
+        return []
+    if limit > 0 and len(entries) > limit:
+        entries = entries[-limit:]
+    return entries
+
+
+def append_history(
+    eval_name: str,
+    result: CalibrationResult,
+    snapshot_dir: Path | None = None,
+) -> Path:
+    """Append a calibration run to the trend history log."""
+    path = history_path(eval_name, snapshot_dir)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a") as f:
+        f.write(json.dumps(_history_entry(result)) + "\n")
+    return path
 
 
 def save_snapshot(
@@ -283,6 +351,7 @@ def save_snapshot(
         "scores_by_input": dict(zip(result.inputs, result.judge_scores)),
     }
     path.write_text(json.dumps(payload, indent=2) + "\n")
+    append_history(eval_name, result, snapshot_dir)
     return path
 
 
@@ -314,6 +383,7 @@ def compute_drift(result: CalibrationResult, snapshot: dict | None) -> DriftResu
 def format_calibration_report(
     result: CalibrationResult,
     drift: DriftResult | None = None,
+    history: list[dict] | None = None,
 ) -> str:
     """Render a human-readable calibration report."""
     lines = [
@@ -349,7 +419,38 @@ def format_calibration_report(
             f"Judge model {change} (`{drift.previous_model}` → `{drift.current_model}`); "
             f"mean score change {drift.mean_abs_change:.3f} over {drift.n_compared} examples."
         )
+    if history:
+        lines.extend(_format_trend_section(history, result))
     return "\n".join(lines)
+
+
+def _format_trend_section(history: list[dict], current: CalibrationResult) -> list[str]:
+    """Render a trend table from prior runs plus the current calibration."""
+    rows = list(history)
+    current_entry = _history_entry(current)
+    if not rows or rows[-1].get("timestamp") != current_entry["timestamp"]:
+        rows.append(current_entry)
+    if len(rows) < 2:
+        return []
+
+    display = rows[-10:]
+    lines = [
+        "",
+        "### Calibration trend",
+        "",
+        "| Run | Model | Agreement | Kappa | MAE |",
+        "|-----|-------|-----------|-------|-----|",
+    ]
+    for row in display:
+        ts = str(row.get("timestamp", "?"))[:16].replace("T", " ")
+        model = str(row.get("model", "?"))
+        agreement = float(row.get("agreement_rate", 0.0))
+        kappa = float(row.get("cohens_kappa", 0.0))
+        mae = float(row.get("mae", 0.0))
+        lines.append(
+            f"| {ts} | `{model}` | {agreement:.3f} | {kappa:.3f} | {mae:.3f} |"
+        )
+    return lines
 
 
 def _kappa_label(kappa: float) -> str:
@@ -369,5 +470,5 @@ def _kappa_label(kappa: float) -> str:
 __all__ = [
     "LabeledExample", "load_labeled_set", "CalibrationResult", "compute_agreement",
     "run_calibration", "DriftResult", "compute_drift", "save_snapshot",
-    "load_snapshot", "format_calibration_report",
+    "load_snapshot", "load_history", "append_history", "format_calibration_report",
 ]

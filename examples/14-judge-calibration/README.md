@@ -35,9 +35,11 @@ agreement rate of ~0.83 and moderate Cohen's kappa.
 
 ## Drift detection
 `--save-snapshot` records the judge model and its scores under
-`.llmci/calibration/ticket-classification.json`. Re-running after changing the judge
-model reports the mean score change so a model swap can't silently move the gate. Gate it
-in CI with `--min-agreement` and/or `--max-drift`:
+`.llmci/calibration/ticket-classification.json` and appends a row to
+`ticket-classification-history.jsonl`. Re-running after changing the judge model reports
+the mean score change so a model swap can't silently move the gate; once you have two or
+more saved runs, the report also shows a **calibration trend** table. Gate it in CI with
+`--min-agreement` and/or `--max-drift`:
 
 ```bash
 llmci judge calibrate --eval ticket-classification --labels labels.jsonl \

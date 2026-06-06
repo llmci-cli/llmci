@@ -83,7 +83,9 @@ async def run_eval(
 ) -> EvalResult:
     """Execute one eval end to end."""
     if eval_config.level == "agent":
-        return await _run_agent_eval(eval_config, target_config, settings, smoke, seed)
+        return await _run_agent_eval(
+            eval_config, target_config, settings, smoke, seed, cache=cache
+        )
 
     smoke_size = settings.smoke_test_size if smoke else None
     require_expected = eval_config.judge.type not in (
@@ -184,6 +186,7 @@ async def _run_agent_eval(
     settings: Settings,
     smoke: bool = False,
     seed: int = 42,
+    cache: ResponseCache | None = None,
 ) -> EvalResult:
     """Execute an agent eval end to end."""
     from llmci.dataset.loader import load_agent_scenarios
@@ -211,6 +214,10 @@ async def _run_agent_eval(
     judge = create_judge(eval_config.judge)
     if not isinstance(judge, CompositeAgentJudge):
         raise ValueError("Agent evals require a composite judge")
+
+    from llmci.judges.llm_cache import judge_cache_from
+
+    judge.set_judge_cache(judge_cache_from(cache))
 
     per_example: list[JudgeResult] = []
     for scenario, trace in zip(scenarios, traces):

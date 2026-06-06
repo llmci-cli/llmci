@@ -3,8 +3,12 @@
 from __future__ import annotations
 
 import json
+from typing import TYPE_CHECKING
 
 from llmci.judges.base import Judge
+
+if TYPE_CHECKING:
+    from llmci.cache import ResponseCache
 from llmci.models import (
     AgentConstraints,
     AgentScenario,
@@ -71,10 +75,14 @@ class OutcomeJudge:
         self.model = model
 
     async def evaluate(
-        self, scenario: AgentScenario, trace: AgentTrace
+        self,
+        scenario: AgentScenario,
+        trace: AgentTrace,
+        *,
+        cache: "ResponseCache | None" = None,
     ) -> JudgeResult:
         """Ask an LLM to evaluate the final output against expected outcome."""
-        import litellm
+        from llmci.judges import llm_cache
 
         expected = (
             scenario.expected.outcome
@@ -94,13 +102,9 @@ class OutcomeJudge:
         )
 
         try:
-            response = await litellm.acompletion(
-                model=self.model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.0,
-                timeout=30,
+            content = await llm_cache.complete(
+                self.model, prompt, cache=cache, temperature=0.0, timeout=30
             )
-            content = response.choices[0].message.content or ""
             return _parse_judge_response(content)
         except Exception as e:
             return JudgeResult(score=0.0, reason=f"Outcome judge error: {e}")
@@ -113,10 +117,14 @@ class TrajectoryJudge:
         self.model = model
 
     async def evaluate(
-        self, trace: AgentTrace, rubric: str
+        self,
+        trace: AgentTrace,
+        rubric: str,
+        *,
+        cache: "ResponseCache | None" = None,
     ) -> JudgeResult:
         """Ask an LLM to evaluate the trace against a trajectory rubric."""
-        import litellm
+        from llmci.judges import llm_cache
 
         trace_text = _format_trace(trace)
 
@@ -132,13 +140,9 @@ class TrajectoryJudge:
         )
 
         try:
-            response = await litellm.acompletion(
-                model=self.model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.0,
-                timeout=30,
+            content = await llm_cache.complete(
+                self.model, prompt, cache=cache, temperature=0.0, timeout=30
             )
-            content = response.choices[0].message.content or ""
             return _parse_judge_response(content)
         except Exception as e:
             return JudgeResult(score=0.0, reason=f"Trajectory judge error: {e}")
@@ -164,12 +168,12 @@ class CompositeAgentJudge(Judge):
 
             if ctype == "outcome":
                 judge = OutcomeJudge(model=self.model)
-                result = await judge.evaluate(scenario, trace)
+                result = await judge.evaluate(scenario, trace, cache=self._judge_cache)
 
             elif ctype == "trajectory":
                 rubric = criterion.get("rubric", "Evaluate the execution quality.")
                 judge_t = TrajectoryJudge(model=self.model)
-                result = await judge_t.evaluate(trace, rubric)
+                result = await judge_t.evaluate(trace, rubric, cache=self._judge_cache)
 
             elif ctype == "constraint":
                 constraints = _get_constraints(scenario, criterion)

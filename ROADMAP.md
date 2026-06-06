@@ -100,8 +100,10 @@ over a human-labeled set and reports agreement rate, Cohen's kappa, MAE, and Pea
 A snapshot (`.llmci/calibration/<eval>.json`, via `--save-snapshot`) records the judge
 model + scores; a later run flags drift when the model changes. Gate with
 `--min-agreement` / `--max-drift`. Per-criterion calibration (composite / RAG / safety)
-labels each criterion separately and gates on the weakest one. Follow-up: trend history
-across snapshots._
+labels each criterion separately and gates on the weakest one. `--save-snapshot` also
+appends to `.llmci/calibration/<eval>-history.jsonl`; the report shows a trend table
+when two or more runs exist. Composite agent judges (outcome / trajectory criteria) share
+the same judge-call cache._
 
 ### 9. Shareable HTML/Markdown run report — `S` · ★★ ✅ prototype
 A self-contained artifact beyond the PR comment.

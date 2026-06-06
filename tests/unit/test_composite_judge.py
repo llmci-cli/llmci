@@ -1,11 +1,14 @@
 """Tests for the composite judge system."""
 
+from unittest.mock import patch
 
 import pytest
 
+from llmci.cache import ResponseCache
 from llmci.judges.composite import (
     CompositeAgentJudge,
     ConstraintJudge,
+    OutcomeJudge,
     _parse_judge_response,
 )
 from llmci.models import (
@@ -180,3 +183,69 @@ class TestCompositeAgentJudge:
         trace = AgentTrace()
         result = await judge.evaluate_scenario(scenario, trace)
         assert result.score == 0.0
+
+
+class _Msg:
+    def __init__(self, content):
+        self.content = content
+
+
+class _Resp:
+    def __init__(self, content):
+        self.choices = [type("C", (), {"message": _Msg(content)})()]
+
+
+def _counting(content, counter):
+    async def _m(**kwargs):
+        counter["n"] += 1
+        return _Resp(content)
+
+    return _m
+
+
+class TestCompositeJudgeCache:
+    @pytest.mark.asyncio
+    async def test_outcome_judge_reuses_cache(self, tmp_path):
+        counter = {"n": 0}
+        cache = ResponseCache(tmp_path / "judges", enabled=True)
+        judge = OutcomeJudge(model="gpt-4o-mini")
+        scenario = AgentScenario(
+            input="test",
+            expected=AgentExpected(outcome="done"),
+        )
+        trace = AgentTrace(final_output="hello")
+
+        with patch(
+            "llmci.judges.llm_cache.litellm.acompletion",
+            side_effect=_counting('{"score": 0.9, "reason": "cached"}', counter),
+        ):
+            first = await judge.evaluate(scenario, trace, cache=cache)
+            second = await judge.evaluate(scenario, trace, cache=cache)
+
+        assert first.score == pytest.approx(0.9)
+        assert second.score == pytest.approx(0.9)
+        assert counter["n"] == 1
+        assert cache.hits == 1
+
+    @pytest.mark.asyncio
+    async def test_composite_passes_attached_cache(self, tmp_path):
+        counter = {"n": 0}
+        cache = ResponseCache(tmp_path / "judges", enabled=True)
+        judge = CompositeAgentJudge(
+            criteria=[{"name": "outcome", "type": "outcome", "weight": 1.0}],
+        )
+        judge.set_judge_cache(cache)
+        scenario = AgentScenario(
+            input="test",
+            expected=AgentExpected(outcome="done"),
+        )
+        trace = AgentTrace(final_output="hello")
+
+        with patch(
+            "llmci.judges.llm_cache.litellm.acompletion",
+            side_effect=_counting('{"score": 1.0, "reason": "ok"}', counter),
+        ):
+            await judge.evaluate_scenario(scenario, trace)
+            await judge.evaluate_scenario(scenario, trace)
+
+        assert counter["n"] == 1

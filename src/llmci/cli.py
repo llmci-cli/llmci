@@ -606,6 +606,7 @@ def judge_calibrate(
     from llmci.calibrate import (
         compute_drift,
         format_calibration_report,
+        load_history,
         load_labeled_set,
         load_snapshot,
         run_calibration,
@@ -643,7 +644,8 @@ def judge_calibrate(
         sys.exit(1)
 
     drift = compute_drift(result, snapshot)
-    report = format_calibration_report(result, drift)
+    history = load_history(eval_name)
+    report = format_calibration_report(result, drift, history=history)
 
     if output:
         Path(output).write_text(report + "\n")

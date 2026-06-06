@@ -10,9 +10,11 @@ from llmci.calibrate import (
     LabeledExample,
     _cohens_kappa,
     _pearson,
+    append_history,
     compute_agreement,
     compute_drift,
     format_calibration_report,
+    load_history,
     load_labeled_set,
     load_snapshot,
     run_calibration,
@@ -157,6 +159,22 @@ class TestSnapshotAndDrift:
         assert loaded["model"] == "m1"
         assert loaded["scores_by_input"] == {"a": 0.8, "b": 0.2}
 
+    def test_save_snapshot_appends_history(self, tmp_path):
+        result = self._result("m1", [0.8], ["a"])
+        save_snapshot("myeval", result, snapshot_dir=tmp_path)
+        history = load_history("myeval", snapshot_dir=tmp_path)
+        assert len(history) == 1
+        assert history[0]["model"] == "m1"
+        assert history[0]["agreement_rate"] == 1.0
+
+    def test_append_history_accumulates(self, tmp_path):
+        r1 = self._result("m1", [1.0], ["a"])
+        r2 = self._result("m2", [0.5], ["a"])
+        append_history("myeval", r1, snapshot_dir=tmp_path)
+        append_history("myeval", r2, snapshot_dir=tmp_path)
+        history = load_history("myeval", snapshot_dir=tmp_path)
+        assert [h["model"] for h in history] == ["m1", "m2"]
+
     def test_load_missing_returns_none(self, tmp_path):
         assert load_snapshot("nope", snapshot_dir=tmp_path) is None
 
@@ -220,3 +238,26 @@ class TestReport:
         assert "Drift vs snapshot" in report
         assert "changed" in report
         assert "0.300" in report
+
+    def test_report_includes_trend_with_history(self):
+        prior = {
+            "timestamp": "2026-06-01T10:00:00Z",
+            "model": "m1",
+            "agreement_rate": 0.8,
+            "cohens_kappa": 0.6,
+            "mae": 0.2,
+        }
+        result = CalibrationResult(
+            model="m2", n=4, agreement_rate=0.9, cohens_kappa=0.75, mae=0.1, pearson=0.85,
+        )
+        report = format_calibration_report(result, history=[prior])
+        assert "Calibration trend" in report
+        assert "`m1`" in report
+        assert "`m2`" in report
+
+    def test_report_omits_trend_for_single_run(self):
+        result = CalibrationResult(
+            model="m1", n=2, agreement_rate=0.9, cohens_kappa=0.8, mae=0.1, pearson=0.85,
+        )
+        report = format_calibration_report(result, history=[])
+        assert "Calibration trend" not in report

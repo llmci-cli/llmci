@@ -2,7 +2,8 @@
 
 Re-running CI shouldn't re-pay for judge LLM calls on unchanged outputs. The ``llm`` judge
 has long cached its own results; this provides the same benefit to the other LLM-based
-judges (pairwise, RAG, safety) through one helper so they cache consistently.
+judges (pairwise, RAG, safety, composite outcome/trajectory) through one helper so
+they cache consistently.
 
 The cache reuses :class:`llmci.cache.ResponseCache` (keyed on model + prompt) but writes to
 a separate ``.llmci/cache/judges`` directory, and honors the same ``--no-cache`` /

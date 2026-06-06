@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Composite judge caching** — outcome and trajectory criteria in agent composite judges
+  now share the `.llmci/cache/judges/` LLM-call cache (same `--no-cache` /
+  `--refresh-cache` flags as other judges).
+- **Calibration trend history** — `--save-snapshot` appends each run to
+  `.llmci/calibration/<eval>-history.jsonl`; `llmci judge calibrate` shows a trend
+  table when two or more calibration runs exist.
+
 ## [0.2.0] - 2026-06-06
 
 Major release: CI gate trust (flake resistance, caching, cost metrics, portable reports),
