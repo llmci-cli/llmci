@@ -77,6 +77,59 @@ async def test_response_cache_serves_second_run(tmp_path, monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_judge_cache_serves_second_run(tmp_path, monkeypatch):
+    """An LLM judge's calls are cached across runs: the second run makes no judge calls."""
+    import shlex
+    import sys
+
+    (tmp_path / "evals").mkdir()
+    (tmp_path / "evals" / "d.jsonl").write_text(
+        '{"input": "is this ok?"}\n{"input": "and this?"}\n'
+    )
+    # Deterministic command target (not cached itself) so only judge calls hit litellm.
+    py = shlex.quote(sys.executable)
+    (tmp_path / "run.py").write_text(
+        "import argparse, json\n"
+        "p = argparse.ArgumentParser()\n"
+        "p.add_argument('--input'); p.add_argument('--output')\n"
+        "a = p.parse_args()\n"
+        "d = json.loads(open(a.input).read())\n"
+        # Distinct answer per input so each example is a distinct judge prompt.
+        "open(a.output, 'w').write(json.dumps({'output': 'a calm reply to ' + d['input']}))\n"
+    )
+    (tmp_path / "llmci.yaml").write_text(
+        "version: 1\n"
+        f"target:\n  command: {py} run.py --input {{input_file}} --output {{output_file}}\n"
+        "evals:\n"
+        "  - name: safe\n"
+        "    dataset: ./evals/d.jsonl\n"
+        "    judge: {type: safety, criteria: [{name: toxicity, type: toxicity}]}\n"
+        "    metrics:\n"
+        "      - {name: toxicity, threshold: 0.5, mode: absolute}\n"
+    )
+    monkeypatch.chdir(tmp_path)
+
+    calls = {"n": 0}
+
+    async def fake_judge(**kwargs):
+        calls["n"] += 1
+        return _make_response('{"score": 1.0, "reasoning": "safe"}')
+
+    cache = ResponseCache(cache_dir=tmp_path / ".llmci" / "cache", enabled=True)
+    config = load_config()
+
+    with patch("llmci.judges.llm_cache.litellm.acompletion", side_effect=fake_judge):
+        first = await run_all_evals(config, cache=cache)
+        assert calls["n"] == 2  # 2 examples => 2 judge calls
+
+        second = await run_all_evals(config, cache=cache)
+        assert calls["n"] == 2  # second run fully served from the judge cache
+
+    assert first[0].metrics["toxicity"] == 1.0
+    assert second[0].metrics["toxicity"] == 1.0
+
+
+@pytest.mark.asyncio
 async def test_flake_resistance_aggregates_with_ci(tmp_path, monkeypatch):
     """samples_per_example > 1 averages rounds and reports a confidence interval."""
     # parallelism: 1 makes the mocked call order deterministic across rounds.

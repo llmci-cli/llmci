@@ -77,7 +77,7 @@ async def test_win_against_baseline_no_swap():
     examples = [EvalExample(input="q1", expected="")]
     results = [TargetResult(output="new better answer", latency_ms=1.0)]
 
-    with patch("llmci.judges.pairwise.litellm.acompletion",
+    with patch("llmci.judges.llm_cache.litellm.acompletion",
                side_effect=_mock_llm('{"winner": "B", "reasoning": "better"}')):
         per_example = await judge.evaluate_dataset(examples, results)
 
@@ -92,7 +92,7 @@ async def test_swap_neutralizes_position_bias():
     examples = [EvalExample(input="q1", expected="")]
     results = [TargetResult(output="new answer", latency_ms=1.0)]
 
-    with patch("llmci.judges.pairwise.litellm.acompletion",
+    with patch("llmci.judges.llm_cache.litellm.acompletion",
                side_effect=_mock_llm('{"winner": "B"}')):
         per_example = await judge.evaluate_dataset(examples, results)
 
@@ -107,7 +107,7 @@ async def test_swap_keeps_consistent_win():
     examples = [EvalExample(input="q1", expected="")]
     results = [TargetResult(output="new better answer", latency_ms=1.0)]
 
-    with patch("llmci.judges.pairwise.litellm.acompletion",
+    with patch("llmci.judges.llm_cache.litellm.acompletion",
                side_effect=_mock_prefer("new better answer")):
         per_example = await judge.evaluate_dataset(examples, results)
 

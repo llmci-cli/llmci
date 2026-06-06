@@ -2,11 +2,23 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from llmci.models import EvalExample, JudgeResult, TargetResult
+
+if TYPE_CHECKING:
+    from llmci.cache import ResponseCache
 
 
 class Judge:
     """Base interface for all judges. All methods are async for uniformity."""
+
+    # Optional shared cache for LLM-based judges; set by the runner. None = no caching.
+    _judge_cache: "ResponseCache | None" = None
+
+    def set_judge_cache(self, cache: "ResponseCache | None") -> None:
+        """Attach a shared LLM-call cache (no-op for deterministic judges)."""
+        self._judge_cache = cache
 
     async def evaluate_single(
         self, input: str, expected: str, actual: str

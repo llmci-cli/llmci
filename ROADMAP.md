@@ -67,8 +67,9 @@ The biggest demand gap vs DeepEval / Ragas.
 
 _Landed: `judge: {type: rag}` with the five criteria above; each surfaces as a
 gateable metric by name. Targets pass `contexts`/`retrieved_ids`; gold labels via
-`relevant_ids`. Runnable deterministic example: `examples/12-rag-retrieval`. Follow-ups:
-judge-result caching for the LLM criteria, and per-claim faithfulness decomposition._
+`relevant_ids`. Runnable deterministic example: `examples/12-rag-retrieval`. The LLM
+criteria now share the judge-call cache (`.llmci/cache/judges/`). Follow-up: per-claim
+faithfulness decomposition._
 
 ### 6. Output diff view — baseline vs PR, per example — `M` · ★★ ✅ prototype
 "Why did this fail?" is currently hard to answer from a pass/fail table.
@@ -86,8 +87,8 @@ Absolute scoring is weak for open-ended generation.
 
 _Landed: compares current vs baseline output per input; `win_rate` surfaced as a
 gateable metric; reuses per-example baseline outputs (item 6) and CI sampling (item 1).
-Position bias is controlled by default via two-order swap-averaging (`position_swap`).
-Follow-up: judge-result caching to offset the doubled judge calls._
+Position bias is controlled by default via two-order swap-averaging (`position_swap`),
+and judge calls are cached (`.llmci/cache/judges/`) to offset the doubled call count._
 
 ### 8. LLM-judge calibration & drift detection — `M` · ★★ ✅ prototype
 LLM judges drift across model versions and disagree with humans; trust erodes silently.

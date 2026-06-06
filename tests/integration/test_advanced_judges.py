@@ -110,7 +110,7 @@ async def test_pairwise_through_runner(tmp_path, monkeypatch):
 
     # The current output ("new answer") wins in either position -> a real win that
     # survives the default position-swap averaging.
-    with patch("llmci.judges.pairwise.litellm.acompletion",
+    with patch("llmci.judges.llm_cache.litellm.acompletion",
                side_effect=_mock_prefer("new answer")):
         results = await run_all_evals(config, baselines=baselines)
 

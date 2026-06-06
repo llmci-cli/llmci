@@ -111,6 +111,12 @@ async def run_eval(
     # variance we are trying to measure.
     round_cache = cache if samples == 1 else None
 
+    # LLM-based judges share a content-addressed call cache, honoring the same flags as
+    # target caching. Skipped while sampling so judge variance isn't flattened.
+    from llmci.judges.llm_cache import judge_cache_from
+
+    judge.set_judge_cache(judge_cache_from(round_cache))
+
     rounds: list[tuple[list[TargetResult], list[JudgeResult]]] = []
     for _ in range(samples):
         round_results = await run_target(target, examples, settings, cache=round_cache)

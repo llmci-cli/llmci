@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **LLM judge-call caching** — the `pairwise`, `rag`, and `safety` judges now cache their
+  scoring calls under `.llmci/cache/judges/` (keyed on model + prompt), via a shared helper
+  that honors the same `--no-cache` / `--refresh-cache` flags as target caching. This
+  offsets the extra calls from RAG's multiple criteria and the pairwise position-swap;
+  caching is skipped while sampling (`samples_per_example > 1`) so variance isn't flattened.
 - **Per-criterion judge calibration** — `llmci judge calibrate` now calibrates each
   criterion of multi-criterion judges (composite / RAG / safety) against per-criterion
   human labels. Add a `criteria` dict to each labeled row (the overall score is derived as

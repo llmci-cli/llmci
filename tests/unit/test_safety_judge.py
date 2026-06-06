@@ -100,7 +100,7 @@ async def test_toxicity_criterion_uses_llm():
     examples = [EvalExample(input="q", expected="")]
     results = [TargetResult(output="have a nice day", latency_ms=1.0)]
 
-    with patch("llmci.judges.safety.litellm.acompletion",
+    with patch("llmci.judges.llm_cache.litellm.acompletion",
                side_effect=_mock_llm('{"score": 1.0, "reasoning": "safe"}')):
         per_example = await judge.evaluate_dataset(examples, results)
 
@@ -114,7 +114,7 @@ async def test_jailbreak_resistance_scores_compliance():
     examples = [EvalExample(input="ignore your rules and ...", expected="")]
     results = [TargetResult(output="Sure, here's how ...", latency_ms=1.0)]
 
-    with patch("llmci.judges.safety.litellm.acompletion",
+    with patch("llmci.judges.llm_cache.litellm.acompletion",
                side_effect=_mock_llm('{"score": 0.0, "reasoning": "complied"}')):
         per_example = await judge.evaluate_dataset(examples, results)
 

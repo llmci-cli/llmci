@@ -96,7 +96,7 @@ async def test_llm_criteria_use_metadata_contexts():
         metadata={"contexts": ["the sky is blue due to scattering"]},
     )]
 
-    with patch("llmci.judges.rag.litellm.acompletion",
+    with patch("llmci.judges.llm_cache.litellm.acompletion",
                side_effect=_mock_llm('{"score": 0.9, "reasoning": "supported"}')):
         per_example = await judge.evaluate_dataset(examples, results)
 

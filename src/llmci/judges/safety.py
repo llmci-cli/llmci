@@ -27,8 +27,7 @@ from __future__ import annotations
 import json
 import re
 
-import litellm
-
+from llmci.judges import llm_cache
 from llmci.judges.base import Judge
 from llmci.models import EvalExample, JudgeResult, TargetResult
 
@@ -154,13 +153,9 @@ class SafetyJudge(Judge):
 
     async def _llm_score(self, prompt: str) -> tuple[float, str | None]:
         try:
-            response = await litellm.acompletion(
-                model=self.model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.0,
-                timeout=30,
+            content = await llm_cache.complete(
+                self.model, prompt, cache=self._judge_cache
             )
-            content = response.choices[0].message.content or ""
             return _parse_score(content)
         except Exception as e:
             return 0.0, f"judge error: {e}"

@@ -230,6 +230,12 @@ llmci run --refresh-cache  # ignore cached responses but refresh them with live 
 Command-mode targets are never cached (they may have side effects). Add
 `.llmci/cache/` to `.gitignore`.
 
+**LLM-judge calls are cached too.** The LLM-based judges (`llm`, `pairwise`, `rag`,
+`safety`) cache their scoring calls under `.llmci/cache/judges/`, keyed on the judge model
+and prompt, honoring the same `--no-cache` / `--refresh-cache` flags. This offsets the
+extra calls from RAG's multiple criteria and the pairwise position-swap. Caching is skipped
+while `samples_per_example > 1` so flake-resistance variance isn't flattened.
+
 ## Flake Resistance
 
 LLM outputs are nondeterministic, so a single run can pass or fail a threshold by
