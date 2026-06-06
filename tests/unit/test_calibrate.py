@@ -32,6 +32,20 @@ class _ScriptedJudge:
         return [JudgeResult(score=self._scores[i]) for i in range(len(results))]
 
 
+class _SubScoreJudge:
+    """Judge that returns preset overall scores plus per-criterion sub-scores."""
+
+    def __init__(self, scores, sub_scores):
+        self._scores = scores
+        self._sub_scores = sub_scores
+
+    async def evaluate_dataset(self, examples, results):
+        return [
+            JudgeResult(score=self._scores[i], sub_scores=self._sub_scores[i])
+            for i in range(len(results))
+        ]
+
+
 class TestLoadLabeledSet:
     def test_loads_and_normalizes(self, tmp_path):
         path = tmp_path / "labels.jsonl"
@@ -101,6 +115,32 @@ class TestRunCalibration:
         assert result.judge_scores == [1.0, 0.0]
         assert result.human_scores == [1.0, 0.0]
         assert result.inputs == ["a", "b"]
+        assert result.per_criterion == {}
+
+    def test_per_criterion_agreement(self):
+        labeled = [
+            LabeledExample("a", "", "o", 1.0, criteria={"faith": 1.0, "rel": 1.0}),
+            LabeledExample("b", "", "o", 0.0, criteria={"faith": 0.0, "rel": 1.0}),
+        ]
+        judge = _SubScoreJudge(
+            scores=[1.0, 0.0],
+            # faith matches humans perfectly; rel disagrees on the 2nd example.
+            sub_scores=[{"faith": 1.0, "rel": 1.0}, {"faith": 0.0, "rel": 0.0}],
+        )
+        result = asyncio.run(run_calibration(judge, "gpt-4o-mini", labeled))
+        assert set(result.per_criterion) == {"faith", "rel"}
+        assert result.per_criterion["faith"].agreement_rate == 1.0
+        assert result.per_criterion["rel"].agreement_rate == 0.5
+        assert result.per_criterion["faith"].n == 2
+
+    def test_criteria_only_derives_overall_human_score(self, tmp_path):
+        path = tmp_path / "labels.jsonl"
+        path.write_text(
+            '{"input": "a", "output": "o", "criteria": {"x": 1, "y": 0}}\n'
+        )
+        labeled = load_labeled_set(path)
+        assert labeled[0].human_score == pytest.approx(0.5)
+        assert labeled[0].criteria == {"x": 1.0, "y": 0.0}
 
 
 class TestSnapshotAndDrift:
@@ -154,6 +194,19 @@ class TestReport:
         assert "Judge Calibration" in report
         assert "0.900" in report
         assert "substantial" in report
+
+    def test_report_includes_per_criterion(self):
+        crit = CalibrationResult(
+            model="m", n=4, agreement_rate=0.75, cohens_kappa=0.5, mae=0.25, pearson=0.6,
+        )
+        result = CalibrationResult(
+            model="m", n=4, agreement_rate=0.9, cohens_kappa=0.8, mae=0.1, pearson=0.85,
+            per_criterion={"faithfulness": crit},
+        )
+        report = format_calibration_report(result)
+        assert "Per-criterion agreement" in report
+        assert "faithfulness" in report
+        assert "0.750" in report
 
     def test_report_includes_drift(self):
         result = CalibrationResult(

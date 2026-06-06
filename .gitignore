@@ -35,3 +35,6 @@ Thumbs.db
 
 # Internal planning docs (not for the public repo)
 TESTBED*.md
+
+# Local reference testbed clone (an embedded git repo; never commit)
+.tmp-llmci-testbed/

@@ -646,12 +646,22 @@ def judge_calibrate(
         click.echo(f"\nSnapshot saved: {path}")
 
     exit_code = 0
-    if min_agreement is not None and result.agreement_rate < min_agreement:
-        click.echo(
-            f"\nFAIL: agreement {result.agreement_rate:.3f} < required {min_agreement:.3f}",
-            err=True,
-        )
-        exit_code = 1
+    if min_agreement is not None:
+        if result.agreement_rate < min_agreement:
+            click.echo(
+                f"\nFAIL: agreement {result.agreement_rate:.3f} < "
+                f"required {min_agreement:.3f}",
+                err=True,
+            )
+            exit_code = 1
+        for crit, cr in result.per_criterion.items():
+            if cr.agreement_rate < min_agreement:
+                click.echo(
+                    f"\nFAIL: criterion '{crit}' agreement {cr.agreement_rate:.3f} < "
+                    f"required {min_agreement:.3f}",
+                    err=True,
+                )
+                exit_code = 1
     if max_drift is not None and drift is not None and drift.mean_abs_change > max_drift:
         click.echo(
             f"\nFAIL: judge drift {drift.mean_abs_change:.3f} > allowed {max_drift:.3f}",

@@ -28,18 +28,26 @@ SNAPSHOT_DIR = Path(".llmci/calibration")
 
 @dataclass
 class LabeledExample:
-    """A judge calibration example: the output to judge plus a human score."""
+    """A judge calibration example: the output to judge plus human score(s).
+
+    ``criteria`` holds optional per-criterion human scores (e.g. {"faithfulness": 1.0,
+    "relevance": 0.0}) for calibrating multi-criterion judges (composite / RAG / safety).
+    """
 
     input: str
     expected: str
     output: str
     human_score: float
+    criteria: dict[str, float] = field(default_factory=dict)
 
 
 def load_labeled_set(path: Path) -> list[LabeledExample]:
     """Load a JSONL labeled set: {input, output, human_score, [expected]} per line.
 
-    ``human_score`` may be a number in [0, 1], a bool, or "pass"/"fail".
+    ``human_score`` may be a number in [0, 1], a bool, or "pass"/"fail". A line may also
+    carry per-criterion labels under ``criteria`` (or ``human_scores``) as a dict; when
+    ``human_score`` is omitted but ``criteria`` is present, the overall score is the mean
+    of the criterion scores.
     """
     if not path.exists():
         raise DatasetError(f"Labeled set not found: {path}")
@@ -56,15 +64,31 @@ def load_labeled_set(path: Path) -> list[LabeledExample]:
                 raise DatasetError(
                     f"Malformed JSON at {path} line {line_num}: {e}"
                 ) from e
-            if "input" not in row or "output" not in row or "human_score" not in row:
+            if "input" not in row or "output" not in row:
                 raise DatasetError(
-                    f"Line {line_num} needs 'input', 'output', and 'human_score' fields."
+                    f"Line {line_num} needs 'input' and 'output' fields."
                 )
+
+            raw_criteria = row.get("criteria") or row.get("human_scores")
+            criteria: dict[str, float] = {}
+            if isinstance(raw_criteria, dict):
+                criteria = {k: _normalize_score(v) for k, v in raw_criteria.items()}
+
+            if "human_score" in row:
+                human_score = _normalize_score(row["human_score"])
+            elif criteria:
+                human_score = sum(criteria.values()) / len(criteria)
+            else:
+                raise DatasetError(
+                    f"Line {line_num} needs a 'human_score' or a 'criteria' dict."
+                )
+
             labeled.append(LabeledExample(
                 input=row["input"],
                 expected=row.get("expected", ""),
                 output=row["output"],
-                human_score=_normalize_score(row["human_score"]),
+                human_score=human_score,
+                criteria=criteria,
             ))
 
     if not labeled:
@@ -99,6 +123,8 @@ class CalibrationResult:
     judge_scores: list[float] = field(default_factory=list)
     human_scores: list[float] = field(default_factory=list)
     inputs: list[str] = field(default_factory=list)
+    # Per-criterion agreement for multi-criterion judges (keyed by criterion name).
+    per_criterion: dict[str, "CalibrationResult"] = field(default_factory=dict)
 
 
 def compute_agreement(
@@ -173,7 +199,50 @@ async def run_calibration(
         judge_scores=judge_scores,
         human_scores=human_scores,
         inputs=[le.input for le in labeled],
+        per_criterion=_calibrate_criteria(labeled, judged, model),
     )
+
+
+def _calibrate_criteria(
+    labeled: list[LabeledExample],
+    judged: list[JudgeResult],
+    model: str,
+) -> dict[str, CalibrationResult]:
+    """Agreement per criterion, over examples where both human and judge scored it.
+
+    A criterion is calibrated only when humans labeled it (in ``criteria``) and the judge
+    surfaced it as a sub-score — so composite/RAG/safety judges get per-criterion trust
+    signals without affecting single-score judges (which produce no sub-scores).
+    """
+    human_criteria: set[str] = set()
+    for le in labeled:
+        human_criteria.update(le.criteria)
+
+    out: dict[str, CalibrationResult] = {}
+    for crit in sorted(human_criteria):
+        js: list[float] = []
+        hs: list[float] = []
+        inputs: list[str] = []
+        for le, jr in zip(labeled, judged):
+            if crit in le.criteria and jr.sub_scores and crit in jr.sub_scores:
+                js.append(jr.sub_scores[crit])
+                hs.append(le.criteria[crit])
+                inputs.append(le.input)
+        if not js:
+            continue
+        agreement, kappa, mae, pearson = compute_agreement(js, hs)
+        out[crit] = CalibrationResult(
+            model=model,
+            n=len(js),
+            agreement_rate=agreement,
+            cohens_kappa=kappa,
+            mae=mae,
+            pearson=pearson,
+            judge_scores=js,
+            human_scores=hs,
+            inputs=inputs,
+        )
+    return out
 
 
 @dataclass
@@ -261,6 +330,17 @@ def format_calibration_report(
         "",
         f"_Interpretation: {_kappa_label(result.cohens_kappa)} agreement beyond chance._",
     ]
+    if result.per_criterion:
+        lines.append("")
+        lines.append("### Per-criterion agreement")
+        lines.append("")
+        lines.append("| Criterion | n | Agreement | Kappa | MAE |")
+        lines.append("|-----------|---|-----------|-------|-----|")
+        for crit, cr in result.per_criterion.items():
+            lines.append(
+                f"| {crit} | {cr.n} | {cr.agreement_rate:.3f} | "
+                f"{cr.cohens_kappa:.3f} | {cr.mae:.3f} |"
+            )
     if drift is not None:
         lines.append("")
         lines.append("### Drift vs snapshot")

@@ -40,7 +40,7 @@ def import_promptfoo_config(
         if isinstance(prompts, list) and len(prompts) == 1:
             prompt_file = prompts[0]
             if isinstance(prompt_file, str) and not prompt_file.startswith("file://"):
-                Path("prompt.txt").write_text(prompt_file)
+                (output.parent / "prompt.txt").write_text(prompt_file)
                 config["target"]["prompt_file"] = "prompt.txt"
             elif isinstance(prompt_file, str):
                 config["target"]["prompt_file"] = prompt_file.replace("file://", "")
@@ -51,14 +51,16 @@ def import_promptfoo_config(
             )
             prompt_file = prompts[0]
             if isinstance(prompt_file, str):
-                Path("prompt.txt").write_text(prompt_file)
+                (output.parent / "prompt.txt").write_text(prompt_file)
                 config["target"]["prompt_file"] = "prompt.txt"
 
     yaml_text = yaml.dump(config, default_flow_style=False, sort_keys=False)
     output.write_text(yaml_text)
 
     if dataset_path:
-        _write_dataset(raw, dataset_path)
+        # Write the dataset next to the generated config, not relative to cwd, while the
+        # stored config path stays relative so the generated project remains portable.
+        _write_dataset(raw, output.parent / dataset_path)
 
     for w in warnings:
         print(f"  Warning: {w}")
@@ -161,7 +163,7 @@ def _convert_tests(raw: dict, warnings: list[str]) -> tuple[list[dict], str | No
     return [eval_cfg], dataset_path
 
 
-def _write_dataset(raw: dict, dataset_path: str) -> None:
+def _write_dataset(raw: dict, dataset_path: str | Path) -> None:
     """Extract test vars into a JSONL dataset."""
     tests = raw.get("tests", [])
     if not tests:

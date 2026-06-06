@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Per-criterion judge calibration** — `llmci judge calibrate` now calibrates each
+  criterion of multi-criterion judges (composite / RAG / safety) against per-criterion
+  human labels. Add a `criteria` dict to each labeled row (the overall score is derived as
+  the mean when `human_score` is omitted); the report gains a per-criterion agreement
+  table and `--min-agreement` fails if *any* criterion falls below the threshold.
 - **Pairwise position-bias control** — the pairwise judge now runs each comparison in
   both A/B orders and averages them by default (`position_swap: true`), cancelling the
   LLM's tendency to favor a fixed position; a judge that blindly prefers one slot scores a

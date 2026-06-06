@@ -98,8 +98,9 @@ _Landed: `llmci judge calibrate --eval <name> --labels <file>` runs the eval's j
 over a human-labeled set and reports agreement rate, Cohen's kappa, MAE, and Pearson r.
 A snapshot (`.llmci/calibration/<eval>.json`, via `--save-snapshot`) records the judge
 model + scores; a later run flags drift when the model changes. Gate with
-`--min-agreement` / `--max-drift`. Follow-up: per-criterion calibration for composite/RAG
-judges, and trend history across snapshots._
+`--min-agreement` / `--max-drift`. Per-criterion calibration (composite / RAG / safety)
+labels each criterion separately and gates on the weakest one. Follow-up: trend history
+across snapshots._
 
 ### 9. Shareable HTML/Markdown run report — `S` · ★★ ✅ prototype
 A self-contained artifact beyond the PR comment.

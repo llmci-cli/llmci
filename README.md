@@ -588,6 +588,18 @@ llmci judge calibrate --eval support-replies --labels labels.jsonl \
 `--min-agreement` fails when judge↔human agreement drops too low; `--max-drift` fails
 when a judge-model change shifts scores more than allowed.
 
+**Per-criterion calibration.** For multi-criterion judges (`composite`, `rag`, `safety`),
+label each criterion separately so you can see *which* one disagrees with humans. Add a
+`criteria` dict to each labeled row (omit `human_score` to derive the overall as the mean):
+
+```json
+{"input": "...", "output": "...", "criteria": {"faithfulness": 1, "answer_relevance": 0}}
+```
+
+The report then includes a per-criterion agreement table, and `--min-agreement` fails if
+*any* criterion (not just the overall score) falls below the threshold — so a judge that's
+trustworthy on average but unreliable on, say, faithfulness can't slip through.
+
 ## Extending llmci: Judge, Metric & Report Plugins
 
 Need domain-specific scoring? Register a new `judge.type` without forking. A plugin is a
