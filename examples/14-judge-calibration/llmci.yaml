@@ -1,0 +1,18 @@
+version: 1
+
+target:
+  command: "python3 run_classifier.py --input {input_file} --output {output_file}"
+
+evals:
+  - name: ticket-classification
+    level: prompt
+    dataset: ./evals/tickets.jsonl
+    judge:
+      type: exact_match
+    metrics:
+      - {name: accuracy, threshold: 0.9, mode: absolute}
+
+settings:
+  parallelism: 5
+  timeout_per_call: 10
+  retries: 1

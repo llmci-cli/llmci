@@ -4,13 +4,25 @@ from __future__ import annotations
 
 import json
 import subprocess
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
 from llmci.models import EvalResult
 
 BASELINE_DIR = Path(".llmci/baselines")
+
+# Cap stored per-example output length so baselines don't balloon.
+_MAX_STORED_OUTPUT = 4000
+
+
+@dataclass
+class BaselineExample:
+    """A single example's stored output for diffing against future runs."""
+
+    input: str
+    output: str
+    score: float
 
 
 @dataclass
@@ -19,6 +31,7 @@ class Baseline:
     metrics: dict[str, float]
     timestamp: str
     commit_sha: str
+    examples: list[BaselineExample] = field(default_factory=list)
 
 
 def save_baseline(result: EvalResult, commit_sha: str | None = None) -> Path:
@@ -33,11 +46,29 @@ def save_baseline(result: EvalResult, commit_sha: str | None = None) -> Path:
         metrics=result.metrics,
         timestamp=datetime.now(timezone.utc).isoformat(),
         commit_sha=commit_sha,
+        examples=_collect_examples(result),
     )
 
     path = BASELINE_DIR / f"{result.eval_name}.json"
     path.write_text(json.dumps(asdict(baseline), indent=2) + "\n")
     return path
+
+
+def _collect_examples(result: EvalResult) -> list[BaselineExample]:
+    """Snapshot per-example outputs/scores for later diffing."""
+    examples: list[BaselineExample] = []
+    for i, jr in enumerate(result.per_example):
+        if i >= len(result.examples) or i >= len(result.results):
+            break
+        output = result.results[i].output or ""
+        examples.append(
+            BaselineExample(
+                input=result.examples[i].input,
+                output=output[:_MAX_STORED_OUTPUT],
+                score=jr.score,
+            )
+        )
+    return examples
 
 
 def load_baseline(eval_name: str, ref: str | None = None) -> Baseline | None:
@@ -75,9 +106,33 @@ def _load_from_disk(eval_name: str) -> Baseline | None:
 
     try:
         data = json.loads(path.read_text())
-        return Baseline(**data)
+        return _baseline_from_dict(data)
     except (json.JSONDecodeError, TypeError, KeyError):
         return None
+
+
+def _baseline_from_dict(data: dict) -> Baseline:
+    """Build a Baseline from raw JSON, reconstructing nested examples.
+
+    Tolerates baselines written before per-example outputs were stored.
+    """
+    raw_examples = data.get("examples") or []
+    examples = [
+        BaselineExample(
+            input=e["input"],
+            output=e.get("output", ""),
+            score=float(e.get("score", 0.0)),
+        )
+        for e in raw_examples
+        if isinstance(e, dict) and "input" in e
+    ]
+    return Baseline(
+        eval_name=data["eval_name"],
+        metrics=data["metrics"],
+        timestamp=data["timestamp"],
+        commit_sha=data["commit_sha"],
+        examples=examples,
+    )
 
 
 def _load_from_git_ref(eval_name: str, ref: str) -> Baseline | None:
@@ -99,7 +154,7 @@ def _load_from_git_ref(eval_name: str, ref: str) -> Baseline | None:
 
     try:
         data = json.loads(result.stdout)
-        return Baseline(**data)
+        return _baseline_from_dict(data)
     except (json.JSONDecodeError, TypeError, KeyError):
         return None
 

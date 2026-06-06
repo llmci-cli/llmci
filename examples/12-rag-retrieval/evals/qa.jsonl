@@ -1,0 +1,4 @@
+{"input": "What is the capital of France?", "relevant_ids": ["doc1"]}
+{"input": "What is the capital of Japan?", "relevant_ids": ["doc3"]}
+{"input": "At what temperature does water boil in Celsius?", "relevant_ids": ["doc5"]}
+{"input": "What currency does Japan use?", "relevant_ids": ["doc4"]}

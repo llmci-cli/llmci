@@ -7,6 +7,109 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-06
+
+Major release: CI gate trust (flake resistance, caching, cost metrics, portable reports),
+deeper eval quality (RAG, pairwise, calibration, diffs), safety/red-team, plugin API, and
+seventeen runnable examples including an integrated pre-merge gate.
+
+### Added
+- **Integrated CI gate example** (`examples/17-integrated-ci-gate`) — one config that
+  stacks quality (`accuracy`), cost/token regression vs committed baselines
+  (`cost_mean`, `tokens_in_mean`), and safety (`pii_leakage`) in a single pre-merge
+  gate. Fully deterministic, API-key-free, with committed baselines and failure toggles
+  for each concern.
+- **Auto-load local baselines** — when `--compare-to` is omitted, `llmci run` loads
+  baselines from `.llmci/baselines/` on disk so checked-in baselines work without a git
+  ref (PR flows still use `--compare-to=origin/main`).
+- **LLM judge-call caching** — the `pairwise`, `rag`, and `safety` judges now cache their
+  scoring calls under `.llmci/cache/judges/` (keyed on model + prompt), via a shared helper
+  that honors the same `--no-cache` / `--refresh-cache` flags as target caching. This
+  offsets the extra calls from RAG's multiple criteria and the pairwise position-swap;
+  caching is skipped while sampling (`samples_per_example > 1`) so variance isn't flattened.
+- **Per-criterion judge calibration** — `llmci judge calibrate` now calibrates each
+  criterion of multi-criterion judges (composite / RAG / safety) against per-criterion
+  human labels. Add a `criteria` dict to each labeled row (the overall score is derived as
+  the mean when `human_score` is omitted); the report gains a per-criterion agreement
+  table and `--min-agreement` fails if *any* criterion falls below the threshold.
+- **Pairwise position-bias control** — the pairwise judge now runs each comparison in
+  both A/B orders and averages them by default (`position_swap: true`), cancelling the
+  LLM's tendency to favor a fixed position; a judge that blindly prefers one slot scores a
+  neutral 0.5 instead of a false win. Set `position_swap: false` to halve judge calls.
+- **Structured-output judge** (`judge: {type: structured}`) — validate a target's JSON
+  output against a JSON Schema, gateable by name (1.0 valid / 0.0 invalid); no API key.
+  The schema is inline under `json_schema:` or a path to a `.json` file. A self-contained
+  validator covers the practical subset (`type`/`required`/`properties`/`items`/`enum`/
+  `additionalProperties`/`minimum`/`maximum`/`minLength`/`maxLength`/`minItems`/`maxItems`/
+  `pattern`). `partial_credit: true` scores the fraction of required fields that validate.
+  See `examples/16-structured-output`.
+- **Red-team attack generator** — `llmci redteam generate --seeds <file>` expands a few
+  plain seed intents into many adversarially-framed prompts (jailbreak, prompt-injection,
+  PII-extraction, and obfuscation techniques) for the `safety` judge to gate. Fully
+  deterministic and API-key-free, so the generated dataset is reproducible and diffable in
+  CI. Filter with `--category` / `--attack`, list the library with `--list`, and add
+  `--include-control` for a raw-seed baseline. Each row carries `attack`/`category`/`seed`
+  metadata so failures attribute to a specific technique. See `examples/15-redteam`.
+- **Custom report sinks** — register a `(ReportContext) -> None` callable with
+  `register_reporter` to ship results after each run (Slack, dashboards, artifact
+  uploads). Activate via `reporters:` in `llmci.yaml`; sinks load from local modules
+  (`plugins:`) or the `llmci.reporters` entry-point group. A sink that raises only warns
+  and never changes the pass/fail gate. The `ReportContext` carries the eval results,
+  configs, overall `passed` flag, and rendered markdown.
+- **Plugin / extension API for judges and metrics** — register a custom `judge.type` or a
+  custom metric (gateable by name) without forking. Installed packages advertise them via
+  the `llmci.judges` / `llmci.metrics` entry-point groups; local repos list dotted module
+  paths under `plugins:` in `llmci.yaml`. A judge value is a `Judge` subclass or a
+  `(JudgeConfig) -> Judge` factory; a metric value is a `(MetricContext) -> float` callable
+  (`register_metric(..., lower_is_better=True)` flips threshold direction). Plugin names
+  can't shadow built-ins. `JudgeConfig.type` is now an open string validated at
+  judge-creation time.
+- **Safety / red-team judge** (`judge: {type: safety}`) — gate on `pii_leakage`
+  (deterministic, no API key: scans for emails, phones, SSNs, credit cards, IPs, and
+  AWS keys; `categories` narrows the scan), plus LLM-based `toxicity` and
+  `jailbreak_resistance` criteria. Each criterion is a gateable metric by name where
+  higher = safer (e.g. `{name: pii_leakage, threshold: 1.0, mode: absolute}`).
+- **Judge calibration & drift detection** — `llmci judge calibrate --eval <name>
+  --labels <file>` runs a configured judge over a human-labeled set and reports
+  judge↔human agreement (agreement rate, Cohen's kappa, MAE, Pearson r). A calibration
+  snapshot (`.llmci/calibration/<eval>.json`, written with `--save-snapshot`) records
+  the judge model and scores so a later run flags drift when the judge model changes.
+  Gate with `--min-agreement` and/or `--max-drift`.
+- **Machine-readable & shareable report formats** — `llmci run --output-format
+  junit|sarif|json|html` for CI systems beyond GitHub Actions. `html` is a
+  self-contained, shareable run report (summary, regressions, per-example results).
+  PR comments stay markdown. New `output-format` input on the GitHub Action.
+- **Response caching** for direct API targets, keyed on
+  `(provider, model, prompt, input)` under `.llmci/cache/responses/`. New flags
+  `--no-cache` and `--refresh-cache`.
+- **Flake resistance** — `settings.samples_per_example` (and `--samples`) run each
+  eval over multiple rounds, reporting each metric's mean with a confidence interval.
+  `settings.significance` (and `--significance`) gates `max_regression` thresholds so
+  drops within run-to-run noise are reported but not enforced.
+- **Cost / token budgeting** — new `cost_total`, `cost_mean`, `tokens_in_mean`,
+  `tokens_out_mean`, and `tokens_total_mean` metrics. Cost/usage come from the litellm
+  response for direct targets, or from optional `"usage"`/`"cost"` keys in a command
+  target's output JSON.
+- **Pairwise / preference judge** (`judge: {type: pairwise}`) — compares each current
+  output against the baseline output for the same input and reports a `win_rate` metric
+  (1.0 win / 0.5 tie / 0.0 loss). Optional `rubric` sets the comparison criterion.
+  Pairs with `samples_per_example` for a win-rate confidence interval.
+- **Output diffs vs baseline** — baselines now store per-example outputs, and reports
+  (markdown + HTML) show a baseline-vs-current diff for each regressed example, matched
+  by input. Backward compatible with baselines written before this change.
+- **RAG judge** (`judge: {type: rag}`) — `faithfulness`, `answer_relevance`,
+  `context_relevance`, `retrieval_recall`, and `retrieval_precision` criteria. Each
+  becomes a gateable metric by name. Command targets pass retrieval context via
+  `"contexts"`/`"retrieved_ids"` output keys; gold labels come from a dataset row's
+  `relevant_ids`. Per-example judge sub-scores are now exposed as aggregate metrics.
+
+### Fixed
+- Local judge plugins listed under `plugins:` now resolve without packaging: the config
+  directory is placed on `sys.path` while plugin modules are imported.
+- Lower-is-better metrics (latency, cost, tokens, `error_rate`) now compare correctly:
+  `absolute` thresholds require the value to be `<=` the threshold, and a
+  `max_regression` is an increase rather than a drop.
+
 ## [0.1.9] - 2026-05-31
 
 ### Added
@@ -114,6 +217,7 @@ Initial public release on PyPI as [`llmci`](https://pypi.org/project/llmci/).
 **Examples**
 - Nine runnable examples: CI regression, model migration, LLM judge, custom judge, agent single/multi-turn, RAG pipeline, FastAPI service, summarization QA
 
+[0.2.0]: https://github.com/llmci-cli/llmci/releases/tag/v0.2.0
 [0.1.9]: https://github.com/llmci-cli/llmci/releases/tag/v0.1.9
 [0.1.8]: https://github.com/llmci-cli/llmci/releases/tag/v0.1.8
 [0.1.7]: https://github.com/llmci-cli/llmci/releases/tag/v0.1.7

@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 
+from llmci.cache import ResponseCache
 from llmci.dataset.loader import load_dataset
 from llmci.judges.factory import create_judge
 from llmci.metrics import compute_latency_stats, compute_metrics
@@ -18,6 +20,9 @@ from llmci.models import (
     TargetResult,
 )
 
+if TYPE_CHECKING:
+    from llmci.baseline import Baseline
+
 
 def resolve_target(eval_config: EvalConfig, global_target: TargetConfig) -> TargetConfig:
     """Per-eval target overrides global target."""
@@ -28,8 +33,13 @@ async def run_target(
     target: TargetConfig,
     examples: list,
     settings: Settings,
+    cache: ResponseCache | None = None,
 ) -> list[TargetResult]:
-    """Dispatch to the correct target runner."""
+    """Dispatch to the correct target runner.
+
+    ``cache`` is applied to direct API targets only; command-mode targets may have
+    side effects and are never cached.
+    """
     if target.is_command_mode:
         from llmci.targets.command import run_command_target
 
@@ -58,6 +68,7 @@ async def run_target(
             timeout=settings.timeout_per_call,
             retries=settings.retries,
             base_url=target.base_url,
+            cache=cache,
         )
 
 
@@ -67,40 +78,104 @@ async def run_eval(
     settings: Settings,
     smoke: bool = False,
     seed: int = 42,
+    cache: ResponseCache | None = None,
+    baseline: "Baseline | None" = None,
 ) -> EvalResult:
     """Execute one eval end to end."""
     if eval_config.level == "agent":
         return await _run_agent_eval(eval_config, target_config, settings, smoke, seed)
 
     smoke_size = settings.smoke_test_size if smoke else None
-    require_expected = eval_config.judge.type not in ("llm", "composite")
+    require_expected = eval_config.judge.type not in (
+        "llm", "composite", "rag", "pairwise", "safety", "structured"
+    )
     examples = load_dataset(
         eval_config.dataset, smoke_size=smoke_size, seed=seed,
         require_expected=require_expected,
     )
 
     target = resolve_target(eval_config, target_config)
-    results = await run_target(target, examples, settings)
-
     judge = create_judge(eval_config.judge)
-    per_example = await judge.evaluate_dataset(examples, results)
+
+    # Pairwise judging compares each output against the stored baseline output.
+    from llmci.judges.pairwise import PairwiseJudge
+
+    if isinstance(judge, PairwiseJudge):
+        judge.set_baseline(baseline)
 
     requested_metrics = [m.name for m in eval_config.metrics]
-    metrics = compute_metrics(examples, results, per_example, requested_metrics)
-    latency_stats = compute_latency_stats(results)
+    samples = max(1, settings.samples_per_example)
 
-    num_errors = sum(1 for r in results if r.error is not None)
+    # When sampling for flake resistance, bypass the response cache so each round is
+    # an independent draw — otherwise identical cached responses would zero out the
+    # variance we are trying to measure.
+    round_cache = cache if samples == 1 else None
+
+    # LLM-based judges share a content-addressed call cache, honoring the same flags as
+    # target caching. Skipped while sampling so judge variance isn't flattened.
+    from llmci.judges.llm_cache import judge_cache_from
+
+    judge.set_judge_cache(judge_cache_from(round_cache))
+
+    rounds: list[tuple[list[TargetResult], list[JudgeResult]]] = []
+    for _ in range(samples):
+        round_results = await run_target(target, examples, settings, cache=round_cache)
+        round_per_example = await judge.evaluate_dataset(examples, round_results)
+        rounds.append((round_results, round_per_example))
+
+    metrics, metric_ci = _aggregate_rounds(
+        examples, rounds, requested_metrics, samples, settings.significance
+    )
+
+    # Per-example display and latency use the first round.
+    first_results, first_per_example = rounds[0]
+    latency_stats = compute_latency_stats(first_results)
+    num_errors = sum(1 for r in first_results if r.error is not None)
 
     return EvalResult(
         eval_name=eval_config.name,
         metrics=metrics,
-        per_example=per_example,
+        per_example=first_per_example,
         examples=examples,
-        results=results,
+        results=first_results,
         latency_stats=latency_stats,
         num_examples=len(examples),
         num_errors=num_errors,
+        samples=samples,
+        metric_ci=metric_ci,
+        significance=settings.significance,
     )
+
+
+def _aggregate_rounds(
+    examples: list[EvalExample],
+    rounds: list[tuple[list[TargetResult], list[JudgeResult]]],
+    requested_metrics: list[str],
+    samples: int,
+    significance: float | None,
+) -> tuple[dict[str, float], dict[str, tuple[float, float]]]:
+    """Average per-round metrics and compute a confidence interval per metric."""
+    from llmci.significance import confidence_interval, mean
+
+    per_metric_values: dict[str, list[float]] = {name: [] for name in requested_metrics}
+    for round_results, round_per_example in rounds:
+        round_metrics = compute_metrics(
+            examples, round_results, round_per_example, requested_metrics
+        )
+        for name in requested_metrics:
+            per_metric_values[name].append(round_metrics.get(name, 0.0))
+
+    metrics = {name: mean(values) for name, values in per_metric_values.items()}
+
+    metric_ci: dict[str, tuple[float, float]] = {}
+    if samples > 1:
+        conf = significance if significance is not None else 0.95
+        metric_ci = {
+            name: confidence_interval(values, conf)
+            for name, values in per_metric_values.items()
+        }
+
+    return metrics, metric_ci
 
 
 async def _run_agent_eval(
@@ -195,8 +270,11 @@ async def run_all_evals(
     config: LlmciConfig,
     smoke: bool = False,
     seed: int = 42,
+    cache: ResponseCache | None = None,
+    baselines: "dict[str, Baseline] | None" = None,
 ) -> list[EvalResult]:
     """Run all evals in the config."""
+    baselines = baselines or {}
     eval_results = []
     for eval_cfg in config.evals:
         result = await run_eval(
@@ -205,6 +283,8 @@ async def run_all_evals(
             settings=config.settings,
             smoke=smoke,
             seed=seed,
+            cache=cache,
+            baseline=baselines.get(eval_cfg.name),
         )
         eval_results.append(result)
     return eval_results

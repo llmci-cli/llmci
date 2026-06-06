@@ -31,12 +31,15 @@ inputs:
   output:
     description: "Write report to this file path"
     default: ""
+  output-format:
+    description: "Report format for output/stdout: markdown, junit, sarif, or json"
+    default: "markdown"
   working-directory:
     description: "Directory containing llmci.yaml"
     default: "."
   llmci-version:
     description: "Exact llmci version to install"
-    default: "0.1.9"
+    default: "0.2.0"
 runs:
   using: "composite"
   steps:
@@ -58,6 +61,7 @@ runs:
         INPUT_EXCLUDE: ${{ inputs.exclude }}
         INPUT_INCLUDE: ${{ inputs.include }}
         INPUT_OUTPUT: ${{ inputs.output }}
+        INPUT_OUTPUT_FORMAT: ${{ inputs.output-format }}
         INPUT_ROOT: ${{ inputs.root }}
         INPUT_SMOKE: ${{ inputs.smoke }}
         INPUT_UPDATE_BASELINE: ${{ inputs.update-baseline }}
@@ -100,6 +104,9 @@ runs:
         fi
         if [ -n "$INPUT_OUTPUT" ]; then
           args+=("--output=$INPUT_OUTPUT")
+        fi
+        if [ -n "$INPUT_OUTPUT_FORMAT" ] && [ "$INPUT_OUTPUT_FORMAT" != "markdown" ]; then
+          args+=("--output-format=$INPUT_OUTPUT_FORMAT")
         fi
 
         llmci run "${args[@]}"

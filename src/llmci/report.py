@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from llmci.baseline import Baseline
-from llmci.comparison import check_thresholds
+from llmci.comparison import check_thresholds, compute_output_diffs
 from llmci.models import EvalConfig, EvalResult
 
 
@@ -43,21 +43,36 @@ def format_report(
         if tr.mode == "max_regression" and tr.baseline_value is None:
             status = "⚠️"
 
-        threshold_str = _threshold_str(tr.threshold, tr.mode)
+        threshold_str = _threshold_str(tr.threshold, tr.mode, tr.metric_name)
+        current_str = _current_str(tr.current_value, tr.current_ci)
 
         if has_baselines:
             bl_str = f"{tr.baseline_value:.3f}" if tr.baseline_value is not None else "—"
             lines.append(
                 f"| {tr.eval_name} | {tr.metric_name} | {bl_str} | "
-                f"{tr.current_value:.3f} | {threshold_str} | {status} |"
+                f"{current_str} | {threshold_str} | {status} |"
             )
         else:
             lines.append(
                 f"| {tr.eval_name} | {tr.metric_name} | "
-                f"{tr.current_value:.3f} | {threshold_str} | {status} |"
+                f"{current_str} | {threshold_str} | {status} |"
             )
 
     lines.append("")
+
+    samples = max((r.samples for r in results), default=1)
+    if samples > 1:
+        lines.append(
+            f"> Averaged over {samples} rounds; values show "
+            f"the mean with a confidence interval `[low, high]`.\n"
+        )
+
+    # Regressions that were within run-to-run noise and therefore not enforced.
+    waived = [tr for tr in threshold_results if tr.waived]
+    if waived:
+        lines.append("### Regressions Within Noise (not enforced)\n")
+        for tr in waived:
+            lines.append(f"**{tr.eval_name} / {tr.metric_name}:** {tr.detail}\n")
 
     # Warning for skipped regression checks
     if not has_baselines:
@@ -99,6 +114,30 @@ def format_report(
                 lines.append(f"| ... and {len(fails) - 20} more | | | |")
             lines.append("</details>\n")
 
+    # Output diffs vs baseline (regressed examples only)
+    if baselines:
+        any_diff = False
+        for result in results:
+            diffs = compute_output_diffs(result, baselines.get(result.eval_name))
+            if not diffs:
+                continue
+            if not any_diff:
+                lines.append("### Output Diffs vs Baseline\n")
+                any_diff = True
+            lines.append(
+                f"<details>\n<summary>{result.eval_name}: "
+                f"{len(diffs)} regressed</summary>\n"
+            )
+            lines.append("| Input | Baseline output | This PR output | Score |")
+            lines.append("|-------|-----------------|----------------|-------|")
+            for d in diffs:
+                lines.append(
+                    f"| {_truncate(d.input, 40)} | {_truncate(d.baseline_output, 40)} "
+                    f"| {_truncate(d.current_output, 40)} "
+                    f"| {d.baseline_score:.2f} → {d.current_score:.2f} |"
+                )
+            lines.append("</details>\n")
+
     # Error summary
     total_errors = sum(r.num_errors for r in results)
     total_examples = sum(r.num_examples for r in results)
@@ -108,12 +147,23 @@ def format_report(
     return "\n".join(lines), all_passed
 
 
-def _threshold_str(threshold: float, mode: str) -> str:
+def _current_str(value: float, ci: tuple[float, float] | None) -> str:
+    """Format a current metric value, with a CI when sampling was used."""
+    if ci is None:
+        return f"{value:.3f}"
+    return f"{value:.3f} [{ci[0]:.3f}, {ci[1]:.3f}]"
+
+
+def _threshold_str(threshold: float, mode: str, metric_name: str = "") -> str:
     """Human-readable threshold string."""
+    from llmci.metrics import is_lower_is_better
+
+    lower = is_lower_is_better(metric_name)
     if mode == "absolute":
-        return f"≥ {threshold}"
+        return f"≤ {threshold}" if lower else f"≥ {threshold}"
     elif mode == "max_regression":
-        return f"≤ {threshold * 100:.0f}% drop"
+        word = "rise" if lower else "drop"
+        return f"≤ {threshold * 100:.0f}% {word}"
     return str(threshold)
 
 

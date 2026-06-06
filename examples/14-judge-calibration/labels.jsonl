@@ -1,0 +1,6 @@
+{"input": "I was charged twice this month", "expected": "billing", "output": "billing", "human_score": 1}
+{"input": "The app crashes on startup", "expected": "technical", "output": "technical", "human_score": 1}
+{"input": "I can't log into my account", "expected": "account", "output": "account", "human_score": 1}
+{"input": "My subscription renewed unexpectedly", "expected": "billing", "output": "technical", "human_score": 0}
+{"input": "Reset my password please", "expected": "account", "output": "security", "human_score": 1}
+{"input": "The export button does nothing", "expected": "technical", "output": "technical", "human_score": 1}

@@ -1,0 +1,4 @@
+{"input": "get product ABC-100", "expected": "id,name,price"}
+{"input": "get product XYZ-200", "expected": "id,name,price"}
+{"input": "get user 7", "expected": "id,name"}
+{"input": "get user 8", "expected": "id,name"}

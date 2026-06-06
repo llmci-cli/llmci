@@ -1,0 +1,24 @@
+version: 1
+
+target:
+  command: "python3 run_rag.py --input {input_file} --output {output_file}"
+
+evals:
+  - name: rag-retrieval
+    level: pipeline
+    dataset: ./evals/qa.jsonl
+    judge:
+      type: rag
+      # The retrieval criteria below are deterministic and need no API key.
+      # Add faithfulness / answer_relevance (and a model:) to score generation too.
+      criteria:
+        - {name: retrieval_recall, type: retrieval_recall, k: 2}
+        - {name: retrieval_precision, type: retrieval_precision, k: 2}
+    metrics:
+      - {name: retrieval_recall, threshold: 0.90, mode: absolute}
+      - {name: retrieval_precision, threshold: 0.50, mode: absolute}
+
+settings:
+  parallelism: 5
+  timeout_per_call: 10
+  retries: 1

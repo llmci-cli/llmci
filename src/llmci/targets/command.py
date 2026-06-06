@@ -100,14 +100,67 @@ async def _execute_command(
         if not raw_output:
             raise TargetError(f"Command produced empty output file: {output_path}")
 
+        tokens_in = tokens_out = 0
+        cost = 0.0
+        metadata: dict = {}
         try:
             output_data = json.loads(raw_output)
             output_text = output_data.get("output", raw_output)
+            tokens_in, tokens_out, cost = _parse_usage(output_data)
+            metadata = _parse_metadata(output_data)
         except json.JSONDecodeError:
             output_text = raw_output
 
-        return TargetResult(output=str(output_text), latency_ms=elapsed_ms)
+        return TargetResult(
+            output=str(output_text),
+            latency_ms=elapsed_ms,
+            tokens_in=tokens_in,
+            tokens_out=tokens_out,
+            cost=cost,
+            metadata=metadata,
+        )
 
     finally:
         input_path.unlink(missing_ok=True)
         output_path.unlink(missing_ok=True)
+
+
+def _parse_usage(output_data: object) -> tuple[int, int, float]:
+    """Parse optional token usage and cost from a command's output JSON.
+
+    Recognizes an optional ``"usage": {"tokens_in", "tokens_out"}`` object and a
+    top-level ``"cost"`` number. Missing or malformed values default to zero so cost
+    budgeting is opt-in for command targets.
+    """
+    if not isinstance(output_data, dict):
+        return (0, 0, 0.0)
+
+    tokens_in = tokens_out = 0
+    usage = output_data.get("usage")
+    if isinstance(usage, dict):
+        try:
+            tokens_in = int(usage.get("tokens_in", 0) or 0)
+            tokens_out = int(usage.get("tokens_out", 0) or 0)
+        except (TypeError, ValueError):
+            tokens_in = tokens_out = 0
+
+    cost = 0.0
+    raw_cost = output_data.get("cost")
+    if raw_cost is not None:
+        try:
+            cost = float(raw_cost)
+        except (TypeError, ValueError):
+            cost = 0.0
+
+    return (tokens_in, tokens_out, cost)
+
+
+# Reserved keys consumed elsewhere; everything else becomes judge-visible metadata.
+_RESERVED_OUTPUT_KEYS = frozenset({"output", "usage", "cost"})
+
+
+def _parse_metadata(output_data: object) -> dict:
+    """Collect structured output fields (e.g. RAG contexts) for judges to consume."""
+    if not isinstance(output_data, dict):
+        return {}
+    return {k: v for k, v in output_data.items() if k not in _RESERVED_OUTPUT_KEYS}

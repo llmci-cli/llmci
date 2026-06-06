@@ -1,0 +1,52 @@
+{
+  "eval_name": "support-routing",
+  "metrics": {
+    "accuracy": 1.0,
+    "cost_mean": 0.000234,
+    "tokens_in_mean": 93.0
+  },
+  "timestamp": "2026-06-06T20:23:01.678155+00:00",
+  "commit_sha": "0d4503d1ed1171bcff3b72aa6b31fe0a092e1c2c",
+  "examples": [
+    {
+      "input": "My printer won't connect to wifi",
+      "output": "hardware",
+      "score": 1.0
+    },
+    {
+      "input": "I need a refund for order #882",
+      "output": "billing",
+      "score": 1.0
+    },
+    {
+      "input": "How do I reset my password?",
+      "output": "account",
+      "score": 1.0
+    },
+    {
+      "input": "The app crashes when I open settings",
+      "output": "software",
+      "score": 1.0
+    },
+    {
+      "input": "Can I upgrade my subscription plan?",
+      "output": "billing",
+      "score": 1.0
+    },
+    {
+      "input": "My monitor has dead pixels",
+      "output": "hardware",
+      "score": 1.0
+    },
+    {
+      "input": "I was charged twice for the same order",
+      "output": "billing",
+      "score": 1.0
+    },
+    {
+      "input": "How do I export my data?",
+      "output": "account",
+      "score": 1.0
+    }
+  ]
+}

@@ -92,12 +92,19 @@ def _run_config(
     update_baseline: bool,
     seed: int,
     post_github: bool = True,
+    output_format: str = "markdown",
+    cache_enabled: bool = True,
+    refresh_cache: bool = False,
+    samples: int | None = None,
+    significance: float | None = None,
 ) -> int:
     """Run a single config and return the process exit code."""
     from llmci.baseline import load_all_baselines, save_baseline
+    from llmci.cache import ResponseCache
     from llmci.config import load_config
     from llmci.integrations.github import detect_github_context, post_pr_comment
     from llmci.report import format_report
+    from llmci.report_formats import format_report_as
     from llmci.runner import run_all_evals
 
     original_cwd = Path.cwd()
@@ -131,15 +138,54 @@ def _run_config(
             click.echo(f"Error: {e}", err=True)
             return 1
 
+        if samples is not None:
+            config.settings.samples_per_example = samples
+        if significance is not None:
+            config.settings.significance = significance
+
         verbose = ctx.obj.get("verbose", False)
         if verbose:
             click.echo(f"Running {len(config.evals)} eval(s)...")
 
+        cache = ResponseCache(enabled=cache_enabled, refresh=refresh_cache)
+
+        # Load baselines up front so pairwise judging and max_regression thresholds
+        # can compare against them while the eval runs.
+        eval_names = [e.name for e in config.evals]
+        baselines = None
+        if compare_to:
+            raw_baselines = load_all_baselines(eval_names, ref=compare_to)
+            if raw_baselines:
+                baselines = raw_baselines
+                if verbose:
+                    click.echo(f"Loaded {len(baselines)} baseline(s) from {compare_to}")
+            elif verbose:
+                click.echo(f"No baselines found on {compare_to}")
+        else:
+            # Fall back to committed/on-disk baselines (e.g. after --update-baseline).
+            raw_baselines = load_all_baselines(eval_names)
+            if raw_baselines:
+                baselines = raw_baselines
+                if verbose:
+                    click.echo(
+                        f"Loaded {len(baselines)} baseline(s) from .llmci/baselines/"
+                    )
+
         try:
-            results = asyncio.run(run_all_evals(config, smoke=smoke, seed=seed))
+            results = asyncio.run(
+                run_all_evals(
+                    config, smoke=smoke, seed=seed, cache=cache,
+                    baselines=baselines or {},
+                )
+            )
         except Exception as e:
             click.echo(f"Error during eval: {e}", err=True)
             return 1
+
+        if verbose and cache_enabled and (cache.hits or cache.misses):
+            click.echo(
+                f"Response cache: {cache.hits} hit(s), {cache.misses} miss(es)"
+            )
 
         if update_baseline:
             for result in results:
@@ -148,25 +194,21 @@ def _run_config(
                     click.echo(f"Baseline saved: {path}")
             click.echo(f"Updated baselines for {len(results)} eval(s).")
 
-        baselines = None
-        if compare_to:
-            eval_names = [r.eval_name for r in results]
-            raw_baselines = load_all_baselines(eval_names, ref=compare_to)
-            if raw_baselines:
-                baselines = raw_baselines
-                if verbose:
-                    click.echo(f"Loaded {len(baselines)} baseline(s) from {compare_to}")
-            elif verbose:
-                click.echo(f"No baselines found on {compare_to}")
-
         report_md, passed = format_report(results, config.evals, baselines=baselines)
 
+        if output_format == "markdown":
+            rendered = report_md
+        else:
+            rendered, _ = format_report_as(
+                output_format, results, config.evals, baselines=baselines
+            )
+
         if output_path:
-            output_path.write_text(report_md)
+            output_path.write_text(rendered)
             if verbose:
                 click.echo(f"Report written to {output_path}")
         else:
-            click.echo(report_md)
+            click.echo(rendered)
 
         gh_ctx = detect_github_context() if post_github else None
         if gh_ctx:
@@ -180,11 +222,38 @@ def _run_config(
                 else:
                     click.echo("Failed to post PR comment.", err=True)
 
+        if config.reporters:
+            _run_reporters(config, results, passed, report_md, verbose)
+
         exit_code = 0 if passed else 1
     finally:
         os.chdir(original_cwd)
 
     return exit_code
+
+
+def _run_reporters(config, results, passed: bool, report_md: str, verbose: bool) -> None:
+    """Invoke each configured report sink. A failing sink warns but never fails the gate."""
+    from llmci.plugins import ReportContext, get_reporter
+
+    ctx = ReportContext(
+        results=results, configs=config.evals, passed=passed, report_markdown=report_md
+    )
+    for name in config.reporters:
+        fn = get_reporter(name)
+        if fn is None:
+            click.echo(
+                f"Warning: report sink '{name}' is not registered "
+                "(did you list its module under 'plugins:'?).",
+                err=True,
+            )
+            continue
+        try:
+            fn(ctx)
+            if verbose:
+                click.echo(f"Report sink '{name}' invoked.")
+        except Exception as e:
+            click.echo(f"Warning: report sink '{name}' failed: {e}", err=True)
 
 
 @cli.command()
@@ -216,9 +285,35 @@ def _run_config(
 @click.option("--smoke", is_flag=True, help="Run on a subset of the dataset.")
 @click.option("--output", default=None, type=click.Path(), help="Write report to file.")
 @click.option(
+    "--output-format",
+    type=click.Choice(["markdown", "junit", "sarif", "json", "html"]),
+    default="markdown",
+    help="Report format for --output/stdout. PR comments stay markdown.",
+)
+@click.option(
     "--update-baseline", is_flag=True, help="Update stored baselines (run on main branch)."
 )
 @click.option("--seed", default=42, type=int, help="Random seed for smoke sampling.")
+@click.option(
+    "--no-cache", is_flag=True, help="Disable the direct-target response cache."
+)
+@click.option(
+    "--refresh-cache",
+    is_flag=True,
+    help="Ignore cached responses on read but write fresh results back.",
+)
+@click.option(
+    "--samples",
+    default=None,
+    type=int,
+    help="Run each eval N rounds for flake resistance (overrides settings).",
+)
+@click.option(
+    "--significance",
+    default=None,
+    type=float,
+    help="Confidence level (e.g. 0.95) for significance-gated regressions.",
+)
 @click.pass_context
 def run(
     ctx: click.Context,
@@ -230,8 +325,13 @@ def run(
     compare_to: str | None,
     smoke: bool,
     output: str | None,
+    output_format: str,
     update_baseline: bool,
     seed: int,
+    no_cache: bool,
+    refresh_cache: bool,
+    samples: int | None,
+    significance: float | None,
 ) -> None:
     """Run evals and compare against baselines."""
     if run_all_configs and output:
@@ -263,6 +363,11 @@ def run(
                 update_baseline=update_baseline,
                 seed=seed,
                 post_github=False,
+                output_format=output_format,
+                cache_enabled=not no_cache,
+                refresh_cache=refresh_cache,
+                samples=samples,
+                significance=significance,
             )
             if result_code != 0:
                 exit_code = result_code
@@ -277,6 +382,11 @@ def run(
         output=output,
         update_baseline=update_baseline,
         seed=seed,
+        output_format=output_format,
+        cache_enabled=not no_cache,
+        refresh_cache=refresh_cache,
+        samples=samples,
+        significance=significance,
     ))
 
 
@@ -442,6 +552,218 @@ def migrate(
 
 def _format_optional_score(score: float | None) -> str:
     return "n/a" if score is None else f"{score:.3f}"
+
+
+@cli.group()
+def judge() -> None:
+    """Calibrate and monitor LLM judges."""
+    pass
+
+
+@judge.command("calibrate")
+@click.option("--eval", "eval_name", required=True, help="Eval whose judge to calibrate.")
+@click.option(
+    "--labels",
+    required=True,
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="JSONL labeled set: {input, output, human_score, [expected]} per line.",
+)
+@click.option(
+    "--config",
+    "config_path",
+    default="llmci.yaml",
+    type=click.Path(exists=False, dir_okay=False, path_type=Path),
+    help="Path to llmci config file.",
+)
+@click.option(
+    "--min-agreement",
+    default=None,
+    type=float,
+    help="Fail (exit 1) if judge↔human agreement falls below this.",
+)
+@click.option(
+    "--max-drift",
+    default=None,
+    type=float,
+    help="Fail if mean score change vs the saved snapshot exceeds this.",
+)
+@click.option(
+    "--save-snapshot",
+    is_flag=True,
+    help="Write/update the calibration snapshot for future drift checks.",
+)
+@click.option("--output", default=None, type=click.Path(), help="Write report to file.")
+def judge_calibrate(
+    eval_name: str,
+    labels: Path,
+    config_path: Path,
+    min_agreement: float | None,
+    max_drift: float | None,
+    save_snapshot: bool,
+    output: str | None,
+) -> None:
+    """Measure judge↔human agreement and detect judge-model drift."""
+    from llmci.calibrate import (
+        compute_drift,
+        format_calibration_report,
+        load_labeled_set,
+        load_snapshot,
+        run_calibration,
+    )
+    from llmci.calibrate import save_snapshot as write_snapshot
+    from llmci.config import find_eval, load_config
+    from llmci.judges.factory import create_judge
+
+    try:
+        config = load_config(config_path)
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+    try:
+        eval_cfg = find_eval(config, eval_name)
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+    try:
+        judge_obj = create_judge(eval_cfg.judge)
+        labeled = load_labeled_set(labels)
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+    model = eval_cfg.judge.model or "default"
+    snapshot = load_snapshot(eval_name)
+
+    try:
+        result = asyncio.run(run_calibration(judge_obj, model, labeled))
+    except Exception as e:
+        click.echo(f"Error during calibration: {e}", err=True)
+        sys.exit(1)
+
+    drift = compute_drift(result, snapshot)
+    report = format_calibration_report(result, drift)
+
+    if output:
+        Path(output).write_text(report + "\n")
+    else:
+        click.echo(report)
+
+    if save_snapshot:
+        path = write_snapshot(eval_name, result)
+        click.echo(f"\nSnapshot saved: {path}")
+
+    exit_code = 0
+    if min_agreement is not None:
+        if result.agreement_rate < min_agreement:
+            click.echo(
+                f"\nFAIL: agreement {result.agreement_rate:.3f} < "
+                f"required {min_agreement:.3f}",
+                err=True,
+            )
+            exit_code = 1
+        for crit, cr in result.per_criterion.items():
+            if cr.agreement_rate < min_agreement:
+                click.echo(
+                    f"\nFAIL: criterion '{crit}' agreement {cr.agreement_rate:.3f} < "
+                    f"required {min_agreement:.3f}",
+                    err=True,
+                )
+                exit_code = 1
+    if max_drift is not None and drift is not None and drift.mean_abs_change > max_drift:
+        click.echo(
+            f"\nFAIL: judge drift {drift.mean_abs_change:.3f} > allowed {max_drift:.3f}",
+            err=True,
+        )
+        exit_code = 1
+
+    sys.exit(exit_code)
+
+
+@cli.group()
+def redteam() -> None:
+    """Generate adversarial datasets to probe safety."""
+    pass
+
+
+@redteam.command("generate")
+@click.option(
+    "--seeds",
+    "seeds_path",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="Seed intents file (.txt one-per-line, or .jsonl with input/seed/prompt).",
+)
+@click.option(
+    "--output",
+    "output_path",
+    type=click.Path(dir_okay=False, path_type=Path),
+    help="Write generated attacks to this JSONL file (default: stdout).",
+)
+@click.option(
+    "--category",
+    "categories",
+    multiple=True,
+    help="Restrict to attack categories (repeatable).",
+)
+@click.option(
+    "--attack",
+    "attacks",
+    multiple=True,
+    help="Restrict to specific attack names (repeatable).",
+)
+@click.option(
+    "--include-control",
+    is_flag=True,
+    help="Also emit the raw seed as an 'attack: none' baseline.",
+)
+@click.option("--list", "list_only", is_flag=True, help="List available attacks and exit.")
+def redteam_generate(
+    seeds_path: Path | None,
+    output_path: Path | None,
+    categories: tuple[str, ...],
+    attacks: tuple[str, ...],
+    include_control: bool,
+    list_only: bool,
+) -> None:
+    """Expand seed intents into adversarially-framed prompts for a safety gate."""
+    from llmci.redteam import (
+        BUILTIN_ATTACKS,
+        generate_attacks,
+        load_seeds,
+        write_attacks,
+    )
+
+    if list_only:
+        click.echo("Available attacks (category · name — description):")
+        for a in sorted(BUILTIN_ATTACKS, key=lambda t: (t.category, t.name)):
+            click.echo(f"  {a.category:14} {a.name:20} {a.description}")
+        return
+
+    if not seeds_path:
+        click.echo("Error: --seeds is required (or use --list).", err=True)
+        sys.exit(1)
+
+    try:
+        seeds = load_seeds(seeds_path)
+        rows = generate_attacks(
+            seeds,
+            categories=list(categories) or None,
+            attacks=list(attacks) or None,
+            include_control=include_control,
+        )
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+    if output_path:
+        n = write_attacks(rows, output_path)
+        click.echo(
+            f"Generated {n} attack(s) from {len(seeds)} seed(s) -> {output_path}"
+        )
+    else:
+        for row in rows:
+            click.echo(json.dumps(row))
 
 
 @cli.group()
