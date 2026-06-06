@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from llmci.baseline import Baseline
-from llmci.comparison import check_thresholds
+from llmci.comparison import check_thresholds, compute_output_diffs
 from llmci.models import EvalConfig, EvalResult
 
 
@@ -112,6 +112,30 @@ def format_report(
                 )
             if len(fails) > 20:
                 lines.append(f"| ... and {len(fails) - 20} more | | | |")
+            lines.append("</details>\n")
+
+    # Output diffs vs baseline (regressed examples only)
+    if baselines:
+        any_diff = False
+        for result in results:
+            diffs = compute_output_diffs(result, baselines.get(result.eval_name))
+            if not diffs:
+                continue
+            if not any_diff:
+                lines.append("### Output Diffs vs Baseline\n")
+                any_diff = True
+            lines.append(
+                f"<details>\n<summary>{result.eval_name}: "
+                f"{len(diffs)} regressed</summary>\n"
+            )
+            lines.append("| Input | Baseline output | This PR output | Score |")
+            lines.append("|-------|-----------------|----------------|-------|")
+            for d in diffs:
+                lines.append(
+                    f"| {_truncate(d.input, 40)} | {_truncate(d.baseline_output, 40)} "
+                    f"| {_truncate(d.current_output, 40)} "
+                    f"| {d.baseline_score:.2f} → {d.current_score:.2f} |"
+                )
             lines.append("</details>\n")
 
     # Error summary

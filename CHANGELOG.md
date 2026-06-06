@@ -8,9 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Machine-readable report formats** — `llmci run --output-format junit|sarif|json`
-  for CI systems beyond GitHub Actions. PR comments stay markdown. New
-  `output-format` input on the GitHub Action.
+- **Machine-readable & shareable report formats** — `llmci run --output-format
+  junit|sarif|json|html` for CI systems beyond GitHub Actions. `html` is a
+  self-contained, shareable run report (summary, regressions, per-example results).
+  PR comments stay markdown. New `output-format` input on the GitHub Action.
 - **Response caching** for direct API targets, keyed on
   `(provider, model, prompt, input)` under `.llmci/cache/responses/`. New flags
   `--no-cache` and `--refresh-cache`.
@@ -22,6 +23,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `tokens_out_mean`, and `tokens_total_mean` metrics. Cost/usage come from the litellm
   response for direct targets, or from optional `"usage"`/`"cost"` keys in a command
   target's output JSON.
+- **Pairwise / preference judge** (`judge: {type: pairwise}`) — compares each current
+  output against the baseline output for the same input and reports a `win_rate` metric
+  (1.0 win / 0.5 tie / 0.0 loss). Optional `rubric` sets the comparison criterion.
+  Pairs with `samples_per_example` for a win-rate confidence interval.
+- **Output diffs vs baseline** — baselines now store per-example outputs, and reports
+  (markdown + HTML) show a baseline-vs-current diff for each regressed example, matched
+  by input. Backward compatible with baselines written before this change.
 - **RAG judge** (`judge: {type: rag}`) — `faithfulness`, `answer_relevance`,
   `context_relevance`, `retrieval_recall`, and `retrieval_precision` criteria. Each
   becomes a gateable metric by name. Command targets pass retrieval context via

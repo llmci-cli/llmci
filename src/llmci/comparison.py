@@ -9,6 +9,54 @@ from llmci.models import EvalConfig, EvalResult
 
 
 @dataclass
+class OutputDiff:
+    """A per-example output regression: baseline vs current."""
+
+    input: str
+    baseline_output: str
+    current_output: str
+    baseline_score: float
+    current_score: float
+
+
+def compute_output_diffs(
+    result: EvalResult,
+    baseline: Baseline | None,
+    limit: int = 20,
+) -> list[OutputDiff]:
+    """Return examples whose score regressed vs the baseline, matched by input.
+
+    Requires a baseline that stored per-example outputs (newer baselines do).
+    Examples are matched on their input string; only regressions (current score
+    below baseline score) are returned, worst drop first.
+    """
+    if baseline is None or not baseline.examples:
+        return []
+
+    baseline_by_input = {e.input: e for e in baseline.examples}
+    diffs: list[OutputDiff] = []
+    for i, jr in enumerate(result.per_example):
+        if i >= len(result.examples) or i >= len(result.results):
+            break
+        example = result.examples[i]
+        bl = baseline_by_input.get(example.input)
+        if bl is None or jr.score >= bl.score:
+            continue
+        diffs.append(
+            OutputDiff(
+                input=example.input,
+                baseline_output=bl.output,
+                current_output=result.results[i].output,
+                baseline_score=bl.score,
+                current_score=jr.score,
+            )
+        )
+
+    diffs.sort(key=lambda d: d.current_score - d.baseline_score)
+    return diffs[:limit]
+
+
+@dataclass
 class ThresholdResult:
     eval_name: str
     metric_name: str

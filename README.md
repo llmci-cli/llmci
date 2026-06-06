@@ -147,6 +147,7 @@ target:
 | `custom` | Domain-specific logic (JSON validation, etc.) | `judge: {type: custom, module: ./judge.py, function: evaluate}` |
 | `composite` | Agent evaluation with multiple criteria | `judge: {type: composite, criteria: [...]}` |
 | `rag` | RAG pipelines (faithfulness, relevance, retrieval) | `judge: {type: rag, criteria: [...]}` |
+| `pairwise` | "Is the new output better than baseline?" (win rate) | `judge: {type: pairwise, model: gpt-4o}` |
 
 ### Metrics
 
@@ -198,6 +199,7 @@ GitHub Actions). For other CI systems, emit a machine-readable format with
 llmci run --output-format junit --output results.xml   # GitLab, Bitbucket, Azure DevOps, Jenkins, CircleCI
 llmci run --output-format sarif --output results.sarif # code-scanning / inline annotations
 llmci run --output-format json  --output results.json  # programmatic consumers
+llmci run --output-format html  --output report.html   # shareable report (upload as a CI artifact)
 ```
 
 - **junit** — each eval is a `<testsuite>`, each metric a `<testcase>`; failed
@@ -206,6 +208,8 @@ llmci run --output-format json  --output results.json  # programmatic consumers
 - **sarif** — SARIF 2.1.0; only failing thresholds become results (an empty list
   means clean), so it drops straight into code-scanning surfaces.
 - **json** — structured per-eval metrics and threshold outcomes.
+- **html** — a self-contained (inline-CSS) report with the summary table, regressions,
+  and per-example results. No external assets, so it uploads cleanly as a CI artifact.
 
 The PR comment always stays markdown regardless of `--output-format`.
 
@@ -322,6 +326,10 @@ Then compare PRs against that baseline:
 llmci run --compare-to=main
 ```
 
+Baselines also store per-example outputs, so when a PR regresses, the report shows an
+**Output Diffs vs Baseline** section — the baseline output next to the current output
+for each regressed example (matched by input), in both the markdown and HTML reports.
+
 ## Model Migration
 
 When switching models (e.g., GPT-4o to GPT-4.5), llmci can automatically tune your prompt to maintain quality parity:
@@ -368,6 +376,34 @@ Supports:
 - **Outcome judging** — LLM-based evaluation of final output
 - **Trajectory judging** — LLM-based evaluation of execution path quality
 - **Full replay** or **history injection** modes for multi-turn
+
+## Pairwise / Preference Evaluation
+
+For open-ended generation, "is this answer good?" is hard to score absolutely.
+Pairwise judging asks the easier question — "is the new output **better** than the
+previous one?" — and reports a **win rate** vs the baseline:
+
+```yaml
+evals:
+  - name: support-replies
+    dataset: ./evals/tickets.jsonl
+    judge:
+      type: pairwise
+      model: gpt-4o
+      rubric: "Which reply is more accurate, helpful, and on-policy?"   # optional criterion
+    metrics:
+      - {name: win_rate, threshold: 0.50, mode: absolute}   # new must win >= 50% of the time
+```
+
+```bash
+llmci run --compare-to=origin/main
+```
+
+The judge compares each current output against the **baseline output** for the same
+input (stored in the baseline — run `--update-baseline` on main first), scoring each
+example 1.0 (win) / 0.5 (tie) / 0.0 (loss). The mean is exposed as the `win_rate`
+metric. Newly added examples with no baseline output score a neutral 0.5. Combine with
+`samples_per_example` for a confidence interval on the win rate.
 
 ## RAG Evaluation
 

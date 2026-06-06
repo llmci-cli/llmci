@@ -149,9 +149,25 @@ def _run_config(
 
         cache = ResponseCache(enabled=cache_enabled, refresh=refresh_cache)
 
+        # Load baselines up front so pairwise judging can compare against them
+        # while the eval runs.
+        baselines = None
+        if compare_to:
+            eval_names = [e.name for e in config.evals]
+            raw_baselines = load_all_baselines(eval_names, ref=compare_to)
+            if raw_baselines:
+                baselines = raw_baselines
+                if verbose:
+                    click.echo(f"Loaded {len(baselines)} baseline(s) from {compare_to}")
+            elif verbose:
+                click.echo(f"No baselines found on {compare_to}")
+
         try:
             results = asyncio.run(
-                run_all_evals(config, smoke=smoke, seed=seed, cache=cache)
+                run_all_evals(
+                    config, smoke=smoke, seed=seed, cache=cache,
+                    baselines=baselines or {},
+                )
             )
         except Exception as e:
             click.echo(f"Error during eval: {e}", err=True)
@@ -168,17 +184,6 @@ def _run_config(
                 if verbose:
                     click.echo(f"Baseline saved: {path}")
             click.echo(f"Updated baselines for {len(results)} eval(s).")
-
-        baselines = None
-        if compare_to:
-            eval_names = [r.eval_name for r in results]
-            raw_baselines = load_all_baselines(eval_names, ref=compare_to)
-            if raw_baselines:
-                baselines = raw_baselines
-                if verbose:
-                    click.echo(f"Loaded {len(baselines)} baseline(s) from {compare_to}")
-            elif verbose:
-                click.echo(f"No baselines found on {compare_to}")
 
         report_md, passed = format_report(results, config.evals, baselines=baselines)
 
@@ -245,7 +250,7 @@ def _run_config(
 @click.option("--output", default=None, type=click.Path(), help="Write report to file.")
 @click.option(
     "--output-format",
-    type=click.Choice(["markdown", "junit", "sarif", "json"]),
+    type=click.Choice(["markdown", "junit", "sarif", "json", "html"]),
     default="markdown",
     help="Report format for --output/stdout. PR comments stay markdown.",
 )

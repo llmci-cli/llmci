@@ -67,25 +67,36 @@ gateable metric by name. Targets pass `contexts`/`retrieved_ids`; gold labels vi
 `relevant_ids`. Follow-ups: a runnable `examples/` case, judge-result caching for the
 LLM criteria, and per-claim faithfulness decomposition._
 
-### 6. Output diff view — baseline vs PR, per example — `M` · ★★
+### 6. Output diff view — baseline vs PR, per example — `M` · ★★ ✅ prototype
 "Why did this fail?" is currently hard to answer from a pass/fail table.
 - Example-level diff of baseline output vs current output for regressed examples.
 - Surface in the PR comment (collapsible) and in a standalone report (item 9).
 
-### 7. Pairwise / preference judging — `M` · ★★
+_Landed: baselines store per-example outputs; markdown + HTML reports show an
+"Output Diffs vs Baseline" section (matched by input, worst regressions first).
+Backward compatible with older baselines._
+
+### 7. Pairwise / preference judging — `M` · ★★ ✅ prototype
 Absolute scoring is weak for open-ended generation.
 - `judge: {type: pairwise}` to evaluate "is B better than A" vs baseline output.
 - Win-rate metric with significance reuse from item 1.
+
+_Landed: compares current vs baseline output per input; `win_rate` surfaced as a
+gateable metric; reuses per-example baseline outputs (item 6) and CI sampling (item 1).
+Follow-up: order-swap to control position bias, and judge-result caching._
 
 ### 8. LLM-judge calibration & drift detection — `M` · ★★
 LLM judges drift across model versions and disagree with humans; trust erodes silently.
 - `llmci judge calibrate` to measure judge↔human agreement on a labeled set.
 - Detect judge-score drift when the judge model changes; warn in CI.
 
-### 9. Shareable HTML/Markdown run report — `S` · ★★
+### 9. Shareable HTML/Markdown run report — `S` · ★★ ✅ prototype
 A self-contained artifact beyond the PR comment.
-- `llmci run --report report.html`; upload as a CI artifact.
-- Includes metric tables, per-example diffs (item 6), and cost (item 3).
+- `llmci run --output-format html --output report.html`; upload as a CI artifact.
+- Includes the summary table (with CIs), regressions, and per-example results.
+
+_Landed as an `--output-format html` value (inline CSS, no external assets). Follow-up:
+fold in the item-6 baseline-vs-current per-example diff once that lands._
 
 ---
 

@@ -119,6 +119,49 @@ class TestJson:
         assert threshold["passed"] is False
 
 
+class TestHtml:
+    def test_self_contained_and_passes(self):
+        results = [_make_result("clf", {"accuracy": 0.95})]
+        configs = [_make_config("clf", [
+            {"name": "accuracy", "threshold": 0.9, "mode": "absolute"},
+        ])]
+        content, passed = format_report_as("html", results, configs)
+
+        assert passed is True
+        assert content.startswith("<!DOCTYPE html>")
+        assert "</html>" in content
+        assert "<style>" in content  # inline CSS → self-contained
+        assert "All thresholds passed" in content
+        assert "accuracy" in content
+
+    def test_failure_banner_and_regressions(self):
+        results = [_make_result("clf", {"accuracy": 0.50})]
+        configs = [_make_config("clf", [
+            {"name": "accuracy", "threshold": 0.9, "mode": "absolute"},
+        ])]
+        content, passed = format_report_as("html", results, configs)
+
+        assert passed is False
+        assert "Regression detected" in content
+        assert "<h2>Regressions</h2>" in content
+
+    def test_escapes_html_in_examples(self):
+        from llmci.models import EvalExample, JudgeResult, TargetResult
+
+        result = _make_result("clf", {"accuracy": 0.0})
+        result.examples = [EvalExample(input="<script>alert(1)</script>", expected="x")]
+        result.results = [TargetResult(output="<b>bad</b>", latency_ms=1.0)]
+        result.per_example = [JudgeResult(score=0.0, reason="nope")]
+        result.num_examples = 1
+        configs = [_make_config("clf", [
+            {"name": "accuracy", "threshold": 0.9, "mode": "absolute"},
+        ])]
+        content, _ = format_report_as("html", [result], configs)
+
+        assert "<script>alert(1)</script>" not in content
+        assert "&lt;script&gt;" in content
+
+
 def test_markdown_delegates_to_report():
     results = [_make_result("clf", {"accuracy": 0.95})]
     configs = [_make_config("clf", [

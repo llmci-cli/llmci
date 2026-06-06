@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from llmci.cache import ResponseCache
 from llmci.dataset.loader import load_dataset
@@ -18,6 +19,9 @@ from llmci.models import (
     TargetConfig,
     TargetResult,
 )
+
+if TYPE_CHECKING:
+    from llmci.baseline import Baseline
 
 
 def resolve_target(eval_config: EvalConfig, global_target: TargetConfig) -> TargetConfig:
@@ -75,13 +79,16 @@ async def run_eval(
     smoke: bool = False,
     seed: int = 42,
     cache: ResponseCache | None = None,
+    baseline: "Baseline | None" = None,
 ) -> EvalResult:
     """Execute one eval end to end."""
     if eval_config.level == "agent":
         return await _run_agent_eval(eval_config, target_config, settings, smoke, seed)
 
     smoke_size = settings.smoke_test_size if smoke else None
-    require_expected = eval_config.judge.type not in ("llm", "composite", "rag")
+    require_expected = eval_config.judge.type not in (
+        "llm", "composite", "rag", "pairwise"
+    )
     examples = load_dataset(
         eval_config.dataset, smoke_size=smoke_size, seed=seed,
         require_expected=require_expected,
@@ -89,6 +96,13 @@ async def run_eval(
 
     target = resolve_target(eval_config, target_config)
     judge = create_judge(eval_config.judge)
+
+    # Pairwise judging compares each output against the stored baseline output.
+    from llmci.judges.pairwise import PairwiseJudge
+
+    if isinstance(judge, PairwiseJudge):
+        judge.set_baseline(baseline)
+
     requested_metrics = [m.name for m in eval_config.metrics]
     samples = max(1, settings.samples_per_example)
 
@@ -251,8 +265,10 @@ async def run_all_evals(
     smoke: bool = False,
     seed: int = 42,
     cache: ResponseCache | None = None,
+    baselines: "dict[str, Baseline] | None" = None,
 ) -> list[EvalResult]:
     """Run all evals in the config."""
+    baselines = baselines or {}
     eval_results = []
     for eval_cfg in config.evals:
         result = await run_eval(
@@ -262,6 +278,7 @@ async def run_all_evals(
             smoke=smoke,
             seed=seed,
             cache=cache,
+            baseline=baselines.get(eval_cfg.name),
         )
         eval_results.append(result)
     return eval_results

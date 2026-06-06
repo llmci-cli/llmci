@@ -51,5 +51,13 @@ def create_judge(config: JudgeConfig) -> Judge:
                 )
             except ValueError as e:
                 raise ConfigError(str(e)) from e
+        case "pairwise":
+            from llmci.judges.pairwise import PairwiseJudge
+
+            criterion = config.rubric if isinstance(config.rubric, str) else None
+            return PairwiseJudge(
+                model=config.model or "gpt-4o-mini",
+                criterion=criterion,
+            )
         case _:
             raise ConfigError(f"Unknown judge type: {config.type}")
