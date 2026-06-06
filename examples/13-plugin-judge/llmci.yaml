@@ -1,0 +1,23 @@
+version: 1
+
+# Import local modules so their register_judge() calls run. This makes the
+# `json_schema` judge type below available without packaging or installing anything.
+plugins:
+  - eval_plugins
+
+target:
+  command: "python3 run_api.py --input {input_file} --output {output_file}"
+
+evals:
+  - name: json-schema
+    level: prompt
+    dataset: ./evals/requests.jsonl
+    judge:
+      type: json_schema      # provided by eval_plugins.py
+    metrics:
+      - {name: accuracy, threshold: 1.0, mode: absolute}
+
+settings:
+  parallelism: 5
+  timeout_per_call: 10
+  retries: 1

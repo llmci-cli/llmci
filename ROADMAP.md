@@ -67,8 +67,8 @@ The biggest demand gap vs DeepEval / Ragas.
 
 _Landed: `judge: {type: rag}` with the five criteria above; each surfaces as a
 gateable metric by name. Targets pass `contexts`/`retrieved_ids`; gold labels via
-`relevant_ids`. Follow-ups: a runnable `examples/` case, judge-result caching for the
-LLM criteria, and per-claim faithfulness decomposition._
+`relevant_ids`. Runnable deterministic example: `examples/12-rag-retrieval`. Follow-ups:
+judge-result caching for the LLM criteria, and per-claim faithfulness decomposition._
 
 ### 6. Output diff view — baseline vs PR, per example — `M` · ★★ ✅ prototype
 "Why did this fail?" is currently hard to answer from a pass/fail table.
@@ -146,8 +146,10 @@ custom metrics and report sinks._
 
 ## Cross-cutting / continuous
 
-- **Docs & examples** keep pace with each feature (the testbed monorepo is the proving
-  ground — every new judge/metric should land there first).
+- **Docs & examples** keep pace with each feature. Deterministic, API-key-free runnable
+  examples now cover the safety, RAG, and plugin judges (`examples/11-13`), each guarded
+  by an integration test. Still to do: examples for pairwise, calibration, and the
+  machine-readable report formats.
 - **Determinism guardrails**: warn when a config has no baseline, or thresholds with no
   significance config once item 1 lands.
 - **Performance**: keep PR feedback under a few minutes; caching (item 2) and parallelism

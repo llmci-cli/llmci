@@ -623,6 +623,12 @@ The [`llmci-testbed`](https://github.com/llmci-cli/llmci-testbed) repository is 
 | [`08-fastapi-service`](examples/08-fastapi-service/) | Pre/post processing pipeline with dual-level testing |
 | [`09-summarization-qa`](examples/09-summarization-qa/) | Multi-criteria LLM judge with reference-free evaluation |
 | [`10-agent-openai-agents`](examples/10-agent-openai-agents/) | TraceBuilder + OpenAI Agents SDK adapter |
+| [`11-safety-pii`](examples/11-safety-pii/) | Safety judge with a deterministic PII-leakage gate |
+| [`12-rag-retrieval`](examples/12-rag-retrieval/) | RAG judge with deterministic retrieval recall/precision |
+| [`13-plugin-judge`](examples/13-plugin-judge/) | Custom judge type registered via the plugin API |
+
+Examples 11–13 are fully deterministic and run with **no API key** — handy for trying
+the safety, RAG, and plugin features locally.
 
 ## CLI Reference
 

@@ -103,14 +103,35 @@ def registered_judge_types() -> list[str]:
 
 
 def load_module_plugins(modules: list[str]) -> None:
-    """Import dotted module paths so their top-level ``register_judge`` calls run."""
-    for module_path in modules:
-        try:
-            importlib.import_module(module_path)
-        except ImportError as e:
-            raise ConfigError(
-                f"Failed to import plugin module {module_path!r}: {e}"
-            ) from e
+    """Import dotted module paths so their top-level ``register_judge`` calls run.
+
+    The current working directory (the config's directory at load time) is placed on
+    ``sys.path`` so a local, in-repo plugin module resolves without packaging.
+    """
+    if not modules:
+        return
+
+    import os
+    import sys
+
+    cwd = os.getcwd()
+    added_cwd = cwd not in sys.path
+    if added_cwd:
+        sys.path.insert(0, cwd)
+    try:
+        for module_path in modules:
+            try:
+                importlib.import_module(module_path)
+            except ImportError as e:
+                raise ConfigError(
+                    f"Failed to import plugin module {module_path!r}: {e}"
+                ) from e
+    finally:
+        if added_cwd:
+            try:
+                sys.path.remove(cwd)
+            except ValueError:
+                pass
 
 
 def ensure_entry_points_loaded() -> None:

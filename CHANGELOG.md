@@ -53,6 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `relevant_ids`. Per-example judge sub-scores are now exposed as aggregate metrics.
 
 ### Fixed
+- Local judge plugins listed under `plugins:` now resolve without packaging: the config
+  directory is placed on `sys.path` while plugin modules are imported.
 - Lower-is-better metrics (latency, cost, tokens, `error_rate`) now compare correctly:
   `absolute` thresholds require the value to be `<=` the threshold, and a
   `max_regression` is an increase rather than a drop.
