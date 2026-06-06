@@ -39,5 +39,17 @@ def create_judge(config: JudgeConfig) -> Judge:
                 criteria=config.criteria,
                 model=config.model or "gpt-4o-mini",
             )
+        case "rag":
+            if not config.criteria:
+                raise ConfigError("RAG judge requires 'criteria' list")
+            from llmci.judges.rag import RagJudge
+
+            try:
+                return RagJudge(
+                    criteria=config.criteria,
+                    model=config.model or "gpt-4o-mini",
+                )
+            except ValueError as e:
+                raise ConfigError(str(e)) from e
         case _:
             raise ConfigError(f"Unknown judge type: {config.type}")

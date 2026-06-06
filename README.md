@@ -146,6 +146,7 @@ target:
 | `llm` | Open-ended generation, summarization | `judge: {type: llm, model: gpt-4o, rubric: [...]}` |
 | `custom` | Domain-specific logic (JSON validation, etc.) | `judge: {type: custom, module: ./judge.py, function: evaluate}` |
 | `composite` | Agent evaluation with multiple criteria | `judge: {type: composite, criteria: [...]}` |
+| `rag` | RAG pipelines (faithfulness, relevance, retrieval) | `judge: {type: rag, criteria: [...]}` |
 
 ### Metrics
 
@@ -168,9 +169,88 @@ target:
 **Latency:**
 - `latency_mean`, `latency_p50`, `latency_p90`, `latency_p99` — response time percentiles (ms)
 
+**Cost / tokens (lower is better):**
+- `cost_total`, `cost_mean` — total and per-example cost (USD), from litellm pricing
+- `tokens_in_mean`, `tokens_out_mean`, `tokens_total_mean` — average token usage
+
+For **direct** targets, cost and token usage are read from the provider response.
+For **command** targets, your script can opt in by adding `"usage"` and `"cost"` to its
+output JSON:
+
+```json
+{"output": "...", "usage": {"tokens_in": 1200, "tokens_out": 300}, "cost": 0.05}
+```
+
 Each metric supports two threshold modes:
-- `absolute` — score must be >= threshold (for latency metrics, must be <= threshold)
-- `max_regression` — drop from baseline must be <= threshold (e.g., 0.05 = max 5% drop)
+- `absolute` — score must be >= threshold. For **lower-is-better** metrics (latency,
+  cost, tokens, `error_rate`) the check inverts: value must be <= threshold.
+- `max_regression` — regression from baseline must be <= threshold (e.g., 0.05 = max
+  5%). A regression is a *drop* for higher-is-better metrics and a *rise* for
+  lower-is-better metrics, so a cost increase past the threshold fails the gate.
+
+## Output Formats
+
+By default `llmci run` prints a markdown report (and posts it as a PR comment in
+GitHub Actions). For other CI systems, emit a machine-readable format with
+`--output-format`:
+
+```bash
+llmci run --output-format junit --output results.xml   # GitLab, Bitbucket, Azure DevOps, Jenkins, CircleCI
+llmci run --output-format sarif --output results.sarif # code-scanning / inline annotations
+llmci run --output-format json  --output results.json  # programmatic consumers
+```
+
+- **junit** — each eval is a `<testsuite>`, each metric a `<testcase>`; failed
+  thresholds emit `<failure>`, and `max_regression` checks with no baseline emit
+  `<skipped>`. Wire `results.xml` into your CI's native test reporting.
+- **sarif** — SARIF 2.1.0; only failing thresholds become results (an empty list
+  means clean), so it drops straight into code-scanning surfaces.
+- **json** — structured per-eval metrics and threshold outcomes.
+
+The PR comment always stays markdown regardless of `--output-format`.
+
+## Response Caching
+
+Re-running CI shouldn't re-pay for unchanged examples. For **direct API targets**,
+llmci caches each response keyed on `(provider, model, prompt, input)` under
+`.llmci/cache/responses/`:
+
+```bash
+llmci run                  # uses the cache; identical calls are free on re-run
+llmci run --no-cache       # bypass the cache entirely
+llmci run --refresh-cache  # ignore cached responses but refresh them with live calls
+```
+
+Command-mode targets are never cached (they may have side effects). Add
+`.llmci/cache/` to `.gitignore`.
+
+## Flake Resistance
+
+LLM outputs are nondeterministic, so a single run can pass or fail a threshold by
+chance. Run each eval over several rounds and gate on statistical significance so a
+flaky result doesn't block (or sneak through) a PR:
+
+```yaml
+settings:
+  samples_per_example: 5   # run each eval 5 rounds
+  significance: 0.95       # confidence level for regression gating
+```
+
+Or from the CLI:
+
+```bash
+llmci run --samples 5 --significance 0.95 --compare-to=origin/main
+```
+
+When `samples_per_example > 1`:
+
+- Each metric is **averaged across rounds** and reported with a confidence interval,
+  e.g. `accuracy 0.562 [0.440, 0.685]`.
+- For `max_regression` thresholds with `significance` set, a drop only **fails the
+  gate when it exceeds the threshold beyond run-to-run noise** (the optimistic end of
+  the confidence interval still breaches the threshold). Drops within noise are
+  reported under "Regressions Within Noise (not enforced)" instead of failing.
+- Sampling rounds bypass the response cache so each round is an independent draw.
 
 ## CI Integration
 
@@ -289,6 +369,54 @@ Supports:
 - **Trajectory judging** — LLM-based evaluation of execution path quality
 - **Full replay** or **history injection** modes for multi-turn
 
+## RAG Evaluation
+
+Score retrieval-augmented pipelines on RAG-specific dimensions. Each criterion
+produces a 0–1 sub-score that is surfaced as a **gateable metric by name**, so you can
+set independent thresholds on faithfulness, relevance, and retrieval quality:
+
+```yaml
+evals:
+  - name: rag-qa
+    dataset: ./evals/qa.jsonl
+    judge:
+      type: rag
+      model: gpt-4o-mini        # used by the LLM-based criteria
+      criteria:
+        - {name: faithfulness,        type: faithfulness,        weight: 2.0}
+        - {name: answer_relevance,    type: answer_relevance,    weight: 1.0}
+        - {name: context_relevance,   type: context_relevance,   weight: 1.0}
+        - {name: retrieval_recall,    type: retrieval_recall,    k: 5}
+        - {name: retrieval_precision, type: retrieval_precision, k: 5}
+    metrics:
+      - {name: faithfulness,      threshold: 0.90, mode: absolute}
+      - {name: retrieval_recall,  threshold: 0.80, mode: absolute}
+      - {name: mean_score,        threshold: 0.05, mode: max_regression}
+```
+
+| Criterion | What it measures | Needs |
+|-----------|------------------|-------|
+| `faithfulness` | Is the answer grounded in the retrieved context? | LLM + `contexts` |
+| `answer_relevance` | Does the answer address the question? | LLM |
+| `context_relevance` | Is the retrieved context relevant to the question? | LLM + `contexts` |
+| `retrieval_recall` | Fraction of gold documents retrieved (`@k`) | `retrieved_ids` + `relevant_ids` |
+| `retrieval_precision` | Fraction of retrieved documents that are relevant (`@k`) | `retrieved_ids` + `relevant_ids` |
+
+Your RAG pipeline runs as a **command target** and writes structured output JSON:
+
+```json
+{"output": "<answer>", "contexts": ["passage 1", "passage 2"], "retrieved_ids": ["doc3", "doc7"]}
+```
+
+Gold retrieval labels live on each dataset row as `relevant_ids`:
+
+```json
+{"input": "What is the capital of France?", "relevant_ids": ["doc1", "doc2"]}
+```
+
+The retrieval criteria (`retrieval_recall` / `retrieval_precision`) are deterministic
+and need no API key; the faithfulness/relevance criteria call the configured judge model.
+
 ## Dataset Tools
 
 ```bash
@@ -352,6 +480,10 @@ llmci dataset check    Analyze dataset coverage
 llmci dataset import   Import from CSV/JSON
 llmci import-promptfoo Convert a Promptfoo config
 ```
+
+Key `run` flags: `--config`, `--all`, `--compare-to`, `--update-baseline`,
+`--output`, `--output-format` (markdown/junit/sarif/json), `--no-cache`,
+`--refresh-cache`, `--samples`, `--significance`, `--smoke`.
 
 Global flags: `-v` (verbose), `--debug` (full logging), `--version`.
 

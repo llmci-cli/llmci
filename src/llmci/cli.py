@@ -92,12 +92,19 @@ def _run_config(
     update_baseline: bool,
     seed: int,
     post_github: bool = True,
+    output_format: str = "markdown",
+    cache_enabled: bool = True,
+    refresh_cache: bool = False,
+    samples: int | None = None,
+    significance: float | None = None,
 ) -> int:
     """Run a single config and return the process exit code."""
     from llmci.baseline import load_all_baselines, save_baseline
+    from llmci.cache import ResponseCache
     from llmci.config import load_config
     from llmci.integrations.github import detect_github_context, post_pr_comment
     from llmci.report import format_report
+    from llmci.report_formats import format_report_as
     from llmci.runner import run_all_evals
 
     original_cwd = Path.cwd()
@@ -131,15 +138,29 @@ def _run_config(
             click.echo(f"Error: {e}", err=True)
             return 1
 
+        if samples is not None:
+            config.settings.samples_per_example = samples
+        if significance is not None:
+            config.settings.significance = significance
+
         verbose = ctx.obj.get("verbose", False)
         if verbose:
             click.echo(f"Running {len(config.evals)} eval(s)...")
 
+        cache = ResponseCache(enabled=cache_enabled, refresh=refresh_cache)
+
         try:
-            results = asyncio.run(run_all_evals(config, smoke=smoke, seed=seed))
+            results = asyncio.run(
+                run_all_evals(config, smoke=smoke, seed=seed, cache=cache)
+            )
         except Exception as e:
             click.echo(f"Error during eval: {e}", err=True)
             return 1
+
+        if verbose and cache_enabled and (cache.hits or cache.misses):
+            click.echo(
+                f"Response cache: {cache.hits} hit(s), {cache.misses} miss(es)"
+            )
 
         if update_baseline:
             for result in results:
@@ -161,12 +182,19 @@ def _run_config(
 
         report_md, passed = format_report(results, config.evals, baselines=baselines)
 
+        if output_format == "markdown":
+            rendered = report_md
+        else:
+            rendered, _ = format_report_as(
+                output_format, results, config.evals, baselines=baselines
+            )
+
         if output_path:
-            output_path.write_text(report_md)
+            output_path.write_text(rendered)
             if verbose:
                 click.echo(f"Report written to {output_path}")
         else:
-            click.echo(report_md)
+            click.echo(rendered)
 
         gh_ctx = detect_github_context() if post_github else None
         if gh_ctx:
@@ -216,9 +244,35 @@ def _run_config(
 @click.option("--smoke", is_flag=True, help="Run on a subset of the dataset.")
 @click.option("--output", default=None, type=click.Path(), help="Write report to file.")
 @click.option(
+    "--output-format",
+    type=click.Choice(["markdown", "junit", "sarif", "json"]),
+    default="markdown",
+    help="Report format for --output/stdout. PR comments stay markdown.",
+)
+@click.option(
     "--update-baseline", is_flag=True, help="Update stored baselines (run on main branch)."
 )
 @click.option("--seed", default=42, type=int, help="Random seed for smoke sampling.")
+@click.option(
+    "--no-cache", is_flag=True, help="Disable the direct-target response cache."
+)
+@click.option(
+    "--refresh-cache",
+    is_flag=True,
+    help="Ignore cached responses on read but write fresh results back.",
+)
+@click.option(
+    "--samples",
+    default=None,
+    type=int,
+    help="Run each eval N rounds for flake resistance (overrides settings).",
+)
+@click.option(
+    "--significance",
+    default=None,
+    type=float,
+    help="Confidence level (e.g. 0.95) for significance-gated regressions.",
+)
 @click.pass_context
 def run(
     ctx: click.Context,
@@ -230,8 +284,13 @@ def run(
     compare_to: str | None,
     smoke: bool,
     output: str | None,
+    output_format: str,
     update_baseline: bool,
     seed: int,
+    no_cache: bool,
+    refresh_cache: bool,
+    samples: int | None,
+    significance: float | None,
 ) -> None:
     """Run evals and compare against baselines."""
     if run_all_configs and output:
@@ -263,6 +322,11 @@ def run(
                 update_baseline=update_baseline,
                 seed=seed,
                 post_github=False,
+                output_format=output_format,
+                cache_enabled=not no_cache,
+                refresh_cache=refresh_cache,
+                samples=samples,
+                significance=significance,
             )
             if result_code != 0:
                 exit_code = result_code
@@ -277,6 +341,11 @@ def run(
         output=output,
         update_baseline=update_baseline,
         seed=seed,
+        output_format=output_format,
+        cache_enabled=not no_cache,
+        refresh_cache=refresh_cache,
+        samples=samples,
+        significance=significance,
     ))
 
 

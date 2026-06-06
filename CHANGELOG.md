@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Machine-readable report formats** — `llmci run --output-format junit|sarif|json`
+  for CI systems beyond GitHub Actions. PR comments stay markdown. New
+  `output-format` input on the GitHub Action.
+- **Response caching** for direct API targets, keyed on
+  `(provider, model, prompt, input)` under `.llmci/cache/responses/`. New flags
+  `--no-cache` and `--refresh-cache`.
+- **Flake resistance** — `settings.samples_per_example` (and `--samples`) run each
+  eval over multiple rounds, reporting each metric's mean with a confidence interval.
+  `settings.significance` (and `--significance`) gates `max_regression` thresholds so
+  drops within run-to-run noise are reported but not enforced.
+- **Cost / token budgeting** — new `cost_total`, `cost_mean`, `tokens_in_mean`,
+  `tokens_out_mean`, and `tokens_total_mean` metrics. Cost/usage come from the litellm
+  response for direct targets, or from optional `"usage"`/`"cost"` keys in a command
+  target's output JSON.
+- **RAG judge** (`judge: {type: rag}`) — `faithfulness`, `answer_relevance`,
+  `context_relevance`, `retrieval_recall`, and `retrieval_precision` criteria. Each
+  becomes a gateable metric by name. Command targets pass retrieval context via
+  `"contexts"`/`"retrieved_ids"` output keys; gold labels come from a dataset row's
+  `relevant_ids`. Per-example judge sub-scores are now exposed as aggregate metrics.
+
+### Fixed
+- Lower-is-better metrics (latency, cost, tokens, `error_rate`) now compare correctly:
+  `absolute` thresholds require the value to be `<=` the threshold, and a
+  `max_regression` is an increase rather than a drop.
+
 ## [0.1.9] - 2026-05-31
 
 ### Added

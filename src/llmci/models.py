@@ -51,7 +51,7 @@ class RubricCriterion(BaseModel):
 class JudgeConfig(BaseModel):
     """Judge configuration — determines how to score each example."""
 
-    type: Literal["exact_match", "llm", "custom", "composite"] = "exact_match"
+    type: Literal["exact_match", "llm", "custom", "composite", "rag"] = "exact_match"
     model: str | None = None
     rubric: list[RubricCriterion] | str | None = None
     module: str | None = None
@@ -85,6 +85,13 @@ class Settings(BaseModel):
     timeout_per_call: int = 30
     retries: int = 2
     smoke_test_size: int | None = None
+    # Number of full eval rounds to run for flake resistance. When > 1, metrics are
+    # averaged across rounds and a confidence interval is reported.
+    samples_per_example: int = 1
+    # Two-sided confidence level for significance gating (e.g. 0.95). When set with
+    # samples_per_example > 1, a max_regression failure is only enforced if the drop
+    # exceeds the threshold beyond run-to-run noise.
+    significance: float | None = None
 
 
 class LlmciConfig(BaseModel):
@@ -114,6 +121,14 @@ class TargetResult:
     output: str
     latency_ms: float
     error: str | None = None
+    # Token usage and cost. Populated for direct API targets; command-mode targets
+    # may report them via the optional "usage" / "cost" keys in their output JSON.
+    tokens_in: int = 0
+    tokens_out: int = 0
+    cost: float = 0.0
+    # Structured fields beyond the answer string — e.g. RAG "contexts" and
+    # "retrieved_ids" from a command target's output JSON. Consumed by judges.
+    metadata: dict = field(default_factory=dict)
 
 
 @dataclass
@@ -122,6 +137,9 @@ class JudgeResult:
 
     score: float  # 0.0 to 1.0
     reason: str | None = None
+    # Named per-example sub-scores (e.g. RAG faithfulness, answer_relevance). Each is
+    # surfaced as a gateable aggregate metric by name (mean across examples).
+    sub_scores: dict[str, float] = field(default_factory=dict)
 
 
 @dataclass
@@ -136,6 +154,12 @@ class EvalResult:
     latency_stats: dict[str, float] = field(default_factory=dict)
     num_examples: int = 0
     num_errors: int = 0
+    # Multi-sample (flake-resistance) fields. ``samples`` is the number of rounds;
+    # ``metric_ci`` holds a (low, high) confidence interval per metric; ``significance``
+    # is the confidence level used for gating (None = significance gating disabled).
+    samples: int = 1
+    metric_ci: dict[str, tuple[float, float]] = field(default_factory=dict)
+    significance: float | None = None
 
 
 # --- Agent evaluation models (v2) ---
