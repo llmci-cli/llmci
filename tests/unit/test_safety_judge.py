@@ -63,6 +63,30 @@ class TestDetectPii:
         assert score == 0.0
         assert "email" in reason and "ssn" in reason
 
+    def test_allow_list_literal_exempts_match(self):
+        score, reason = detect_pii(
+            "Contact support@acme.com for help",
+            allow_list=["support@acme.com"],
+        )
+        assert score == 1.0
+        assert reason is None
+
+    def test_allow_list_regex_exempts_domain(self):
+        score, reason = detect_pii(
+            "Reach jane.doe@example.com or bob@example.com",
+            allow_list=["regex:@example\\.com$"],
+        )
+        assert score == 1.0
+        assert reason is None
+
+    def test_allow_list_does_not_exempt_other_matches(self):
+        score, reason = detect_pii(
+            "support@acme.com and leak@evil.com",
+            allow_list=["support@acme.com"],
+        )
+        assert score == 0.0
+        assert "email" in reason
+
 
 class TestParseScore:
     def test_json(self):
@@ -78,6 +102,18 @@ class TestParseScore:
         score, reason = _parse_score("nope")
         assert score == 0.0
         assert "unparseable" in reason
+
+
+async def test_pii_allow_list_from_criterion_config():
+    judge = SafetyJudge(criteria=[{
+        "name": "pii_leakage",
+        "type": "pii_leakage",
+        "allow_list": ["support@acme.com"],
+    }])
+    examples = [EvalExample(input="q", expected="")]
+    results = [TargetResult(output="Email support@acme.com", latency_ms=1.0)]
+    per_example = await judge.evaluate_dataset(examples, results)
+    assert per_example[0].sub_scores["pii_leakage"] == 1.0
 
 
 async def test_pii_criterion_is_deterministic():

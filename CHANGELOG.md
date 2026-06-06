@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-06-06
+
+Cross-provider migration, few-shot strategy, and PII allow-list for safety gates.
+
 ### Added
 - **Cross-provider migration** — `llmci migrate` accepts `provider/model` identifiers
   (`openai/gpt-4o-mini` → `anthropic/claude-3-haiku-20240307`) with per-side
@@ -14,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Few-shot migration strategy** — `--strategy few_shot` greedily selects train
   examples to inline as few-shot demos instead of rewriting the prompt
   (`--max-few-shot`). See `examples/19-cross-provider-migration`.
+- **PII allow-list** — `pii_leakage` criteria accept `allow_list` with literal values
+  (case-insensitive exact match) or `regex:<pattern>` entries to exempt known-safe spans
+  (e.g. `support@acme.com` or all `@example.com` addresses).
 
 ## [0.3.0] - 2026-06-06
 
@@ -253,6 +260,7 @@ Initial public release on PyPI as [`llmci`](https://pypi.org/project/llmci/).
 **Examples**
 - Nine runnable examples: CI regression, model migration, LLM judge, custom judge, agent single/multi-turn, RAG pipeline, FastAPI service, summarization QA
 
+[0.4.0]: https://github.com/llmci-cli/llmci/releases/tag/v0.4.0
 [0.3.0]: https://github.com/llmci-cli/llmci/releases/tag/v0.3.0
 [0.2.0]: https://github.com/llmci-cli/llmci/releases/tag/v0.2.0
 [0.1.9]: https://github.com/llmci-cli/llmci/releases/tag/v0.1.9

@@ -129,8 +129,8 @@ _Landed: `judge: {type: safety}` with `pii_leakage` (deterministic, no API key),
 name (higher = safer). Plus `llmci redteam generate`: a deterministic attack library
 (jailbreak / injection / pii_extraction / obfuscation) that expands seed intents into an
 adversarial dataset for the safety judge to gate — see `examples/15-redteam`.
-`--mutate` adds LLM-rephrased variants (temperature 0, cacheable). Follow-up: more PII
-categories / a configurable allow-list._
+`--mutate` adds LLM-rephrased variants (temperature 0, cacheable). The `pii_leakage`
+criterion accepts `allow_list` (literal or `regex:` entries) to exempt known-safe values._
 
 ### 11. Multimodal & structured-output evals — `M` · ★ ✅ prototype (structured-output)
 - Image/audio inputs through litellm; JSON-schema / structured-output judging built in
