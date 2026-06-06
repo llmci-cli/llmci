@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Custom report sinks** — register a `(ReportContext) -> None` callable with
+  `register_reporter` to ship results after each run (Slack, dashboards, artifact
+  uploads). Activate via `reporters:` in `llmci.yaml`; sinks load from local modules
+  (`plugins:`) or the `llmci.reporters` entry-point group. A sink that raises only warns
+  and never changes the pass/fail gate. The `ReportContext` carries the eval results,
+  configs, overall `passed` flag, and rendered markdown.
 - **Plugin / extension API for judges and metrics** — register a custom `judge.type` or a
   custom metric (gateable by name) without forking. Installed packages advertise them via
   the `llmci.judges` / `llmci.metrics` entry-point groups; local repos list dotted module

@@ -132,17 +132,19 @@ and more PII categories / a configurable allow-list._
 - Migration across providers (not just model versions), and few-shot/example-selection
   optimization in addition to prompt rewriting.
 
-### 13. Plugin / extension API — `M` · ★ ✅ prototype (judges)
+### 13. Plugin / extension API — `M` · ★ ✅ prototype (judges, metrics, report sinks)
 - Stable entry-point API for third-party judges, metrics, and report sinks so the
   ecosystem can extend llmci without forking.
 
-_Landed: a registry (`llmci.plugins`) for **judges and metrics**, with two registration
-paths each — the `llmci.judges` / `llmci.metrics` entry-point groups for installed
-packages, and a `plugins:` list of dotted module paths in `llmci.yaml` for local plugins.
-`create_judge` consults the registry for unknown judge types; `compute_metrics` resolves
-unknown metric names from the registry (with `lower_is_better` direction support). Plugin
-names can't shadow built-ins. Example: `examples/13-plugin-judge` registers both a judge
-and a metric. Follow-up: extend the same pattern to report sinks._
+_Landed: a registry (`llmci.plugins`) for **judges, metrics, and report sinks**, with two
+registration paths each — the `llmci.judges` / `llmci.metrics` / `llmci.reporters`
+entry-point groups for installed packages, and a `plugins:` list of dotted module paths in
+`llmci.yaml` for local plugins. `create_judge` consults the registry for unknown judge
+types; `compute_metrics` resolves unknown metric names (with `lower_is_better` direction
+support); report sinks listed under `reporters:` receive a `ReportContext` after each run
+(a failing sink warns without changing the gate). Plugin names can't shadow built-ins.
+Example: `examples/13-plugin-judge` registers a judge and a metric. The trifecta is
+complete._
 
 ---
 
@@ -152,8 +154,8 @@ and a metric. Follow-up: extend the same pattern to report sinks._
   examples now cover the safety, RAG, plugin, and calibration judges (`examples/11-14`).
   Integration tests also exercise pairwise judging, response caching, and flake-resistance
   sampling/CI through the runner (with a mocked LLM), plus the machine-readable report
-  formats (JUnit/SARIF/JSON/HTML) on a real result. Every prototyped feature now has
-  end-to-end coverage.
+  formats (JUnit/SARIF/JSON/HTML) on a real result, and custom report sinks end-to-end
+  through the CLI. Every prototyped feature now has end-to-end coverage.
 - **Determinism guardrails**: warn when a config has no baseline, or thresholds with no
   significance config once item 1 lands.
 - **Performance**: keep PR feedback under a few minutes; caching (item 2) and parallelism

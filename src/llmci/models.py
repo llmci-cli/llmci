@@ -107,9 +107,11 @@ class LlmciConfig(BaseModel):
     target: TargetConfig
     evals: list[EvalConfig]
     settings: Settings = Field(default_factory=Settings)
-    # Dotted module paths imported at load time so their top-level register_judge()
-    # calls run, enabling local/in-repo judge plugins. See llmci.plugins.
+    # Dotted module paths imported at load time so their top-level register_judge() /
+    # register_metric() / register_reporter() calls run, enabling local/in-repo plugins.
     plugins: list[str] = Field(default_factory=list)
+    # Names of registered report sinks to invoke after each run. See llmci.plugins.
+    reporters: list[str] = Field(default_factory=list)
 
 
 # --- Runtime data models (not from config) ---

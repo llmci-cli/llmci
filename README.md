@@ -528,7 +528,7 @@ llmci judge calibrate --eval support-replies --labels labels.jsonl \
 `--min-agreement` fails when judge↔human agreement drops too low; `--max-drift` fails
 when a judge-model change shifts scores more than allowed.
 
-## Extending llmci: Custom Judge Plugins
+## Extending llmci: Judge, Metric & Report Plugins
 
 Need domain-specific scoring? Register a new `judge.type` without forking. A plugin is a
 `Judge` subclass (or a `(JudgeConfig) -> Judge` factory) registered with
@@ -600,6 +600,33 @@ Pass `lower_is_better=True` to flip the threshold direction (like cost/latency).
 plugins also load from the `llmci.metrics` entry-point group for distribution. See
 [`examples/13-plugin-judge`](examples/13-plugin-judge/), which registers both a judge and
 a metric.
+
+### Custom report sinks
+
+Register a **report sink** to ship results somewhere after each run — a Slack message, a
+dashboard, an artifact upload. A sink receives a `ReportContext` (the eval results, the
+configs, the overall `passed` flag, and the rendered markdown) and runs for its side
+effect. List it under `reporters:` to activate it:
+
+```python
+from llmci.plugins import ReportContext, register_reporter
+
+
+def slack_sink(ctx: ReportContext) -> None:
+    status = "passed" if ctx.passed else "FAILED"
+    post_to_slack(f"llmci {status} ({len(ctx.results)} evals)\n{ctx.report_markdown}")
+
+
+register_reporter("slack", slack_sink)
+```
+
+```yaml
+plugins: [my_sinks]      # module that calls register_reporter
+reporters: [slack]       # sinks to invoke after the run
+```
+
+Sinks load from local modules (via `plugins:`) or the `llmci.reporters` entry-point group.
+A sink that raises only warns — it never changes the pass/fail gate.
 
 ## Dataset Tools
 

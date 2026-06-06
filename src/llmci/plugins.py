@@ -41,13 +41,21 @@ from typing import cast
 
 from llmci.errors import ConfigError
 from llmci.judges.base import Judge
-from llmci.models import EvalExample, JudgeConfig, JudgeResult, TargetResult
+from llmci.models import (
+    EvalConfig,
+    EvalExample,
+    EvalResult,
+    JudgeConfig,
+    JudgeResult,
+    TargetResult,
+)
 
 # A judge factory takes the eval's JudgeConfig and returns a Judge instance.
 JudgeFactory = Callable[[JudgeConfig], Judge]
 
 ENTRY_POINT_GROUP = "llmci.judges"
 ENTRY_POINT_GROUP_METRICS = "llmci.metrics"
+ENTRY_POINT_GROUP_REPORTERS = "llmci.reporters"
 
 # Reserved names handled directly by judges.factory.create_judge; plugins can't shadow.
 BUILTIN_JUDGE_TYPES = frozenset({
@@ -79,6 +87,27 @@ MetricFn = Callable[["MetricContext"], float]
 
 _METRIC_REGISTRY: dict[str, MetricFn] = {}
 _METRIC_LOWER_IS_BETTER: set[str] = set()
+
+
+@dataclass
+class ReportContext:
+    """Inputs handed to a report sink after an eval run completes.
+
+    ``report_markdown`` is the canonical rendered report; ``passed`` is the overall gate
+    result. ``results``/``configs`` are the raw materials for a sink that wants to render
+    its own format (e.g. post a Slack summary or upload an artifact).
+    """
+
+    results: list[EvalResult]
+    configs: list[EvalConfig]
+    passed: bool
+    report_markdown: str
+
+
+# A report sink consumes a ReportContext for its side effect (post, upload, notify).
+ReporterFn = Callable[["ReportContext"], None]
+
+_REPORTER_REGISTRY: dict[str, ReporterFn] = {}
 
 
 def register_judge(type_name: str, factory: type[Judge] | JudgeFactory) -> None:
@@ -181,6 +210,37 @@ def metric_is_lower_is_better(name: str) -> bool:
     return name in _METRIC_LOWER_IS_BETTER
 
 
+def register_reporter(name: str, fn: ReporterFn) -> None:
+    """Register a report sink invoked after a run with a :class:`ReportContext`.
+
+    Raises ``ConfigError`` on an empty name, a non-callable, or a conflicting
+    re-registration.
+    """
+    if not name:
+        raise ConfigError("Reporter plugin name must be non-empty")
+    if not callable(fn):
+        raise ConfigError("Reporter plugin must be a (ReportContext) -> None callable")
+
+    existing = _REPORTER_REGISTRY.get(name)
+    if existing is not None and existing is not fn:
+        raise ConfigError(
+            f"Reporter {name!r} is already registered by a different plugin"
+        )
+    _REPORTER_REGISTRY[name] = fn
+
+
+def get_reporter(name: str) -> ReporterFn | None:
+    """Return the registered reporter for a name, or None. Loads entry points."""
+    ensure_entry_points_loaded()
+    return _REPORTER_REGISTRY.get(name)
+
+
+def registered_reporter_names() -> list[str]:
+    """Return the sorted list of currently registered reporter names."""
+    ensure_entry_points_loaded()
+    return sorted(_REPORTER_REGISTRY)
+
+
 def load_module_plugins(modules: list[str]) -> None:
     """Import dotted module paths so their top-level ``register_judge`` calls run.
 
@@ -249,6 +309,18 @@ def ensure_entry_points_loaded() -> None:
                 f"Failed to load llmci metric plugin {ep.name!r}: {e}", stacklevel=2
             )
 
+    for ep in _select_entry_points(ENTRY_POINT_GROUP_REPORTERS):
+        try:
+            register_reporter(ep.name, ep.load())
+        except ConfigError:
+            raise
+        except Exception as e:  # pragma: no cover - defensive against broken plugins
+            import warnings
+
+            warnings.warn(
+                f"Failed to load llmci reporter plugin {ep.name!r}: {e}", stacklevel=2
+            )
+
 
 def _select_entry_points(group: str) -> list:
     """Return entry points in a group across importlib.metadata versions."""
@@ -267,13 +339,16 @@ def reset_registry() -> None:
     _JUDGE_REGISTRY.clear()
     _METRIC_REGISTRY.clear()
     _METRIC_LOWER_IS_BETTER.clear()
+    _REPORTER_REGISTRY.clear()
     _entry_points_loaded = False
 
 
 __all__ = [
     "JudgeFactory", "ENTRY_POINT_GROUP", "ENTRY_POINT_GROUP_METRICS",
-    "BUILTIN_JUDGE_TYPES", "register_judge", "get_judge_factory",
-    "registered_judge_types", "load_module_plugins", "ensure_entry_points_loaded",
-    "reset_registry", "MetricContext", "MetricFn", "register_metric", "get_metric_fn",
-    "registered_metric_names", "metric_is_lower_is_better",
+    "ENTRY_POINT_GROUP_REPORTERS", "BUILTIN_JUDGE_TYPES", "register_judge",
+    "get_judge_factory", "registered_judge_types", "load_module_plugins",
+    "ensure_entry_points_loaded", "reset_registry", "MetricContext", "MetricFn",
+    "register_metric", "get_metric_fn", "registered_metric_names",
+    "metric_is_lower_is_better", "ReportContext", "ReporterFn", "register_reporter",
+    "get_reporter", "registered_reporter_names",
 ]

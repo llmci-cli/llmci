@@ -213,11 +213,38 @@ def _run_config(
                 else:
                     click.echo("Failed to post PR comment.", err=True)
 
+        if config.reporters:
+            _run_reporters(config, results, passed, report_md, verbose)
+
         exit_code = 0 if passed else 1
     finally:
         os.chdir(original_cwd)
 
     return exit_code
+
+
+def _run_reporters(config, results, passed: bool, report_md: str, verbose: bool) -> None:
+    """Invoke each configured report sink. A failing sink warns but never fails the gate."""
+    from llmci.plugins import ReportContext, get_reporter
+
+    ctx = ReportContext(
+        results=results, configs=config.evals, passed=passed, report_markdown=report_md
+    )
+    for name in config.reporters:
+        fn = get_reporter(name)
+        if fn is None:
+            click.echo(
+                f"Warning: report sink '{name}' is not registered "
+                "(did you list its module under 'plugins:'?).",
+                err=True,
+            )
+            continue
+        try:
+            fn(ctx)
+            if verbose:
+                click.echo(f"Report sink '{name}' invoked.")
+        except Exception as e:
+            click.echo(f"Warning: report sink '{name}' failed: {e}", err=True)
 
 
 @cli.command()
