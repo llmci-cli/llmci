@@ -52,9 +52,9 @@ class JudgeConfig(BaseModel):
     """Judge configuration — determines how to score each example.
 
     ``type`` is one of the built-in judges (``exact_match``, ``llm``, ``custom``,
-    ``composite``, ``rag``, ``pairwise``, ``safety``) or a plugin-registered type
-    (see ``llmci.plugins``). Validation of the type happens in ``create_judge`` so
-    plugin types are accepted.
+    ``composite``, ``rag``, ``pairwise``, ``safety``, ``structured``) or a
+    plugin-registered type (see ``llmci.plugins``). Validation of the type happens in
+    ``create_judge`` so plugin types are accepted.
     """
 
     type: str = "exact_match"
@@ -63,6 +63,10 @@ class JudgeConfig(BaseModel):
     module: str | None = None
     function: str | None = None
     criteria: list[dict] | None = None  # Phase 6: composite judge
+    # Structured judge: an inline JSON Schema (dict) or a path to a .json schema file.
+    json_schema: dict | str | None = None
+    # Structured judge: score the fraction of required fields that validate (vs pass/fail).
+    partial_credit: bool = False
 
 
 class DatasetSource(BaseModel):

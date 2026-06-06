@@ -126,9 +126,16 @@ name (higher = safer). Plus `llmci redteam generate`: a deterministic attack lib
 adversarial dataset for the safety judge to gate — see `examples/15-redteam`. Follow-up:
 LLM-based attack mutation, more PII categories / a configurable allow-list._
 
-### 11. Multimodal & structured-output evals — `M` · ★
+### 11. Multimodal & structured-output evals — `M` · ★ ✅ prototype (structured-output)
 - Image/audio inputs through litellm; JSON-schema / structured-output judging built in
   (today this requires a custom judge).
+
+_Landed: a first-class `structured` judge that validates a target's JSON output against a
+JSON Schema (inline or a `.json` file), scored 1.0/0.0 and gateable by name, with an
+optional `partial_credit` fraction-of-required-fields mode. Self-contained validator (no
+new dependency) covering the practical JSON-Schema subset — replaces the custom judge that
+`examples/13` needed. See `examples/16-structured-output`. Follow-up: multimodal
+(image/audio) inputs through litellm._
 
 ### 12. More migration targets & strategies — `M` · ★★
 - Migration across providers (not just model versions), and few-shot/example-selection
@@ -153,8 +160,8 @@ complete._
 ## Cross-cutting / continuous
 
 - **Docs & examples** keep pace with each feature. Deterministic, API-key-free runnable
-  examples now cover the safety, RAG, plugin, calibration, and red-team flows
-  (`examples/11-15`).
+  examples now cover the safety, RAG, plugin, calibration, red-team, and
+  structured-output flows (`examples/11-16`).
   Integration tests also exercise pairwise judging, response caching, and flake-resistance
   sampling/CI through the runner (with a mocked LLM), plus the machine-readable report
   formats (JUnit/SARIF/JSON/HTML) on a real result, and custom report sinks end-to-end

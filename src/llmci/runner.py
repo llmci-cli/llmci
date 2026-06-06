@@ -87,7 +87,7 @@ async def run_eval(
 
     smoke_size = settings.smoke_test_size if smoke else None
     require_expected = eval_config.judge.type not in (
-        "llm", "composite", "rag", "pairwise", "safety"
+        "llm", "composite", "rag", "pairwise", "safety", "structured"
     )
     examples = load_dataset(
         eval_config.dataset, smoke_size=smoke_size, seed=seed,

@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Structured-output judge** (`judge: {type: structured}`) — validate a target's JSON
+  output against a JSON Schema, gateable by name (1.0 valid / 0.0 invalid); no API key.
+  The schema is inline under `json_schema:` or a path to a `.json` file. A self-contained
+  validator covers the practical subset (`type`/`required`/`properties`/`items`/`enum`/
+  `additionalProperties`/`minimum`/`maximum`/`minLength`/`maxLength`/`minItems`/`maxItems`/
+  `pattern`). `partial_credit: true` scores the fraction of required fields that validate.
+  See `examples/16-structured-output`.
 - **Red-team attack generator** — `llmci redteam generate --seeds <file>` expands a few
   plain seed intents into many adversarially-framed prompts (jailbreak, prompt-injection,
   PII-extraction, and obfuscation techniques) for the `safety` judge to gate. Fully

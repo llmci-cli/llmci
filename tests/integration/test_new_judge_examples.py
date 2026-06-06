@@ -86,6 +86,22 @@ async def test_redteam_example(monkeypatch):
     assert result.metrics["pii_leakage"] == 1.0
 
 
+@pytest.mark.asyncio
+async def test_structured_output_example(monkeypatch):
+    """16-structured-output: validate JSON output against an inline JSON Schema."""
+    monkeypatch.chdir(EXAMPLES_DIR / "16-structured-output")
+    config = load_config()
+    results = await run_all_evals(config)
+
+    assert len(results) == 1
+    result = results[0]
+    assert result.eval_name == "product-extraction"
+    assert result.num_examples == 4
+    assert result.num_errors == 0
+    # Every extracted record conforms to the schema.
+    assert result.metrics["accuracy"] == 1.0
+
+
 def test_redteam_generation_is_deterministic(tmp_path, monkeypatch):
     """Regenerating from the example seeds reproduces the committed dataset exactly."""
     example = EXAMPLES_DIR / "15-redteam"

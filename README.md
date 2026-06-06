@@ -149,6 +149,7 @@ target:
 | `rag` | RAG pipelines (faithfulness, relevance, retrieval) | `judge: {type: rag, criteria: [...]}` |
 | `pairwise` | "Is the new output better than baseline?" (win rate) | `judge: {type: pairwise, model: gpt-4o}` |
 | `safety` | PII leakage, toxicity, jailbreak resistance | `judge: {type: safety, criteria: [...]}` |
+| `structured` | JSON output validates against a JSON Schema | `judge: {type: structured, json_schema: {...}}` |
 
 ### Metrics
 
@@ -514,6 +515,34 @@ flags, and add `--include-control` to also emit the raw seed as a baseline. Feed
 straight into a `safety` judge (above) to gate it. See
 [`examples/15-redteam`](examples/15-redteam/) for the full generate-then-gate flow.
 
+## Structured-Output Evaluation
+
+When a feature must emit machine-readable JSON (tool calls, extraction, config
+generation), gate on validity with the built-in `structured` judge — no API key, fully
+deterministic. It parses the output and validates it against a JSON Schema, scoring 1.0
+when valid and 0.0 otherwise:
+
+```yaml
+judge:
+  type: structured
+  json_schema:                 # inline, or a path: json_schema: ./schema.json
+    type: object
+    required: [id, name, price]
+    additionalProperties: false
+    properties:
+      id:    {type: integer}
+      name:  {type: string, minLength: 1}
+      price: {type: number, minimum: 0}
+metrics:
+  - {name: accuracy, threshold: 1.0, mode: absolute}
+```
+
+The self-contained validator supports the practical JSON-Schema subset: `type` (incl.
+lists of types), `required`, `properties`, `additionalProperties`, `items`, `enum`,
+`minimum`/`maximum`, `minLength`/`maxLength`, `minItems`/`maxItems`, and `pattern`. Set
+`partial_credit: true` to score the **fraction** of required top-level fields that validate
+instead of pass/fail. See [`examples/16-structured-output`](examples/16-structured-output/).
+
 ## Judge Calibration & Drift
 
 An LLM judge is only worth gating on if it agrees with humans — and judges drift
@@ -708,9 +737,10 @@ The [`llmci-testbed`](https://github.com/llmci-cli/llmci-testbed) repository is 
 | [`13-plugin-judge`](examples/13-plugin-judge/) | Custom judge type registered via the plugin API |
 | [`14-judge-calibration`](examples/14-judge-calibration/) | `judge calibrate`: judge↔human agreement + drift |
 | [`15-redteam`](examples/15-redteam/) | `redteam generate`: adversarial dataset gated by the safety judge |
+| [`16-structured-output`](examples/16-structured-output/) | `structured` judge: validate JSON output against a JSON Schema |
 
-Examples 11–15 are fully deterministic and run with **no API key** — handy for trying
-the safety, RAG, plugin, calibration, and red-team features locally.
+Examples 11–16 are fully deterministic and run with **no API key** — handy for trying
+the safety, RAG, plugin, calibration, red-team, and structured-output features locally.
 
 ## CLI Reference
 

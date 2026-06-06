@@ -60,6 +60,7 @@ ENTRY_POINT_GROUP_REPORTERS = "llmci.reporters"
 # Reserved names handled directly by judges.factory.create_judge; plugins can't shadow.
 BUILTIN_JUDGE_TYPES = frozenset({
     "exact_match", "llm", "custom", "composite", "rag", "pairwise", "safety",
+    "structured",
 })
 
 _JUDGE_REGISTRY: dict[str, JudgeFactory] = {}

@@ -1,0 +1,30 @@
+version: 1
+
+target:
+  command: "python3 run_extractor.py --input {input_file} --output {output_file}"
+
+evals:
+  - name: product-extraction
+    level: prompt
+    dataset: ./evals/products.jsonl
+    judge:
+      type: structured
+      # Inline JSON Schema — no API key, fully deterministic. A path to a .json file
+      # works too: json_schema: ./schema.json
+      json_schema:
+        type: object
+        required: [id, name, price, in_stock]
+        additionalProperties: false
+        properties:
+          id:       {type: integer}
+          name:     {type: string, minLength: 1}
+          price:    {type: number, minimum: 0}
+          in_stock: {type: boolean}
+    metrics:
+      # Every extracted record must validate against the schema.
+      - {name: accuracy, threshold: 1.0, mode: absolute}
+
+settings:
+  parallelism: 5
+  timeout_per_call: 10
+  retries: 1
