@@ -781,6 +781,7 @@ The [`llmci-testbed`](https://github.com/llmci-cli/llmci-testbed) repository is 
 | [`16-structured-output`](examples/16-structured-output/) | `structured` judge: validate JSON output against a JSON Schema |
 | [`17-integrated-ci-gate`](examples/17-integrated-ci-gate/) | Stacked Now-tier gate: quality + cost regression + safety |
 | [`18-multimodal-vision`](examples/18-multimodal-vision/) | Direct target with `images` on dataset rows (API key) |
+| [`19-cross-provider-migration`](examples/19-cross-provider-migration/) | `migrate` across providers + few-shot strategy |
 
 Examples 11–17 are fully deterministic and run with **no API key** — handy for trying
 the safety, RAG, plugin, calibration, red-team, structured-output, and integrated-gate
