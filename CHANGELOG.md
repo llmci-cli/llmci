@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-06
+
+Major release: CI gate trust (flake resistance, caching, cost metrics, portable reports),
+deeper eval quality (RAG, pairwise, calibration, diffs), safety/red-team, plugin API, and
+seventeen runnable examples including an integrated pre-merge gate.
+
 ### Added
 - **Integrated CI gate example** (`examples/17-integrated-ci-gate`) — one config that
   stacks quality (`accuracy`), cost/token regression vs committed baselines
@@ -211,6 +217,7 @@ Initial public release on PyPI as [`llmci`](https://pypi.org/project/llmci/).
 **Examples**
 - Nine runnable examples: CI regression, model migration, LLM judge, custom judge, agent single/multi-turn, RAG pipeline, FastAPI service, summarization QA
 
+[0.2.0]: https://github.com/llmci-cli/llmci/releases/tag/v0.2.0
 [0.1.9]: https://github.com/llmci-cli/llmci/releases/tag/v0.1.9
 [0.1.8]: https://github.com/llmci-cli/llmci/releases/tag/v0.1.8
 [0.1.7]: https://github.com/llmci-cli/llmci/releases/tag/v0.1.7
