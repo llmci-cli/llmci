@@ -17,7 +17,7 @@ import json
 import math
 import statistics
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from llmci.errors import DatasetError
@@ -279,7 +279,7 @@ def load_snapshot(eval_name: str, snapshot_dir: Path | None = None) -> dict | No
 def _history_entry(result: CalibrationResult) -> dict:
     """Serialize a calibration run for the trend history log."""
     entry: dict = {
-        "timestamp": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "model": result.model,
         "n": result.n,
         "agreement_rate": result.agreement_rate,
