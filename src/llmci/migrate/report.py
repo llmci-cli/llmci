@@ -11,6 +11,9 @@ def format_migration_report(result: OptimizationResult) -> str:
 
     lines.append(f"## Migration Report: {result.from_model} → {result.to_model}\n")
 
+    if result.strategy == "few_shot":
+        lines.append(f"Strategy: **few-shot** ({result.few_shot_count} example(s) selected)\n")
+
     lines.append("### Optimization Summary\n")
     lines.append(f"- Iterations: {len(result.steps)} (stopped: {result.stopped_reason})")
 

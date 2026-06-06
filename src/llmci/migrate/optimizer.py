@@ -11,6 +11,7 @@ import litellm
 
 from llmci.judges.factory import create_judge
 from llmci.metrics import compute_metrics
+from llmci.migrate.model_spec import ModelSpec
 from llmci.migrate.splitter import DataSplit
 from llmci.migrate.stopping import EarlyStopping
 from llmci.models import (
@@ -72,6 +73,8 @@ class OptimizationResult:
     to_model: str
     steps: list[OptimizationStep] = field(default_factory=list)
     stopped_reason: str = "max_iterations"
+    strategy: str = "prompt"
+    few_shot_count: int = 0
 
 
 async def optimize_prompt(
@@ -87,12 +90,19 @@ async def optimize_prompt(
     max_iterations: int = 20,
     max_edit_distance: int | None = None,
     base_url: str | None = None,
+    from_base_url: str | None = None,
+    to_base_url: str | None = None,
+    optimizer_base_url: str | None = None,
     progress_callback: ProgressCallback | None = None,
 ) -> OptimizationResult:
     """Run the optimization loop to adapt a prompt from one model to another."""
+    default_url = base_url
+    from_spec = ModelSpec.parse(from_model, from_base_url or default_url)
+    to_spec = ModelSpec.parse(to_model, to_base_url or default_url)
+    optimizer_spec = ModelSpec.parse(optimizer_model, optimizer_base_url or default_url)
+
     original_score = await _evaluate_prompt(
-        original_prompt, from_model, split.holdout, eval_config, primary_metric,
-        base_url=base_url,
+        original_prompt, from_spec, split.holdout, eval_config, primary_metric,
     )
     _emit_progress(
         progress_callback,
@@ -101,8 +111,7 @@ async def optimize_prompt(
 
     current_prompt = original_prompt
     train_score = await _evaluate_prompt(
-        current_prompt, to_model, split.train, eval_config, primary_metric,
-        base_url=base_url,
+        current_prompt, to_spec, split.train, eval_config, primary_metric,
     )
     _emit_progress(
         progress_callback,
@@ -117,8 +126,7 @@ async def optimize_prompt(
 
     for iteration in range(1, max_iterations + 1):
         failures = await _get_failures(
-            current_prompt, to_model, split.train, eval_config,
-            base_url=base_url,
+            current_prompt, to_spec, split.train, eval_config,
         )
         _emit_progress(
             progress_callback,
@@ -146,9 +154,9 @@ async def optimize_prompt(
             break
 
         new_prompt = await _suggest_modification(
-            optimizer_model=optimizer_model,
+            optimizer_spec=optimizer_spec,
             current_prompt=current_prompt,
-            to_model=to_model,
+            to_model=to_spec.raw,
             failures=failures[:10],
             current_score=train_score,
             target_score=original_score,
@@ -185,12 +193,10 @@ async def optimize_prompt(
                 continue
 
         new_train_score = await _evaluate_prompt(
-            new_prompt, to_model, split.train, eval_config, primary_metric,
-            base_url=base_url,
+            new_prompt, to_spec, split.train, eval_config, primary_metric,
         )
         new_val_score = await _evaluate_prompt(
-            new_prompt, to_model, split.validation, eval_config, primary_metric,
-            base_url=base_url,
+            new_prompt, to_spec, split.validation, eval_config, primary_metric,
         )
 
         diff = _unified_diff(current_prompt, new_prompt)
@@ -233,8 +239,7 @@ async def optimize_prompt(
         stopped_reason = "converged"
 
     holdout_score = await _evaluate_prompt(
-        best_prompt, to_model, split.holdout, eval_config, primary_metric,
-        base_url=base_url,
+        best_prompt, to_spec, split.holdout, eval_config, primary_metric,
     )
     _emit_progress(
         progress_callback,
@@ -263,26 +268,23 @@ def _emit_progress(
 
 async def _evaluate_prompt(
     prompt: str,
-    model: str,
+    model_spec: ModelSpec,
     examples: list[EvalExample],
     eval_config: EvalConfig,
     primary_metric: str,
-    base_url: str | None = None,
 ) -> float:
     """Evaluate a prompt on a set of examples using direct LLM calls."""
     from llmci.targets.direct import run_direct_target
 
-    provider, _, model_name = model.rpartition("/")
-
     results = await run_direct_target(
-        provider=provider,
-        model=model_name if provider else model,
+        provider=model_spec.provider,
+        model=model_spec.model,
         prompt_template=prompt,
         examples=examples,
         parallelism=5,
         timeout=30,
         retries=1,
-        base_url=base_url,
+        base_url=model_spec.base_url,
     )
 
     judge = create_judge(eval_config.judge)
@@ -296,25 +298,22 @@ async def _evaluate_prompt(
 
 async def _get_failures(
     prompt: str,
-    model: str,
+    model_spec: ModelSpec,
     examples: list[EvalExample],
     eval_config: EvalConfig,
-    base_url: str | None = None,
 ) -> list[dict]:
     """Get examples where the prompt fails."""
     from llmci.targets.direct import run_direct_target
 
-    provider, _, model_name = model.rpartition("/")
-
     results = await run_direct_target(
-        provider=provider,
-        model=model_name if provider else model,
+        provider=model_spec.provider,
+        model=model_spec.model,
         prompt_template=prompt,
         examples=examples,
         parallelism=5,
         timeout=30,
         retries=1,
-        base_url=base_url,
+        base_url=model_spec.base_url,
     )
 
     judge = create_judge(eval_config.judge)
@@ -334,7 +333,7 @@ async def _get_failures(
 
 
 async def _suggest_modification(
-    optimizer_model: str,
+    optimizer_spec: ModelSpec,
     current_prompt: str,
     to_model: str,
     failures: list[dict],
@@ -357,16 +356,20 @@ async def _suggest_modification(
         "Suggest a minimal modification to improve the prompt."
     )
 
+    kwargs: dict = {
+        "model": optimizer_spec.raw,
+        "messages": [
+            {"role": "system", "content": OPTIMIZER_SYSTEM_PROMPT},
+            {"role": "user", "content": user_msg},
+        ],
+        "temperature": 0.3,
+        "timeout": 60,
+    }
+    if optimizer_spec.base_url:
+        kwargs["api_base"] = optimizer_spec.base_url
+
     try:
-        response = await litellm.acompletion(
-            model=optimizer_model,
-            messages=[
-                {"role": "system", "content": OPTIMIZER_SYSTEM_PROMPT},
-                {"role": "user", "content": user_msg},
-            ],
-            temperature=0.3,
-            timeout=60,
-        )
+        response = await litellm.acompletion(**kwargs)
         content = response.choices[0].message.content or ""
         return _extract_prompt(content)
     except Exception:

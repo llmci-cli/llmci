@@ -81,3 +81,18 @@ class TestMigrationReport:
         )
         report = format_migration_report(result)
         assert "Iteration History" not in report
+
+    def test_few_shot_strategy_in_report(self):
+        result = OptimizationResult(
+            best_prompt="with examples",
+            best_val_score=0.9,
+            holdout_score=0.88,
+            original_score=0.9,
+            from_model="openai/gpt-4o",
+            to_model="anthropic/claude-3-haiku-20240307",
+            strategy="few_shot",
+            few_shot_count=3,
+        )
+        report = format_migration_report(result)
+        assert "few-shot" in report
+        assert "3 example" in report

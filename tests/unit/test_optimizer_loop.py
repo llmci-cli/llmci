@@ -160,14 +160,14 @@ async def test_optimizer_emits_progress_events():
     split = _make_split()
     events = []
 
-    async def mock_evaluate(prompt, model, examples, config, metric, **kwargs):
-        if model == "gpt-4o":
+    async def mock_evaluate(prompt, model_spec, examples, config, metric):
+        if model_spec.model == "gpt-4o":
             return 0.9
         if prompt.startswith("Modified"):
             return 0.8 if len(examples) == len(split.train) else 0.75
         return 0.5
 
-    async def mock_failures(prompt, model, examples, config, **kwargs):
+    async def mock_failures(prompt, model_spec, examples, config):
         return [{"input": "x", "expected": "billing", "actual": "account", "reason": "wrong"}]
 
     async def mock_suggest(**kwargs):

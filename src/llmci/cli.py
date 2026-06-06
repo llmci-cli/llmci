@@ -442,8 +442,47 @@ def discover(
 
 
 @cli.command()
-@click.option("--from", "from_model", required=True, help="Source model to migrate from.")
-@click.option("--to", "to_model", required=True, help="Target model to migrate to.")
+@click.option(
+    "--from",
+    "from_model",
+    required=True,
+    help="Source model (provider/model, e.g. openai/gpt-4o-mini).",
+)
+@click.option(
+    "--to",
+    "to_model",
+    required=True,
+    help="Target model (provider/model, e.g. anthropic/claude-3-haiku-20240307).",
+)
+@click.option(
+    "--from-base-url",
+    default=None,
+    help="API base URL for the source model (internal proxies).",
+)
+@click.option(
+    "--to-base-url",
+    default=None,
+    help="API base URL for the target model (internal proxies).",
+)
+@click.option(
+    "--optimizer-base-url",
+    default=None,
+    help="API base URL for the optimizer model.",
+)
+@click.option(
+    "--strategy",
+    type=click.Choice(["prompt", "few_shot"]),
+    default="prompt",
+    show_default=True,
+    help="Optimization strategy: rewrite the prompt or select few-shot examples.",
+)
+@click.option(
+    "--max-few-shot",
+    default=5,
+    show_default=True,
+    type=int,
+    help="Max few-shot examples to add (few_shot strategy only).",
+)
 @click.option("--eval", "eval_name", required=True, help="Eval to optimize against.")
 @click.option("--optimizer-model", default="gpt-4o", help="Model for prompt optimization.")
 @click.option("--patience", default=3, type=int, help="Early stopping patience.")
@@ -464,6 +503,11 @@ def migrate(
     to_model: str,
     eval_name: str,
     optimizer_model: str,
+    from_base_url: str | None,
+    to_base_url: str | None,
+    optimizer_base_url: str | None,
+    strategy: str,
+    max_few_shot: int,
     patience: int,
     max_iterations: int,
     min_improvement: float,
@@ -472,6 +516,8 @@ def migrate(
     """Run prompt migration optimization."""
     from llmci.config import find_eval, load_config
     from llmci.dataset.loader import load_dataset
+    from llmci.migrate.fewshot import optimize_fewshot
+    from llmci.migrate.model_spec import ModelSpec
     from llmci.migrate.optimizer import MigrationProgressEvent, optimize_prompt
     from llmci.migrate.report import format_migration_report
     from llmci.migrate.splitter import split_dataset
@@ -500,6 +546,7 @@ def migrate(
     click.echo(
         f"Migrating {from_model} → {to_model}\n"
         f"Eval: {eval_name} (metric: {primary_metric})\n"
+        f"Strategy: {strategy}\n"
         f"Split: {len(split.train)} train / {len(split.validation)} val / "
         f"{len(split.holdout)} holdout\n"
         f"Optimizer: {optimizer_model}\n"
@@ -528,22 +575,42 @@ def migrate(
         elif event.phase == "complete" and event.holdout_score is not None:
             click.echo(f"\nFinal holdout on target model: {event.holdout_score:.3f}\n")
 
+    default_base = config.target.base_url
     try:
-        result = asyncio.run(optimize_prompt(
-            original_prompt=original_prompt,
-            from_model=from_model,
-            to_model=to_model,
-            optimizer_model=optimizer_model,
-            eval_config=eval_cfg,
-            split=split,
-            primary_metric=primary_metric,
-            patience=patience,
-            min_improvement=min_improvement,
-            max_iterations=max_iterations,
-            max_edit_distance=max_edit_distance,
-            base_url=config.target.base_url,
-            progress_callback=report_progress,
-        ))
+        if strategy == "few_shot":
+            from_spec = ModelSpec.parse(from_model, from_base_url or default_base)
+            to_spec = ModelSpec.parse(to_model, to_base_url or default_base)
+            result = asyncio.run(optimize_fewshot(
+                original_prompt=original_prompt,
+                from_spec=from_spec,
+                to_spec=to_spec,
+                eval_config=eval_cfg,
+                split=split,
+                primary_metric=primary_metric,
+                max_few_shot=max_few_shot,
+                patience=patience,
+                min_improvement=min_improvement,
+                progress_callback=report_progress,
+            ))
+        else:
+            result = asyncio.run(optimize_prompt(
+                original_prompt=original_prompt,
+                from_model=from_model,
+                to_model=to_model,
+                optimizer_model=optimizer_model,
+                eval_config=eval_cfg,
+                split=split,
+                primary_metric=primary_metric,
+                patience=patience,
+                min_improvement=min_improvement,
+                max_iterations=max_iterations,
+                max_edit_distance=max_edit_distance,
+                base_url=default_base,
+                from_base_url=from_base_url,
+                to_base_url=to_base_url,
+                optimizer_base_url=optimizer_base_url,
+                progress_callback=report_progress,
+            ))
     except Exception as e:
         click.echo(f"Error during migration: {e}", err=True)
         sys.exit(1)

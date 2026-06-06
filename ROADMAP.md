@@ -144,9 +144,13 @@ new dependency) covering the practical JSON-Schema subset — replaces the custo
 `audio` fields on dataset rows are supported for direct (litellm) targets — see
 `examples/18-multimodal-vision`._
 
-### 12. More migration targets & strategies — `M` · ★★
+### 12. More migration targets & strategies — `M` · ★★ ✅ prototype
 - Migration across providers (not just model versions), and few-shot/example-selection
   optimization in addition to prompt rewriting.
+
+_Landed: `llmci migrate` accepts `provider/model` refs with per-side `--from-base-url` /
+`--to-base-url` / `--optimizer-base-url`. `--strategy few_shot` greedily inlines train
+examples as few-shot demos. See `examples/19-cross-provider-migration`._
 
 ### 13. Plugin / extension API — `M` · ★ ✅ prototype (judges, metrics, report sinks)
 - Stable entry-point API for third-party judges, metrics, and report sinks so the

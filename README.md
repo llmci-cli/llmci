@@ -349,21 +349,28 @@ for each regressed example (matched by input), in both the markdown and HTML rep
 
 ## Model Migration
 
-When switching models (e.g., GPT-4o to GPT-4.5), llmci can automatically tune your prompt to maintain quality parity:
+When switching models — or **providers** (OpenAI → Anthropic, etc.) — `llmci migrate`
+tunes your prompt to recover quality on the target:
 
 ```bash
 llmci migrate \
-  --from gpt-4o \
-  --to gpt-4.5 \
+  --from openai/gpt-4o-mini \
+  --to anthropic/claude-3-haiku-20240307 \
   --eval ticket-classification \
-  --optimizer-model gpt-4o
+  --optimizer-model openai/gpt-4o
 ```
 
-The optimizer:
-1. Splits your dataset into train/validation/holdout
-2. Iteratively suggests minimal prompt modifications
-3. Stops when improvement plateaus (early stopping)
-4. Reports the final holdout score vs. the original model
+**Strategies**
+
+| `--strategy` | What it does |
+|--------------|--------------|
+| `prompt` (default) | Iteratively rewrite the prompt from failure examples |
+| `few_shot` | Greedily add train examples as inline few-shot demos (`--max-few-shot`) |
+
+Per-provider proxies: `--from-base-url`, `--to-base-url`, `--optimizer-base-url`.
+
+The optimizer splits train/validation/holdout, early-stops on plateau, and reports
+holdout score vs. the source model. See [`examples/19-cross-provider-migration`](examples/19-cross-provider-migration/).
 
 ## Agent Evaluation
 

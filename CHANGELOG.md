@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Cross-provider migration** — `llmci migrate` accepts `provider/model` identifiers
+  (`openai/gpt-4o-mini` → `anthropic/claude-3-haiku-20240307`) with per-side
+  `--from-base-url` / `--to-base-url` / `--optimizer-base-url` for internal proxies.
+- **Few-shot migration strategy** — `--strategy few_shot` greedily selects train
+  examples to inline as few-shot demos instead of rewriting the prompt
+  (`--max-few-shot`). See `examples/19-cross-provider-migration`.
+
 ## [0.3.0] - 2026-06-06
 
 Post-0.2.0 follow-ups: judge caching, calibration trends, gate trust warnings,
