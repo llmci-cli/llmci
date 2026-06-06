@@ -1,0 +1,18 @@
+version: 1
+
+target:
+  provider: openai
+  model: gpt-4o-mini
+  prompt_file: prompt.txt
+
+evals:
+  - name: vision-color
+    dataset: evals/vision.jsonl
+    judge:
+      type: exact_match
+    metrics:
+      - {name: accuracy, threshold: 1.0, mode: absolute}
+
+settings:
+  parallelism: 1
+  timeout_per_call: 60

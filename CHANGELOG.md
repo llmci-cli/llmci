@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Multimodal direct targets** — dataset rows can include `images` and/or `audio`
+  fields (paths relative to the dataset file, or HTTPS/data URLs). Direct API targets
+  build litellm multimodal messages and include media in the response-cache key.
+  Example: `examples/18-multimodal-vision`.
 - **LLM attack mutation** — `llmci redteam generate --mutate` appends LLM-rephrased
   variants of each built-in attack (`--mutate-model`, `--mutate-count`, `--no-cache`).
   Mutated rows carry `parent_attack` and `mutated: true` metadata.

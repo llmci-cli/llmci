@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import asyncio
 import time
+from pathlib import Path
 
 import litellm
 
 from llmci.cache import ResponseCache, make_key
 from llmci.models import EvalExample, TargetResult
+from llmci.multimodal import build_user_content, has_media, media_cache_params
 
 
 async def run_direct_target(
@@ -21,6 +23,7 @@ async def run_direct_target(
     retries: int = 2,
     base_url: str | None = None,
     cache: ResponseCache | None = None,
+    media_base: Path | None = None,
 ) -> list[TargetResult]:
     """Run a direct API target on all examples with bounded concurrency.
 
@@ -34,7 +37,7 @@ async def run_direct_target(
         async with semaphore:
             return await _run_single_direct(
                 model_str, prompt_template, example, timeout, retries,
-                base_url=base_url, cache=cache,
+                base_url=base_url, cache=cache, media_base=media_base,
             )
 
     return await asyncio.gather(*[run_one(ex) for ex in examples])
@@ -48,13 +51,25 @@ async def _run_single_direct(
     retries: int,
     base_url: str | None = None,
     cache: ResponseCache | None = None,
+    media_base: Path | None = None,
 ) -> TargetResult:
     """Run a single example through litellm with retries, using the cache if set."""
     last_error: str | None = None
 
     prompt = prompt_template.replace("{input}", example.input)
+    try:
+        content = build_user_content(prompt, example, media_base)
+    except ValueError as e:
+        return TargetResult(output="", latency_ms=0.0, error=str(e))
+
+    cache_params = media_cache_params(example) if has_media(example) else None
     cache_key = (
-        make_key(model=model_str, prompt=prompt, base_url=base_url)
+        make_key(
+            model=model_str,
+            prompt=prompt,
+            base_url=base_url,
+            params=cache_params,
+        )
         if cache is not None
         else None
     )
@@ -76,7 +91,7 @@ async def _run_single_direct(
 
             kwargs: dict = {
                 "model": model_str,
-                "messages": [{"role": "user", "content": prompt}],
+                "messages": [{"role": "user", "content": content}],
                 "timeout": timeout,
             }
             if base_url:

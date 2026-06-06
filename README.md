@@ -127,6 +127,10 @@ target:
 
 Uses [litellm](https://github.com/BerriAI/litellm) under the hood, so any provider works (OpenAI, Anthropic, Azure, etc.). Set credentials via environment variables.
 
+Dataset rows can attach multimodal input beside the text `input` — `images` and/or
+`audio` (paths relative to the dataset file, or HTTPS URLs). See
+[`examples/18-multimodal-vision`](examples/18-multimodal-vision/).
+
 For internal proxies or custom gateways, add `base_url`:
 
 ```yaml
@@ -769,10 +773,11 @@ The [`llmci-testbed`](https://github.com/llmci-cli/llmci-testbed) repository is 
 | [`15-redteam`](examples/15-redteam/) | `redteam generate`: adversarial dataset gated by the safety judge |
 | [`16-structured-output`](examples/16-structured-output/) | `structured` judge: validate JSON output against a JSON Schema |
 | [`17-integrated-ci-gate`](examples/17-integrated-ci-gate/) | Stacked Now-tier gate: quality + cost regression + safety |
+| [`18-multimodal-vision`](examples/18-multimodal-vision/) | Direct target with `images` on dataset rows (API key) |
 
 Examples 11–17 are fully deterministic and run with **no API key** — handy for trying
 the safety, RAG, plugin, calibration, red-team, structured-output, and integrated-gate
-features locally.
+features locally. Example 18 exercises multimodal vision and requires a provider API key.
 
 ## CLI Reference
 

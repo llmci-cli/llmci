@@ -1,0 +1,3 @@
+{input}
+
+Answer with a single word.

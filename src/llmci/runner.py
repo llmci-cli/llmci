@@ -34,6 +34,7 @@ async def run_target(
     examples: list,
     settings: Settings,
     cache: ResponseCache | None = None,
+    media_base: Path | None = None,
 ) -> list[TargetResult]:
     """Dispatch to the correct target runner.
 
@@ -69,6 +70,7 @@ async def run_target(
             retries=settings.retries,
             base_url=target.base_url,
             cache=cache,
+            media_base=media_base,
         )
 
 
@@ -99,6 +101,10 @@ async def run_eval(
     target = resolve_target(eval_config, target_config)
     judge = create_judge(eval_config.judge)
 
+    from llmci.multimodal import dataset_media_base
+
+    media_base = dataset_media_base(eval_config.dataset)
+
     # Pairwise judging compares each output against the stored baseline output.
     from llmci.judges.pairwise import PairwiseJudge
 
@@ -121,7 +127,9 @@ async def run_eval(
 
     rounds: list[tuple[list[TargetResult], list[JudgeResult]]] = []
     for _ in range(samples):
-        round_results = await run_target(target, examples, settings, cache=round_cache)
+        round_results = await run_target(
+            target, examples, settings, cache=round_cache, media_base=media_base
+        )
         round_per_example = await judge.evaluate_dataset(examples, round_results)
         rounds.append((round_results, round_per_example))
 

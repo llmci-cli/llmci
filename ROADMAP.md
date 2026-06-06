@@ -140,8 +140,9 @@ _Landed: a first-class `structured` judge that validates a target's JSON output 
 JSON Schema (inline or a `.json` file), scored 1.0/0.0 and gateable by name, with an
 optional `partial_credit` fraction-of-required-fields mode. Self-contained validator (no
 new dependency) covering the practical JSON-Schema subset — replaces the custom judge that
-`examples/13` needed. See `examples/16-structured-output`. Follow-up: multimodal
-(image/audio) inputs through litellm._
+`examples/13` needed. See `examples/16-structured-output`. Multimodal `images` /
+`audio` fields on dataset rows are supported for direct (litellm) targets — see
+`examples/18-multimodal-vision`._
 
 ### 12. More migration targets & strategies — `M` · ★★
 - Migration across providers (not just model versions), and few-shot/example-selection
@@ -166,10 +167,10 @@ complete._
 ## Cross-cutting / continuous
 
 - **Docs & examples** keep pace with each feature. Deterministic, API-key-free runnable
-  examples now cover the safety, RAG, plugin, calibration, red-team, and
-  structured-output flows (`examples/11-16`), plus a stacked Now-tier dogfood gate
-  (`examples/17-integrated-ci-gate`: quality + cost regression + safety with committed
-  baselines).
+  examples now cover the safety, RAG, plugin, calibration, red-team,
+  structured-output, and multimodal flows (`examples/11-18`), plus a stacked Now-tier
+  dogfood gate (`examples/17-integrated-ci-gate`: quality + cost regression + safety
+  with committed baselines).
   Integration tests also exercise pairwise judging, response caching, and flake-resistance
   sampling/CI through the runner (with a mocked LLM), plus the machine-readable report
   formats (JUnit/SARIF/JSON/HTML) on a real result, and custom report sinks end-to-end
