@@ -632,6 +632,8 @@ Ticket: <span class="string">{input}</span></pre>
 
         <p>Set API credentials via environment variables (e.g., <code>OPENAI_API_KEY</code>). All litellm-supported providers work: OpenAI, Anthropic, Azure, Bedrock, Vertex, Ollama, etc.</p>
 
+        <p>Dataset rows can include <code>images</code> and/or <code>audio</code> (paths relative to the dataset file, or HTTPS URLs) for multimodal direct targets. See <code>examples/18-multimodal-vision</code>.</p>
+
         <h4>Custom Base URL / Proxy</h4>
         <p>If your organization uses an internal LLM proxy or gateway, set <code>base_url</code> to route requests through it:</p>
 
@@ -735,6 +737,37 @@ Ticket: <span class="string">{input}</span></pre>
       <span class="key">rubric</span>: <span class="string">"Did the agent use tools efficiently?"</span></pre>
 
         <p>See <a href="#agents">Agent Evaluation</a> for details.</p>
+
+        <h3>RAG Judge</h3>
+        <p>First-class metrics for retrieval-augmented pipelines. Each criterion surfaces as a gateable metric by name:</p>
+
+<pre><span class="key">judge</span>:
+  <span class="key">type</span>: <span class="string">rag</span>
+  <span class="key">model</span>: <span class="string">gpt-4o-mini</span>
+  <span class="key">criteria</span>:
+    - {<span class="key">name</span>: <span class="string">faithfulness</span>,        <span class="key">type</span>: <span class="string">faithfulness</span>}
+    - {<span class="key">name</span>: <span class="string">retrieval_recall</span>,    <span class="key">type</span>: <span class="string">retrieval_recall</span>,    <span class="key">k</span>: <span class="string">5</span>}
+    - {<span class="key">name</span>: <span class="string">retrieval_precision</span>, <span class="key">type</span>: <span class="string">retrieval_precision</span>, <span class="key">k</span>: <span class="string">5</span>}</pre>
+
+        <p>Command targets write structured output; gold retrieval labels use <code>relevant_ids</code> on each dataset row. Retrieval criteria are deterministic (no API key). See the <a href="#cs-rag">RAG case study</a> and <code>examples/12-rag-retrieval</code>.</p>
+
+        <h3>Safety Judge</h3>
+        <p>Gate on PII leakage, toxicity, and jailbreak resistance. Higher scores are safer:</p>
+
+<pre><span class="key">judge</span>:
+  <span class="key">type</span>: <span class="string">safety</span>
+  <span class="key">model</span>: <span class="string">gpt-4o-mini</span>
+  <span class="key">criteria</span>:
+    - {<span class="key">name</span>: <span class="string">pii_leakage</span>,          <span class="key">type</span>: <span class="string">pii_leakage</span>}
+    - {<span class="key">name</span>: <span class="string">jailbreak_resistance</span>, <span class="key">type</span>: <span class="string">jailbreak_resistance</span>}</pre>
+
+        <p><code>pii_leakage</code> is deterministic — it scans for emails, phones, SSNs, credit cards, IPv4, and AWS keys. Narrow with <code>categories: [email, ssn]</code> or exempt known-safe values with <code>allow_list: [support@acme.com]</code> / <code>allow_list: [regex:@example\.com$]</code>. Generate adversarial inputs with <code>llmci redteam generate</code> (<code>examples/15-redteam</code>).</p>
+
+        <h3>Pairwise Judge</h3>
+        <p>Compare each output against the baseline output for the same input and report a <code>win_rate</code> metric. Position-swap averaging controls LLM position bias by default. Requires <code>--compare-to</code> (or committed baselines with per-example outputs).</p>
+
+        <h3>Structured-Output Judge</h3>
+        <p>Validate JSON output against a JSON Schema (inline or a <code>.json</code> file). Deterministic, no API key. See <code>examples/16-structured-output</code>.</p>
       </section>
 
       <hr>
@@ -785,6 +818,18 @@ Ticket: <span class="string">{input}</span></pre>
           <tr><td><code>latency_p99</code></td><td>99th percentile response time (ms)</td><td>Worst-case latency</td></tr>
         </table>
 
+        <h3>Cost &amp; Tokens <span style="font-weight:400;color:var(--text-secondary)">(lower is better)</span></h3>
+        <table>
+          <tr><th>Metric</th><th>Description</th><th>Best for</th></tr>
+          <tr><td><code>cost_total</code> / <code>cost_mean</code></td><td>Total and per-example cost (USD)</td><td>Cost regression gates</td></tr>
+          <tr><td><code>tokens_in_mean</code> / <code>tokens_out_mean</code></td><td>Average input/output tokens</td><td>Token budget monitoring</td></tr>
+          <tr><td><code>tokens_total_mean</code></td><td>Average combined token usage</td><td>Overall spend drivers</td></tr>
+        </table>
+        <p>Direct targets read usage from the provider. Command targets can opt in by adding <code>usage</code> and <code>cost</code> to output JSON. See <code>examples/17-integrated-ci-gate</code> for a stacked quality + cost + safety gate.</p>
+
+        <h3>Judge sub-scores</h3>
+        <p>RAG, safety, pairwise, and composite judges expose each criterion as a gateable metric by name — e.g. <code>faithfulness</code>, <code>retrieval_recall</code>, <code>pii_leakage</code>, <code>win_rate</code>.</p>
+
         <h3>Threshold Modes</h3>
 
         <h4>Absolute</h4>
@@ -801,7 +846,7 @@ Ticket: <span class="string">{input}</span></pre>
 
         <div class="callout callout-info">
           <div class="callout-icon">&#x2139;</div>
-          <p><code>max_regression</code> thresholds require a stored baseline. Run <code>llmci run --update-baseline</code> on your main branch first.</p>
+          <p><code>max_regression</code> thresholds require a stored baseline. Run <code>llmci run --update-baseline</code> on your main branch first. For <strong>lower-is-better</strong> metrics (cost, tokens, latency, <code>error_rate</code>), <code>absolute</code> checks invert (value must be ≤ threshold) and <code>max_regression</code> fails on a <em>rise</em> past the threshold.</p>
         </div>
 
         <h3>Monorepos and multiple configs</h3>
@@ -828,6 +873,17 @@ Ticket: <span class="string">{input}</span></pre>
         <h3>Comparing against baselines</h3>
         <p>On a PR branch, compare against the main branch:</p>
 <pre><span class="cmd">llmci run --compare-to=main</span></pre>
+        <p>Committed baselines under <code>.llmci/baselines/</code> are also loaded automatically when you omit <code>--compare-to</code> — useful for repos that check baselines into git. Baselines store per-example outputs; regressed examples show an <strong>Output Diffs vs Baseline</strong> section in markdown and HTML reports.</p>
+
+        <h3>Output formats</h3>
+        <p>PR comments stay markdown. For GitLab, Bitbucket, Azure DevOps, Jenkins, or artifacts, use <code>--output-format</code>:</p>
+<pre><span class="cmd">llmci run --output-format junit --output results.xml</span>
+<span class="cmd">llmci run --output-format sarif --output results.sarif</span>
+<span class="cmd">llmci run --output-format html  --output report.html</span>
+<span class="cmd">llmci run --output-format json  --output results.json</span></pre>
+
+        <h3>Response caching</h3>
+        <p>Direct API targets cache responses under <code>.llmci/cache/responses/</code> (keyed on provider, model, prompt, input). Judge LLM calls for RAG, safety, and pairwise share <code>.llmci/cache/judges/</code>. Use <code>--no-cache</code> or <code>--refresh-cache</code> to bypass or rebuild.</p>
 
         <h3>GitHub Actions</h3>
         <p>llmci auto-detects GitHub Actions and posts eval results as a PR comment.</p>
@@ -862,6 +918,7 @@ Ticket: <span class="string">{input}</span></pre>
   <span class="key">matrix</span>:
     <span class="key">include</span>:
       - { <span class="key">service</span>: <span class="string">ticket-classifier</span>, <span class="key">config</span>: <span class="string">llmci.yaml</span> }
+      - { <span class="key">service</span>: <span class="string">ticket-classifier</span>, <span class="key">config</span>: <span class="string">llmci-gate.yaml</span> }
       - { <span class="key">service</span>: <span class="string">rag-qa</span>, <span class="key">config</span>: <span class="string">llmci.yaml</span> }
 <span class="key">steps</span>:
   - <span class="key">uses</span>: <span class="string">actions/checkout@v4</span>
@@ -888,23 +945,32 @@ Ticket: <span class="string">{input}</span></pre>
       <!-- MODEL MIGRATION -->
       <section class="doc-section" id="migration">
         <h2>Model Migration</h2>
-        <p class="section-lead">Automatically re-tune your prompt when switching LLM models.</p>
+        <p class="section-lead">Re-tune your prompt when switching models or providers.</p>
 
-        <p>When you upgrade from one model to another, your prompt may need adjustments to maintain quality. llmci automates this:</p>
+        <p>When you move from one model to another — or across providers (OpenAI → Anthropic, etc.) — your prompt may need adjustments to maintain quality. llmci automates this:</p>
 
 <pre><span class="cmd">llmci migrate \</span>
-  <span class="flag">--from</span> gpt-4o \
-  <span class="flag">--to</span> gpt-4.5 \
+  <span class="flag">--from</span> openai/gpt-4o-mini \
+  <span class="flag">--to</span> anthropic/claude-3-haiku-20240307 \
   <span class="flag">--eval</span> ticket-classification \
-  <span class="flag">--optimizer-model</span> gpt-4o</pre>
+  <span class="flag">--optimizer-model</span> openai/gpt-4o</pre>
+
+        <h3>Strategies</h3>
+        <table>
+          <tr><th><code>--strategy</code></th><th>What it does</th></tr>
+          <tr><td><code>prompt</code> (default)</td><td>Iteratively rewrite the prompt from failure examples</td></tr>
+          <tr><td><code>few_shot</code></td><td>Greedily add train examples as inline few-shot demos (<code>--max-few-shot</code>)</td></tr>
+        </table>
+
+        <p>Per-provider proxies: <code>--from-base-url</code>, <code>--to-base-url</code>, <code>--optimizer-base-url</code>. See <code>examples/19-cross-provider-migration</code>.</p>
 
         <h3>How it works</h3>
         <ol>
           <li><strong>Split</strong> — dataset is split into train (70%), validation (15%), holdout (15%), stratified by category</li>
-          <li><strong>Baseline</strong> — evaluate the original prompt on the holdout set with the <em>old</em> model (this is the quality bar)</li>
-          <li><strong>Optimize</strong> — iteratively ask an optimizer LLM to suggest minimal prompt changes, evaluated on train/validation with the <em>new</em> model</li>
+          <li><strong>Baseline</strong> — evaluate the original prompt on the holdout set with the <em>source</em> model (this is the quality bar)</li>
+          <li><strong>Optimize</strong> — iteratively improve the prompt (rewrite or few-shot selection), evaluated on train/validation with the <em>target</em> model</li>
           <li><strong>Stop</strong> — early stopping when validation score plateaus</li>
-          <li><strong>Report</strong> — evaluate the best prompt on holdout with the new model for an honest final score</li>
+          <li><strong>Report</strong> — evaluate the best prompt on holdout with the target model for an honest final score</li>
         </ol>
 
         <h3>Options</h3>
@@ -914,6 +980,7 @@ Ticket: <span class="string">{input}</span></pre>
           <tr><td><code>--max-iterations</code></td><td>20</td><td>Maximum optimization iterations</td></tr>
           <tr><td><code>--min-improvement</code></td><td>0.005</td><td>Minimum score improvement to reset patience</td></tr>
           <tr><td><code>--max-edit-distance</code></td><td>none</td><td>Reject prompts that change too much</td></tr>
+          <tr><td><code>--max-few-shot</code></td><td>5</td><td>Cap for <code>few_shot</code> strategy</td></tr>
         </table>
 
         <div class="callout callout-warn">
@@ -1028,7 +1095,12 @@ result = run_for_llmci_sync(build_agent(), {<span class="string">"query"</span>:
           <tr><td><code>llmci run --update-baseline</code></td><td>Save current scores as baseline</td></tr>
           <tr><td><code>llmci run --compare-to=main</code></td><td>Compare against a baseline branch</td></tr>
           <tr><td><code>llmci run --output report.md</code></td><td>Write report to a file</td></tr>
-          <tr><td><code>llmci migrate</code></td><td>Optimize a prompt for a new model</td></tr>
+          <tr><td><code>llmci run --output-format junit|sarif|json|html</code></td><td>Machine-readable or shareable report formats</td></tr>
+          <tr><td><code>llmci run --no-cache</code> / <code>--refresh-cache</code></td><td>Bypass or rebuild response/judge caches</td></tr>
+          <tr><td><code>llmci run --samples N</code></td><td>Multi-sample runs with statistical aggregation</td></tr>
+          <tr><td><code>llmci migrate</code></td><td>Optimize a prompt for a new model or provider</td></tr>
+          <tr><td><code>llmci judge calibrate</code></td><td>Measure judge↔human agreement; detect drift</td></tr>
+          <tr><td><code>llmci redteam generate</code></td><td>Generate adversarial inputs for safety evals</td></tr>
           <tr><td><code>llmci init</code></td><td>Generate llmci.yaml interactively</td></tr>
           <tr><td><code>llmci dataset init</code></td><td>Create a new eval dataset</td></tr>
           <tr><td><code>llmci dataset add</code></td><td>Add examples interactively</td></tr>
@@ -1209,35 +1281,34 @@ json.dump({<span class="string">"output"</span>: result[<span class="string">"ca
         <h4>The risk</h4>
         <p>Bugs can appear at any stage: the embedding model could be swapped (changing retrieval quality), the chunking strategy could be adjusted (changing what context the LLM sees), or the generation prompt could be edited. Each affects the final answer differently, and prompt-level testing alone won't catch retrieval-side regressions.</p>
 
-        <h4>Pipeline-level testing with a custom judge</h4>
-        <p>Test the full pipeline end-to-end. Since RAG answers are open-ended, use a custom judge that checks whether key expected information appears in the response:</p>
+        <h4>Pipeline-level testing with the built-in RAG judge</h4>
+        <p>Test the full pipeline end-to-end. The built-in <code>rag</code> judge scores retrieval quality deterministically and can gate on faithfulness/relevance with an LLM:</p>
 
-<pre><span class="key">version</span>: <span class="string">1</span>
-
-<span class="key">target</span>:
-  <span class="key">command</span>: <span class="string">"python3 run_rag.py --input {input_file} --output {output_file}"</span>
+<pre><span class="key">target</span>:
+  <span class="key">command</span>: <span class="string">"python3 pipeline/run.py --input {input_file} --output {output_file}"</span>
 
 <span class="key">evals</span>:
   - <span class="key">name</span>: <span class="string">rag-qa</span>
     <span class="key">level</span>: <span class="string">pipeline</span>
-    <span class="key">dataset</span>: <span class="string">./evals/qa_pairs.jsonl</span>
+    <span class="key">dataset</span>: <span class="string">./evals/qa.jsonl</span>
     <span class="key">judge</span>:
-      <span class="key">type</span>: <span class="string">custom</span>
-      <span class="key">module</span>: <span class="string">./rag_judge.py</span>
-      <span class="key">function</span>: <span class="string">evaluate</span>
+      <span class="key">type</span>: <span class="string">rag</span>
+      <span class="key">criteria</span>:
+        - {<span class="key">name</span>: <span class="string">retrieval_recall</span>,    <span class="key">type</span>: <span class="string">retrieval_recall</span>,    <span class="key">k</span>: <span class="string">2</span>}
+        - {<span class="key">name</span>: <span class="string">retrieval_precision</span>, <span class="key">type</span>: <span class="string">retrieval_precision</span>, <span class="key">k</span>: <span class="string">2</span>}
     <span class="key">metrics</span>:
-      - <span class="key">name</span>: <span class="string">pass_rate</span>
-        <span class="key">threshold</span>: <span class="string">0.85</span>
-        <span class="key">mode</span>: <span class="string">absolute</span></pre>
+      - {<span class="key">name</span>: <span class="string">retrieval_recall</span>,    <span class="key">threshold</span>: <span class="string">0.90</span>, <span class="key">mode</span>: <span class="string">absolute</span>}
+      - {<span class="key">name</span>: <span class="string">retrieval_precision</span>, <span class="key">threshold</span>: <span class="string">0.50</span>, <span class="key">mode</span>: <span class="string">absolute</span>}</pre>
 
-        <p>The custom judge can implement domain-specific logic — checking for factual keywords, verifying citations, or validating that the answer doesn't contradict known facts:</p>
+        <p>The pipeline writes structured output; gold labels use <code>relevant_ids</code> per row:</p>
 
-<pre><span class="key">def</span> <span class="cmd">evaluate</span>(input: str, expected: str, actual: str) -> dict:
-    <span class="comment"># Check if key facts from the expected answer appear</span>
-    expected_facts = [f.strip() <span class="key">for</span> f <span class="key">in</span> expected.split(<span class="string">";"</span>)]
-    found = sum(1 <span class="key">for</span> f <span class="key">in</span> expected_facts <span class="key">if</span> f.lower() <span class="key">in</span> actual.lower())
-    score = found / len(expected_facts) <span class="key">if</span> expected_facts <span class="key">else</span> 0
-    <span class="key">return</span> {<span class="string">"score"</span>: score, <span class="string">"reason"</span>: f<span class="string">"{found}/{len(expected_facts)} facts found"</span>}</pre>
+<pre><span class="comment"># output JSON from your command target</span>
+{<span class="key">"output"</span>: <span class="string">"..."</span>, <span class="key">"contexts"</span>: [<span class="string">"..."</span>], <span class="key">"retrieved_ids"</span>: [<span class="string">"python"</span>, <span class="string">"docker"</span>]}
+
+<span class="comment"># dataset row</span>
+{<span class="key">"input"</span>: <span class="string">"What is Python?"</span>, <span class="key">"relevant_ids"</span>: [<span class="string">"python"</span>]}</pre>
+
+        <p>See <code>examples/12-rag-retrieval</code> and the live testbed service for a deterministic, API-key-free setup.</p>
 
       </section>
 
@@ -1259,13 +1330,15 @@ json.dump({<span class="string">"output"</span>: result[<span class="string">"ca
 <span class="key">for</span> service <span class="key">in</span> billing-classifier faq-summarizer ticket-router ...; <span class="key">do</span>
   <span class="cmd">cd</span> services/$service
   llmci migrate \
-    <span class="flag">--from</span> gpt-4o \
-    <span class="flag">--to</span> gpt-4o-mini \
+    <span class="flag">--from</span> openai/gpt-4o \
+    <span class="flag">--to</span> openai/gpt-4o-mini \
     <span class="flag">--eval</span> main-eval \
     <span class="flag">--patience</span> 5 \
     <span class="flag">--max-iterations</span> 30
   <span class="cmd">cd</span> ../..
 <span class="key">done</span></pre>
+
+        <p>Cross-provider moves use the same loop with <code>provider/model</code> refs and per-side <code>--from-base-url</code> / <code>--to-base-url</code> when routing through internal proxies. Try <code>--strategy few_shot</code> when prompt rewriting is too brittle.</p>
 
         <p>For each service, llmci:</p>
         <ol>
@@ -1413,7 +1486,18 @@ json.dump({<span class="string">"output"</span>: result[<span class="string">"ca
           <tr><td><code>08-fastapi-service</code></td><td>Pre/post processing pipeline with dual-level testing</td><td><a href="#cs-fastapi">FastAPI Service</a></td></tr>
           <tr><td><code>09-summarization-qa</code></td><td>Multi-criteria rubric with reference-free evaluation</td><td><a href="#cs-summarization">Summarization QA</a></td></tr>
           <tr><td><code>10-agent-openai-agents</code></td><td>TraceBuilder + OpenAI Agents SDK adapter</td><td><a href="#cs-agent">Support Agent</a></td></tr>
+          <tr><td><code>11-safety-pii</code></td><td>Deterministic PII-leakage safety gate</td><td>—</td></tr>
+          <tr><td><code>12-rag-retrieval</code></td><td>RAG judge: retrieval recall/precision</td><td><a href="#cs-rag">RAG Pipeline</a></td></tr>
+          <tr><td><code>13-plugin-judge</code></td><td>Plugin API: custom judge + metric</td><td>—</td></tr>
+          <tr><td><code>14-judge-calibration</code></td><td>Judge calibration and drift detection</td><td>—</td></tr>
+          <tr><td><code>15-redteam</code></td><td>Adversarial dataset generation + safety gate</td><td>—</td></tr>
+          <tr><td><code>16-structured-output</code></td><td>JSON Schema validation judge</td><td>—</td></tr>
+          <tr><td><code>17-integrated-ci-gate</code></td><td>Quality + cost regression + safety in one gate</td><td>—</td></tr>
+          <tr><td><code>18-multimodal-vision</code></td><td>Direct target with <code>images</code> on dataset rows</td><td>—</td></tr>
+          <tr><td><code>19-cross-provider-migration</code></td><td>Cross-provider migrate + few-shot strategy</td><td><a href="#cs-migration">Multi-Model Migration</a></td></tr>
         </table>
+
+        <p>Examples 11–17 run with <strong>no API key</strong> (fully deterministic). Example 18 requires a vision-capable provider.</p>
 
         <p>Run any example:</p>
 <pre><span class="cmd">cd examples/01-ci-regression</span>
