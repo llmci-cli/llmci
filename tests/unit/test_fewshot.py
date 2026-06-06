@@ -1,6 +1,6 @@
 """Tests for few-shot migration strategy."""
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 import pytest
 
