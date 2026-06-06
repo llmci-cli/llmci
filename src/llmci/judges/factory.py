@@ -58,6 +58,7 @@ def create_judge(config: JudgeConfig) -> Judge:
             return PairwiseJudge(
                 model=config.model or "gpt-4o-mini",
                 criterion=criterion,
+                position_swap=config.position_swap,
             )
         case "safety":
             if not config.criteria:

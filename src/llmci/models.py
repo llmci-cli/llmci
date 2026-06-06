@@ -67,6 +67,9 @@ class JudgeConfig(BaseModel):
     json_schema: dict | str | None = None
     # Structured judge: score the fraction of required fields that validate (vs pass/fail).
     partial_credit: bool = False
+    # Pairwise judge: run each comparison in both A/B orders and average, to cancel the
+    # LLM's position bias. On by default; set false to halve judge calls.
+    position_swap: bool = True
 
 
 class DatasetSource(BaseModel):

@@ -28,6 +28,18 @@ def _mock_llm(content):
     return _m
 
 
+def _mock_prefer(winning_text):
+    """A position-independent judge mock: picks whichever side contains winning_text."""
+
+    async def _m(*args, **kwargs):
+        prompt = kwargs["messages"][0]["content"]
+        a_section = prompt[prompt.index("## Answer A") : prompt.index("## Answer B")]
+        winner = "A" if winning_text in a_section else "B"
+        return _Resp(f'{{"winner": "{winner}", "reasoning": "content"}}')
+
+    return _m
+
+
 class TestParseWinner:
     def test_b_wins(self):
         score, reason = _parse_winner('{"winner": "B", "reasoning": "clearer"}')
@@ -59,8 +71,8 @@ def _baseline(pairs) -> Baseline:
     )
 
 
-async def test_win_against_baseline():
-    judge = PairwiseJudge(model="gpt-4o-mini")
+async def test_win_against_baseline_no_swap():
+    judge = PairwiseJudge(model="gpt-4o-mini", position_swap=False)
     judge.set_baseline(_baseline([("q1", "old answer", 1.0)]))
     examples = [EvalExample(input="q1", expected="")]
     results = [TargetResult(output="new better answer", latency_ms=1.0)]
@@ -71,6 +83,36 @@ async def test_win_against_baseline():
 
     assert per_example[0].score == 1.0
     assert per_example[0].sub_scores["win_rate"] == 1.0
+
+
+async def test_swap_neutralizes_position_bias():
+    # A judge that *always* picks B is pure position bias; swap-averaging cancels it.
+    judge = PairwiseJudge(position_swap=True)
+    judge.set_baseline(_baseline([("q1", "old answer", 1.0)]))
+    examples = [EvalExample(input="q1", expected="")]
+    results = [TargetResult(output="new answer", latency_ms=1.0)]
+
+    with patch("llmci.judges.pairwise.litellm.acompletion",
+               side_effect=_mock_llm('{"winner": "B"}')):
+        per_example = await judge.evaluate_dataset(examples, results)
+
+    assert per_example[0].score == 0.5
+    assert "position-bias" in per_example[0].reason
+
+
+async def test_swap_keeps_consistent_win():
+    # A content-aware judge prefers the current answer in either position -> real win.
+    judge = PairwiseJudge(position_swap=True)
+    judge.set_baseline(_baseline([("q1", "old answer", 1.0)]))
+    examples = [EvalExample(input="q1", expected="")]
+    results = [TargetResult(output="new better answer", latency_ms=1.0)]
+
+    with patch("llmci.judges.pairwise.litellm.acompletion",
+               side_effect=_mock_prefer("new better answer")):
+        per_example = await judge.evaluate_dataset(examples, results)
+
+    assert per_example[0].score == 1.0
+    assert "consistent" in per_example[0].reason
 
 
 async def test_new_example_without_baseline_is_neutral():
@@ -110,3 +152,10 @@ def test_factory_builds_pairwise_with_criterion():
     judge = create_judge(JudgeConfig(type="pairwise", rubric="Which is more concise?"))
     assert isinstance(judge, PairwiseJudge)
     assert judge.criterion == "Which is more concise?"
+    assert judge.position_swap is True  # on by default
+
+
+def test_factory_respects_position_swap_false():
+    judge = create_judge(JudgeConfig(type="pairwise", position_swap=False))
+    assert isinstance(judge, PairwiseJudge)
+    assert judge.position_swap is False

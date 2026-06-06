@@ -12,6 +12,11 @@ output (e.g. newly added rows) score a neutral 0.5.
 
 Per-example results carry a ``win_rate`` sub-score (1.0 win / 0.5 tie / 0.0 loss),
 which is surfaced as a gateable aggregate metric by the same mechanism RAG uses.
+
+LLM judges have a well-known **position bias**: they tend to favor whichever answer is
+shown first (or second). To control for it, ``position_swap`` (on by default) runs each
+comparison twice with the answers in both orders and averages the two — so a judge that
+blindly prefers position B scores a neutral 0.5 instead of a spurious win.
 """
 
 from __future__ import annotations
@@ -48,9 +53,15 @@ Decide which answer is better by the criterion. Reply with JSON only:
 class PairwiseJudge(Judge):
     """Scores each current output against the baseline output as a win/tie/loss."""
 
-    def __init__(self, model: str = "gpt-4o-mini", criterion: str | None = None):
+    def __init__(
+        self,
+        model: str = "gpt-4o-mini",
+        criterion: str | None = None,
+        position_swap: bool = True,
+    ):
         self.model = model
         self.criterion = criterion or DEFAULT_CRITERION
+        self.position_swap = position_swap
         self.baseline_outputs: dict[str, str] = {}
 
     def set_baseline(self, baseline: Baseline | None) -> None:
@@ -82,21 +93,48 @@ class PairwiseJudge(Judge):
                 ))
                 continue
 
-            score, reason = await self._compare(ex.input, baseline_output, res.output)
+            score, reason = await self._score_pair(
+                ex.input, baseline_output, res.output
+            )
             per_example.append(
                 JudgeResult(score=score, reason=reason, sub_scores={"win_rate": score})
             )
         return per_example
 
-    async def _compare(
+    async def _score_pair(
         self, question: str, baseline_output: str, current_output: str
     ) -> tuple[float, str]:
-        """Return (score, reason). Answer A = baseline, Answer B = current."""
+        """Score current vs baseline (1.0 current wins), optionally swapping positions.
+
+        With ``position_swap`` the comparison runs twice — current as B, then current as
+        A — and the two are averaged so position bias cancels out.
+        """
+        # Pass 1: A = baseline, B = current -> returned score is "current (B) wins".
+        first, reason = await self._compare(question, baseline_output, current_output)
+        if not self.position_swap:
+            return first, reason
+
+        # Pass 2: A = current, B = baseline -> returned score is "baseline (B) wins",
+        # so current's score is its complement.
+        other, reason_swapped = await self._compare(
+            question, current_output, baseline_output
+        )
+        current_second = 1.0 - other
+        combined = (first + current_second) / 2
+
+        agree = (first > 0.5) == (current_second > 0.5) or first == current_second == 0.5
+        note = "consistent" if agree else "position-bias detected, averaged"
+        return combined, f"swap-averaged ({note}); A/B: {reason}; B/A: {reason_swapped}"
+
+    async def _compare(
+        self, question: str, answer_a: str, answer_b: str
+    ) -> tuple[float, str]:
+        """Return (score, reason) where a win for Answer B scores 1.0."""
         prompt = _PROMPT.format(
             criterion=self.criterion,
             question=question,
-            answer_a=baseline_output,
-            answer_b=current_output,
+            answer_a=answer_a,
+            answer_b=answer_b,
         )
         try:
             response = await litellm.acompletion(

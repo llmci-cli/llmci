@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Pairwise position-bias control** — the pairwise judge now runs each comparison in
+  both A/B orders and averages them by default (`position_swap: true`), cancelling the
+  LLM's tendency to favor a fixed position; a judge that blindly prefers one slot scores a
+  neutral 0.5 instead of a false win. Set `position_swap: false` to halve judge calls.
 - **Structured-output judge** (`judge: {type: structured}`) — validate a target's JSON
   output against a JSON Schema, gateable by name (1.0 valid / 0.0 invalid); no API key.
   The schema is inline under `json_schema:` or a path to a `.json` file. A self-contained

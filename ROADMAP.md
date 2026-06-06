@@ -86,7 +86,8 @@ Absolute scoring is weak for open-ended generation.
 
 _Landed: compares current vs baseline output per input; `win_rate` surfaced as a
 gateable metric; reuses per-example baseline outputs (item 6) and CI sampling (item 1).
-Follow-up: order-swap to control position bias, and judge-result caching._
+Position bias is controlled by default via two-order swap-averaging (`position_swap`).
+Follow-up: judge-result caching to offset the doubled judge calls._
 
 ### 8. LLM-judge calibration & drift detection — `M` · ★★ ✅ prototype
 LLM judges drift across model versions and disagree with humans; trust erodes silently.

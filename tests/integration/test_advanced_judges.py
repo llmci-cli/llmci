@@ -35,6 +35,18 @@ def _mock_llm(content):
     return _m
 
 
+def _mock_prefer(winning_text):
+    """Position-independent pairwise mock: picks whichever side has winning_text."""
+
+    async def _m(*args, **kwargs):
+        prompt = kwargs["messages"][0]["content"]
+        a_section = prompt[prompt.index("## Answer A") : prompt.index("## Answer B")]
+        winner = "A" if winning_text in a_section else "B"
+        return _MockResponse(f'{{"winner": "{winner}", "reasoning": "content"}}')
+
+    return _m
+
+
 @pytest.mark.asyncio
 async def test_calibration_example(monkeypatch):
     """14-judge-calibration: exact_match judge vs human labels, deterministic."""
@@ -96,9 +108,10 @@ async def test_pairwise_through_runner(tmp_path, monkeypatch):
     config = load_config()
     baselines = load_all_baselines(["pw"])
 
-    # The current output wins every head-to-head comparison.
+    # The current output ("new answer") wins in either position -> a real win that
+    # survives the default position-swap averaging.
     with patch("llmci.judges.pairwise.litellm.acompletion",
-               side_effect=_mock_llm('{"winner": "B", "reasoning": "clearer"}')):
+               side_effect=_mock_prefer("new answer")):
         results = await run_all_evals(config, baselines=baselines)
 
     result = results[0]

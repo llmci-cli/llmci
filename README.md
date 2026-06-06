@@ -407,6 +407,12 @@ example 1.0 (win) / 0.5 (tie) / 0.0 (loss). The mean is exposed as the `win_rate
 metric. Newly added examples with no baseline output score a neutral 0.5. Combine with
 `samples_per_example` for a confidence interval on the win rate.
 
+**Position bias:** LLM judges tend to favor whichever answer appears first. By default the
+pairwise judge runs each comparison in **both orders** and averages them, so a judge that
+blindly prefers one position scores a neutral 0.5 instead of a false win. This doubles the
+judge calls; set `position_swap: false` on the judge to disable it (e.g. when judge cost
+dominates and you've verified low bias).
+
 ## RAG Evaluation
 
 Score retrieval-augmented pipelines on RAG-specific dimensions. Each criterion
