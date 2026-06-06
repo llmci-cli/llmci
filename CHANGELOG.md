@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Per-claim faithfulness** — RAG `faithfulness` criteria accept
+  `decompose_claims: true` to extract atomic claims and score each against context
+  (fraction supported), with unsupported claims listed in the judge reason.
+- **Gate configuration warnings** — `llmci run` warns when `max_regression` thresholds
+  or a pairwise judge have no baseline, or when multi-sample runs lack `significance`.
 - **Composite judge caching** — outcome and trajectory criteria in agent composite judges
   now share the `.llmci/cache/judges/` LLM-call cache (same `--no-cache` /
   `--refresh-cache` flags as other judges).

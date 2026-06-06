@@ -1,11 +1,18 @@
 """Tests for the RAG judge and sub-score metrics."""
 
+import json
 from unittest.mock import patch
 
 import pytest
 
 from llmci.judges.factory import create_judge
-from llmci.judges.rag import RagJudge, _parse_score, _retrieval_precision, _retrieval_recall
+from llmci.judges.rag import (
+    RagJudge,
+    _parse_claim_scores,
+    _parse_score,
+    _retrieval_precision,
+    _retrieval_recall,
+)
 from llmci.metrics import compute_metrics
 from llmci.models import EvalExample, JudgeConfig, JudgeResult, TargetResult
 
@@ -49,6 +56,26 @@ class TestRetrievalMetrics:
         score, reason = _retrieval_precision([], ["a"], k=None)
         assert score == 0.0
         assert "no documents" in reason
+
+
+class TestParseClaimScores:
+    def test_fraction_supported(self):
+        content = json.dumps({
+            "claims": [
+                {"text": "a", "supported": True},
+                {"text": "b", "supported": False},
+                {"text": "c", "supported": True},
+            ]
+        })
+        score, reason = _parse_claim_scores(content)
+        assert score == pytest.approx(2 / 3)
+        assert "unsupported" in reason
+
+    def test_all_supported(self):
+        content = json.dumps({"claims": [{"text": "a", "supported": True}]})
+        score, reason = _parse_claim_scores(content)
+        assert score == 1.0
+        assert "1/1" in reason
 
 
 class TestParseScore:
@@ -101,6 +128,31 @@ async def test_llm_criteria_use_metadata_contexts():
         per_example = await judge.evaluate_dataset(examples, results)
 
     assert per_example[0].sub_scores["faithfulness"] == 0.9
+
+
+async def test_faithfulness_decomposed_scores_per_claim():
+    judge = RagJudge(criteria=[
+        {"name": "faithfulness", "type": "faithfulness", "decompose_claims": True},
+    ])
+    examples = [EvalExample(input="q", expected="")]
+    results = [TargetResult(
+        output="Paris is in France. The moon is cheese.",
+        latency_ms=1.0,
+        metadata={"contexts": ["Paris is the capital of France."]},
+    )]
+
+    response = json.dumps({
+        "claims": [
+            {"text": "Paris is in France", "supported": True},
+            {"text": "The moon is cheese", "supported": False},
+        ]
+    })
+    with patch("llmci.judges.llm_cache.litellm.acompletion",
+               side_effect=_mock_llm(response)):
+        per_example = await judge.evaluate_dataset(examples, results)
+
+    assert per_example[0].sub_scores["faithfulness"] == 0.5
+    assert "unsupported" in per_example[0].reason
 
 
 async def test_faithfulness_without_contexts_scores_zero():

@@ -34,5 +34,7 @@ llmci run
 
 ## How to adapt
 - Add `faithfulness` / `answer_relevance` / `context_relevance` criteria and set a
-  `model:` to also score the generated answer (these call the judge model).
+  `model:` to also score the generated answer (these call the judge model). For
+  finer-grained grounding checks, set `decompose_claims: true` on `faithfulness` to
+  score each atomic claim separately and list unsupported claims in the report.
 - Tune `k`, or weight criteria with `weight:` to shape the overall score.

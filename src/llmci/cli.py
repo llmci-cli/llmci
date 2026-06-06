@@ -171,6 +171,13 @@ def _run_config(
                         f"Loaded {len(baselines)} baseline(s) from .llmci/baselines/"
                     )
 
+        from llmci.gate_warnings import collect_gate_warnings
+
+        for warning in collect_gate_warnings(
+            config, baselines, update_baseline=update_baseline
+        ):
+            click.echo(f"Warning: {warning}", err=True)
+
         try:
             results = asyncio.run(
                 run_all_evals(

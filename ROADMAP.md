@@ -68,8 +68,8 @@ The biggest demand gap vs DeepEval / Ragas.
 _Landed: `judge: {type: rag}` with the five criteria above; each surfaces as a
 gateable metric by name. Targets pass `contexts`/`retrieved_ids`; gold labels via
 `relevant_ids`. Runnable deterministic example: `examples/12-rag-retrieval`. The LLM
-criteria now share the judge-call cache (`.llmci/cache/judges/`). Follow-up: per-claim
-faithfulness decomposition._
+criteria now share the judge-call cache (`.llmci/cache/judges/`). Per-claim
+faithfulness is available via `decompose_claims: true` on a `faithfulness` criterion._
 
 ### 6. Output diff view — baseline vs PR, per example — `M` · ★★ ✅ prototype
 "Why did this fail?" is currently hard to answer from a pass/fail table.
@@ -173,8 +173,9 @@ complete._
   sampling/CI through the runner (with a mocked LLM), plus the machine-readable report
   formats (JUnit/SARIF/JSON/HTML) on a real result, and custom report sinks end-to-end
   through the CLI. Every prototyped feature now has end-to-end coverage.
-- **Determinism guardrails**: warn when a config has no baseline, or thresholds with no
-  significance config once item 1 lands.
+- **Determinism guardrails** ✅ — `llmci run` warns when `max_regression` thresholds or
+  a pairwise judge have no baseline, or when `samples_per_example > 1` without
+  `significance`.
 - **Performance**: keep PR feedback under a few minutes; caching (item 2) and parallelism
   are the levers.
 
