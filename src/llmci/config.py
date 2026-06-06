@@ -36,9 +36,16 @@ def load_config(path: Path = Path("llmci.yaml")) -> LlmciConfig:
     raw = _normalize_config(raw)
 
     try:
-        return LlmciConfig(**raw)
+        config = LlmciConfig(**raw)
     except ValidationError as e:
         raise ConfigError(f"Invalid config in {path}:\n{_format_validation_error(e)}") from e
+
+    if config.plugins:
+        from llmci.plugins import load_module_plugins
+
+        load_module_plugins(config.plugins)
+
+    return config
 
 
 def _normalize_config(raw: dict[str, Any]) -> dict[str, Any]:

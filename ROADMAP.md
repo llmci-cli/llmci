@@ -132,9 +132,15 @@ and more PII categories / a configurable allow-list._
 - Migration across providers (not just model versions), and few-shot/example-selection
   optimization in addition to prompt rewriting.
 
-### 13. Plugin / extension API — `M` · ★
+### 13. Plugin / extension API — `M` · ★ ✅ prototype (judges)
 - Stable entry-point API for third-party judges, metrics, and report sinks so the
   ecosystem can extend llmci without forking.
+
+_Landed: a judge registry (`llmci.plugins`) with two registration paths — the
+`llmci.judges` entry-point group for installed packages, and a `plugins:` list of dotted
+module paths in `llmci.yaml` for local plugins. `create_judge` consults the registry for
+unknown types; plugin types can't shadow built-ins. Follow-up: extend the same pattern to
+custom metrics and report sinks._
 
 ---
 

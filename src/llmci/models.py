@@ -49,11 +49,15 @@ class RubricCriterion(BaseModel):
 
 
 class JudgeConfig(BaseModel):
-    """Judge configuration — determines how to score each example."""
+    """Judge configuration — determines how to score each example.
 
-    type: Literal[
-        "exact_match", "llm", "custom", "composite", "rag", "pairwise", "safety"
-    ] = "exact_match"
+    ``type`` is one of the built-in judges (``exact_match``, ``llm``, ``custom``,
+    ``composite``, ``rag``, ``pairwise``, ``safety``) or a plugin-registered type
+    (see ``llmci.plugins``). Validation of the type happens in ``create_judge`` so
+    plugin types are accepted.
+    """
+
+    type: str = "exact_match"
     model: str | None = None
     rubric: list[RubricCriterion] | str | None = None
     module: str | None = None
@@ -103,6 +107,9 @@ class LlmciConfig(BaseModel):
     target: TargetConfig
     evals: list[EvalConfig]
     settings: Settings = Field(default_factory=Settings)
+    # Dotted module paths imported at load time so their top-level register_judge()
+    # calls run, enabling local/in-repo judge plugins. See llmci.plugins.
+    plugins: list[str] = Field(default_factory=list)
 
 
 # --- Runtime data models (not from config) ---

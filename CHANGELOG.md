@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Plugin / extension API for judges** — register a custom `judge.type` without forking.
+  Installed packages advertise judges via the `llmci.judges` entry-point group; local
+  repos list dotted module paths under `plugins:` in `llmci.yaml`. A plugin value is a
+  `Judge` subclass or a `(JudgeConfig) -> Judge` factory; plugin types can't shadow
+  built-ins. `JudgeConfig.type` is now an open string validated at judge-creation time.
 - **Safety / red-team judge** (`judge: {type: safety}`) — gate on `pii_leakage`
   (deterministic, no API key: scans for emails, phones, SSNs, credit cards, IPs, and
   AWS keys; `categories` narrows the scan), plus LLM-based `toxicity` and

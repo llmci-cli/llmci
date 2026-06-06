@@ -528,6 +528,51 @@ llmci judge calibrate --eval support-replies --labels labels.jsonl \
 `--min-agreement` fails when judge↔human agreement drops too low; `--max-drift` fails
 when a judge-model change shifts scores more than allowed.
 
+## Extending llmci: Custom Judge Plugins
+
+Need domain-specific scoring? Register a new `judge.type` without forking. A plugin is a
+`Judge` subclass (or a `(JudgeConfig) -> Judge` factory) registered with
+`register_judge`:
+
+```python
+# my_repo/eval_plugins.py
+from llmci.judges.base import Judge
+from llmci.models import JudgeResult
+from llmci.plugins import register_judge
+
+
+class SqlValidityJudge(Judge):
+    async def evaluate_single(self, input: str, expected: str, actual: str) -> JudgeResult:
+        ok = is_valid_sql(actual)
+        return JudgeResult(score=1.0 if ok else 0.0, reason=None if ok else "invalid SQL")
+
+
+register_judge("sql_validity", SqlValidityJudge)
+```
+
+**Local plugins** — list the module under `plugins:` so it's imported at config load:
+
+```yaml
+plugins:
+  - my_repo.eval_plugins
+
+evals:
+  - name: text2sql
+    dataset: ./evals/queries.jsonl
+    judge: {type: sql_validity}
+```
+
+**Distributable plugins** — ship a package that advertises the judge via the
+`llmci.judges` entry-point group; it's discovered automatically once installed:
+
+```toml
+# pyproject.toml of your plugin package
+[project.entry-points."llmci.judges"]
+sql_validity = "my_pkg.judges:SqlValidityJudge"
+```
+
+Plugin types are validated when the judge is built and may not shadow a built-in type.
+
 ## Dataset Tools
 
 ```bash

@@ -72,4 +72,27 @@ def create_judge(config: JudgeConfig) -> Judge:
             except ValueError as e:
                 raise ConfigError(str(e)) from e
         case _:
-            raise ConfigError(f"Unknown judge type: {config.type}")
+            return _create_plugin_judge(config)
+
+
+def _create_plugin_judge(config: JudgeConfig) -> Judge:
+    """Build a judge from a plugin-registered type, or raise a helpful error."""
+    from llmci.plugins import get_judge_factory, registered_judge_types
+
+    factory = get_judge_factory(config.type)
+    if factory is None:
+        builtins = "exact_match, llm, custom, composite, rag, pairwise, safety"
+        plugins = registered_judge_types()
+        plugin_hint = f"; plugins: {', '.join(plugins)}" if plugins else ""
+        raise ConfigError(
+            f"Unknown judge type: {config.type!r}. "
+            f"Built-in types: {builtins}{plugin_hint}."
+        )
+    try:
+        return factory(config)
+    except ConfigError:
+        raise
+    except Exception as e:
+        raise ConfigError(
+            f"Plugin judge {config.type!r} failed to build: {e}"
+        ) from e
