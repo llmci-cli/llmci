@@ -148,8 +148,10 @@ custom metrics and report sinks._
 
 - **Docs & examples** keep pace with each feature. Deterministic, API-key-free runnable
   examples now cover the safety, RAG, plugin, and calibration judges (`examples/11-14`).
-  Integration tests also exercise pairwise judging (through the runner with a mocked LLM)
-  and the machine-readable report formats (JUnit/SARIF/JSON/HTML) on a real result.
+  Integration tests also exercise pairwise judging, response caching, and flake-resistance
+  sampling/CI through the runner (with a mocked LLM), plus the machine-readable report
+  formats (JUnit/SARIF/JSON/HTML) on a real result. Every prototyped feature now has
+  end-to-end coverage.
 - **Determinism guardrails**: warn when a config has no baseline, or thresholds with no
   significance config once item 1 lands.
 - **Performance**: keep PR feedback under a few minutes; caching (item 2) and parallelism
