@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-06
+
+Post-0.2.0 follow-ups: judge caching, calibration trends, gate trust warnings,
+per-claim RAG faithfulness, LLM red-team mutation, and multimodal direct targets.
+
 ### Added
 - **Multimodal direct targets** — dataset rows can include `images` and/or `audio`
   fields (paths relative to the dataset file, or HTTPS/data URLs). Direct API targets
@@ -26,6 +31,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Calibration trend history** — `--save-snapshot` appends each run to
   `.llmci/calibration/<eval>-history.jsonl`; `llmci judge calibrate` shows a trend
   table when two or more calibration runs exist.
+
+### Fixed
+- Calibration timestamps use `timezone.utc` for Python 3.10 mypy compatibility.
 
 ## [0.2.0] - 2026-06-06
 
@@ -237,6 +245,7 @@ Initial public release on PyPI as [`llmci`](https://pypi.org/project/llmci/).
 **Examples**
 - Nine runnable examples: CI regression, model migration, LLM judge, custom judge, agent single/multi-turn, RAG pipeline, FastAPI service, summarization QA
 
+[0.3.0]: https://github.com/llmci-cli/llmci/releases/tag/v0.3.0
 [0.2.0]: https://github.com/llmci-cli/llmci/releases/tag/v0.2.0
 [0.1.9]: https://github.com/llmci-cli/llmci/releases/tag/v0.1.9
 [0.1.8]: https://github.com/llmci-cli/llmci/releases/tag/v0.1.8

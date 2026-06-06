@@ -851,7 +851,7 @@ Ticket: <span class="string">{input}</span></pre>
       - <span class="key">uses</span>: <span class="string">llmci-cli/llmci@main</span>
         <span class="key">with</span>:
           <span class="key">compare-to</span>: <span class="string">origin/main</span>
-          <span class="key">llmci-version</span>: <span class="string">0.2.0</span>
+          <span class="key">llmci-version</span>: <span class="string">0.3.0</span>
         <span class="key">env</span>:
           <span class="key">OPENAI_API_KEY</span>: <span class="string">${{ secrets.OPENAI_API_KEY }}</span></pre>
 
@@ -1057,7 +1057,7 @@ result = run_for_llmci_sync(build_agent(), {<span class="string">"query"</span>:
     <span class="key">compare-to</span>: <span class="string">origin/main</span>       <span class="comment"># baseline branch</span>
     <span class="key">smoke</span>: <span class="string">false</span>                   <span class="comment"># run full dataset</span>
     <span class="key">working-directory</span>: <span class="string">.</span>           <span class="comment"># dir with llmci.yaml</span>
-    <span class="key">llmci-version</span>: <span class="string">0.2.0</span>            <span class="comment"># exact package version</span>
+    <span class="key">llmci-version</span>: <span class="string">0.3.0</span>            <span class="comment"># exact package version</span>
   <span class="key">env</span>:
     <span class="key">OPENAI_API_KEY</span>: <span class="string">${{ secrets.OPENAI_API_KEY }}</span></pre>
 
@@ -1076,7 +1076,7 @@ result = run_for_llmci_sync(build_agent(), {<span class="string">"query"</span>:
           <tr><td><code>working-directory</code></td><td><code>.</code></td><td>Directory containing llmci.yaml</td></tr>
           <tr><td><code>output</code></td><td>(none)</td><td>Write report to a file path</td></tr>
           <tr><td><code>github-token</code></td><td><code>github.token</code></td><td>Token for posting PR comments</td></tr>
-          <tr><td><code>llmci-version</code></td><td><code>0.2.0</code></td><td>Exact llmci package version to install</td></tr>
+          <tr><td><code>llmci-version</code></td><td><code>0.3.0</code></td><td>Exact llmci package version to install</td></tr>
         </table>
       </section>
 
