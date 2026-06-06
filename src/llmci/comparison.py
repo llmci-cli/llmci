@@ -100,7 +100,7 @@ def check_thresholds(
                 result.significance if (ci is not None and result.significance) else None
             )
 
-            from llmci.metrics import LOWER_IS_BETTER
+            from llmci.metrics import is_lower_is_better
 
             passed, detail, significant = _evaluate_threshold(
                 current=current,
@@ -109,7 +109,7 @@ def check_thresholds(
                 mode=metric.mode,
                 ci=ci,
                 significance=significance,
-                lower_is_better=metric.name in LOWER_IS_BETTER,
+                lower_is_better=is_lower_is_better(metric.name),
             )
 
             waived = significant is False and "not significant" in detail

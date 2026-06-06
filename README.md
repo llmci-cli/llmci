@@ -573,6 +573,34 @@ sql_validity = "my_pkg.judges:SqlValidityJudge"
 
 Plugin types are validated when the judge is built and may not shadow a built-in type.
 
+### Custom metrics
+
+Register a custom **metric** the same way. A metric function takes a `MetricContext`
+(examples, target results, judge results, and the indices/scores of non-errored examples)
+and returns one aggregate float — then it's gateable by name like any built-in:
+
+```python
+from llmci.plugins import MetricContext, register_metric
+
+
+def answer_length(ctx: MetricContext) -> float:
+    lengths = [len(ctx.results[i].output) for i in ctx.valid_indices]
+    return sum(lengths) / len(lengths) if lengths else 0.0
+
+
+register_metric("answer_length", answer_length, lower_is_better=True)
+```
+
+```yaml
+metrics:
+  - {name: answer_length, threshold: 600, mode: absolute}   # avg chars must stay <= 600
+```
+
+Pass `lower_is_better=True` to flip the threshold direction (like cost/latency). Metric
+plugins also load from the `llmci.metrics` entry-point group for distribution. See
+[`examples/13-plugin-judge`](examples/13-plugin-judge/), which registers both a judge and
+a metric.
+
 ## Dataset Tools
 
 ```bash

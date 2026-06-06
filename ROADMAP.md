@@ -136,11 +136,13 @@ and more PII categories / a configurable allow-list._
 - Stable entry-point API for third-party judges, metrics, and report sinks so the
   ecosystem can extend llmci without forking.
 
-_Landed: a judge registry (`llmci.plugins`) with two registration paths — the
-`llmci.judges` entry-point group for installed packages, and a `plugins:` list of dotted
-module paths in `llmci.yaml` for local plugins. `create_judge` consults the registry for
-unknown types; plugin types can't shadow built-ins. Follow-up: extend the same pattern to
-custom metrics and report sinks._
+_Landed: a registry (`llmci.plugins`) for **judges and metrics**, with two registration
+paths each — the `llmci.judges` / `llmci.metrics` entry-point groups for installed
+packages, and a `plugins:` list of dotted module paths in `llmci.yaml` for local plugins.
+`create_judge` consults the registry for unknown judge types; `compute_metrics` resolves
+unknown metric names from the registry (with `lower_is_better` direction support). Plugin
+names can't shadow built-ins. Example: `examples/13-plugin-judge` registers both a judge
+and a metric. Follow-up: extend the same pattern to report sinks._
 
 ---
 

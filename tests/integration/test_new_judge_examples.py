@@ -52,10 +52,11 @@ async def test_plugin_judge_example(monkeypatch):
     monkeypatch.chdir(EXAMPLES_DIR / "13-plugin-judge")
     config = load_config()
 
-    # The plugins: list in llmci.yaml should have registered the judge on load.
-    from llmci.plugins import registered_judge_types
+    # The plugins: list in llmci.yaml should have registered the judge and metric on load.
+    from llmci.plugins import registered_judge_types, registered_metric_names
 
     assert "json_schema" in registered_judge_types()
+    assert "json_field_coverage" in registered_metric_names()
 
     results = await run_all_evals(config)
     assert len(results) == 1
@@ -64,3 +65,5 @@ async def test_plugin_judge_example(monkeypatch):
     assert result.num_examples == 4
     assert result.num_errors == 0
     assert result.metrics["accuracy"] == 1.0
+    # Custom metric plugin computed and surfaced by name.
+    assert result.metrics["json_field_coverage"] == 1.0

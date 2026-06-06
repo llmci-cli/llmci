@@ -18,6 +18,28 @@ LOWER_IS_BETTER = frozenset({
     "tokens_in_mean", "tokens_out_mean", "tokens_total_mean",
 })
 
+# All metric names llmci computes itself. Plugin metrics may not shadow these.
+BUILTIN_METRIC_NAMES = frozenset({
+    "pass_rate", "mean_score", "median_score", "min_score", "max_score",
+    "accuracy", "error_rate", "rubric_pass_rate",
+    "f1_macro", "f1_micro", "f1_weighted",
+    "precision_macro", "precision_micro", "precision_weighted",
+    "recall_macro", "recall_micro", "recall_weighted",
+    "latency_mean", "latency_p50", "latency_p90", "latency_p99",
+    "cost_total", "cost_mean",
+    "tokens_in_mean", "tokens_out_mean", "tokens_total_mean",
+    "cosine_similarity",
+})
+
+
+def is_lower_is_better(name: str) -> bool:
+    """Whether a metric (built-in or plugin-registered) is lower-is-better."""
+    if name in LOWER_IS_BETTER:
+        return True
+    from llmci.plugins import metric_is_lower_is_better
+
+    return metric_is_lower_is_better(name)
+
 
 def compute_metrics(
     examples: list[EvalExample],
@@ -96,6 +118,15 @@ def compute_metrics(
     for name, value in _compute_subscore_metrics(per_example, valid_indices).items():
         available.setdefault(name, value)
 
+    # Any still-unresolved requested metric may be provided by a plugin.
+    unresolved = [name for name in requested if name not in available]
+    if unresolved:
+        available.update(
+            _compute_plugin_metrics(
+                unresolved, examples, results, per_example, valid_indices, valid_scores
+            )
+        )
+
     output = {}
     for name in requested:
         if name in available:
@@ -127,6 +158,40 @@ def _needs_cost_metrics(requested: list[str]) -> bool:
         "tokens_in_mean", "tokens_out_mean", "tokens_total_mean",
     }
     return bool(set(requested) & cost_metrics)
+
+
+def _compute_plugin_metrics(
+    names: list[str],
+    examples: list[EvalExample],
+    results: list[TargetResult],
+    per_example: list[JudgeResult],
+    valid_indices: list[int],
+    valid_scores: list[float],
+) -> dict[str, float]:
+    """Resolve requested metrics from the plugin registry, if registered."""
+    from llmci.plugins import MetricContext, get_metric_fn
+
+    ctx: MetricContext | None = None
+    computed: dict[str, float] = {}
+    for name in names:
+        fn = get_metric_fn(name)
+        if fn is None:
+            continue
+        if ctx is None:
+            ctx = MetricContext(
+                examples=examples,
+                results=results,
+                per_example=per_example,
+                valid_indices=valid_indices,
+                scores=valid_scores,
+            )
+        try:
+            computed[name] = float(fn(ctx))
+        except Exception:
+            # A broken plugin metric shouldn't crash the run; fall through to the
+            # pass_rate default applied by the caller.
+            continue
+    return computed
 
 
 def _compute_subscore_metrics(

@@ -1,19 +1,26 @@
-# 13: Custom Judge Plugin
+# 13: Custom Judge & Metric Plugins
 
-Registers a project-specific `judge.type` **without forking llmci**, using the plugin
-API. The `json_schema` judge checks that each response is valid JSON containing the
-required keys.
+Registers a project-specific `judge.type` **and** a custom metric **without forking
+llmci**, using the plugin API. The `json_schema` judge checks that each response is valid
+JSON containing the required keys; the `json_field_coverage` metric tracks the mean
+fraction of required keys present.
 
 ## What it shows
 - A local judge plugin registered via `register_judge(...)`
-- Loading it with a `plugins:` list in `llmci.yaml` (no packaging needed)
-- Referencing the plugin as `judge: {type: json_schema}`
+- A local metric plugin registered via `register_metric(...)`, gateable by name
+- Loading both with a `plugins:` list in `llmci.yaml` (no packaging needed)
 
 ## How it works
-`eval_plugins.py` defines a `Judge` subclass and calls `register_judge("json_schema", ...)`
-at import time. `llmci.yaml` lists the module under `plugins:`, so llmci imports it during
-config load and the new judge type becomes available. The dataset's `expected` field lists
-the required top-level keys.
+`eval_plugins.py` defines a `Judge` subclass and a metric function, then calls
+`register_judge("json_schema", ...)` and `register_metric("json_field_coverage", ...)` at
+import time. `llmci.yaml` lists the module under `plugins:`, so llmci imports it during
+config load and both become available. The dataset's `expected` field lists the required
+top-level keys.
+
+A metric function receives a `MetricContext` (examples, target results, judge results,
+and the indices/scores of non-errored examples) and returns one aggregate float. Pass
+`lower_is_better=True` to `register_metric` to flip the threshold direction (like cost or
+latency).
 
 ## How to run
 ```bash

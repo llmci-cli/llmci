@@ -16,6 +16,7 @@ evals:
       type: json_schema      # provided by eval_plugins.py
     metrics:
       - {name: accuracy, threshold: 1.0, mode: absolute}
+      - {name: json_field_coverage, threshold: 1.0, mode: absolute}   # custom metric plugin
 
 settings:
   parallelism: 5

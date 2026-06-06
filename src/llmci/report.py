@@ -156,9 +156,9 @@ def _current_str(value: float, ci: tuple[float, float] | None) -> str:
 
 def _threshold_str(threshold: float, mode: str, metric_name: str = "") -> str:
     """Human-readable threshold string."""
-    from llmci.metrics import LOWER_IS_BETTER
+    from llmci.metrics import is_lower_is_better
 
-    lower = metric_name in LOWER_IS_BETTER
+    lower = is_lower_is_better(metric_name)
     if mode == "absolute":
         return f"≤ {threshold}" if lower else f"≥ {threshold}"
     elif mode == "max_regression":
