@@ -149,11 +149,11 @@ def _run_config(
 
         cache = ResponseCache(enabled=cache_enabled, refresh=refresh_cache)
 
-        # Load baselines up front so pairwise judging can compare against them
-        # while the eval runs.
+        # Load baselines up front so pairwise judging and max_regression thresholds
+        # can compare against them while the eval runs.
+        eval_names = [e.name for e in config.evals]
         baselines = None
         if compare_to:
-            eval_names = [e.name for e in config.evals]
             raw_baselines = load_all_baselines(eval_names, ref=compare_to)
             if raw_baselines:
                 baselines = raw_baselines
@@ -161,6 +161,15 @@ def _run_config(
                     click.echo(f"Loaded {len(baselines)} baseline(s) from {compare_to}")
             elif verbose:
                 click.echo(f"No baselines found on {compare_to}")
+        else:
+            # Fall back to committed/on-disk baselines (e.g. after --update-baseline).
+            raw_baselines = load_all_baselines(eval_names)
+            if raw_baselines:
+                baselines = raw_baselines
+                if verbose:
+                    click.echo(
+                        f"Loaded {len(baselines)} baseline(s) from .llmci/baselines/"
+                    )
 
         try:
             results = asyncio.run(

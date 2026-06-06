@@ -1,0 +1,8 @@
+{"input": "My printer won't connect to wifi", "expected": "hardware"}
+{"input": "I need a refund for order #882", "expected": "billing"}
+{"input": "How do I reset my password?", "expected": "account"}
+{"input": "The app crashes when I open settings", "expected": "software"}
+{"input": "Can I upgrade my subscription plan?", "expected": "billing"}
+{"input": "My monitor has dead pixels", "expected": "hardware"}
+{"input": "I was charged twice for the same order", "expected": "billing"}
+{"input": "How do I export my data?", "expected": "account"}

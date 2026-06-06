@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Integrated CI gate example** (`examples/17-integrated-ci-gate`) — one config that
+  stacks quality (`accuracy`), cost/token regression vs committed baselines
+  (`cost_mean`, `tokens_in_mean`), and safety (`pii_leakage`) in a single pre-merge
+  gate. Fully deterministic, API-key-free, with committed baselines and failure toggles
+  for each concern.
+- **Auto-load local baselines** — when `--compare-to` is omitted, `llmci run` loads
+  baselines from `.llmci/baselines/` on disk so checked-in baselines work without a git
+  ref (PR flows still use `--compare-to=origin/main`).
 - **LLM judge-call caching** — the `pairwise`, `rag`, and `safety` judges now cache their
   scoring calls under `.llmci/cache/judges/` (keyed on model + prompt), via a shared helper
   that honors the same `--no-cache` / `--refresh-cache` flags as target caching. This

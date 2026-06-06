@@ -164,7 +164,9 @@ complete._
 
 - **Docs & examples** keep pace with each feature. Deterministic, API-key-free runnable
   examples now cover the safety, RAG, plugin, calibration, red-team, and
-  structured-output flows (`examples/11-16`).
+  structured-output flows (`examples/11-16`), plus a stacked Now-tier dogfood gate
+  (`examples/17-integrated-ci-gate`: quality + cost regression + safety with committed
+  baselines).
   Integration tests also exercise pairwise judging, response caching, and flake-resistance
   sampling/CI through the runner (with a mocked LLM), plus the machine-readable report
   formats (JUnit/SARIF/JSON/HTML) on a real result, and custom report sinks end-to-end

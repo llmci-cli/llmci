@@ -334,6 +334,11 @@ Then compare PRs against that baseline:
 llmci run --compare-to=main
 ```
 
+Committed baselines under `.llmci/baselines/` are also loaded automatically when you run
+without `--compare-to` — handy for repos that check baselines into git. See
+[`examples/17-integrated-ci-gate`](examples/17-integrated-ci-gate/) for a stacked gate
+(quality + cost regression + safety) that uses this pattern.
+
 Baselines also store per-example outputs, so when a PR regresses, the report shows an
 **Output Diffs vs Baseline** section — the baseline output next to the current output
 for each regressed example (matched by input), in both the markdown and HTML reports.
@@ -762,9 +767,11 @@ The [`llmci-testbed`](https://github.com/llmci-cli/llmci-testbed) repository is 
 | [`14-judge-calibration`](examples/14-judge-calibration/) | `judge calibrate`: judge↔human agreement + drift |
 | [`15-redteam`](examples/15-redteam/) | `redteam generate`: adversarial dataset gated by the safety judge |
 | [`16-structured-output`](examples/16-structured-output/) | `structured` judge: validate JSON output against a JSON Schema |
+| [`17-integrated-ci-gate`](examples/17-integrated-ci-gate/) | Stacked Now-tier gate: quality + cost regression + safety |
 
-Examples 11–16 are fully deterministic and run with **no API key** — handy for trying
-the safety, RAG, plugin, calibration, red-team, and structured-output features locally.
+Examples 11–17 are fully deterministic and run with **no API key** — handy for trying
+the safety, RAG, plugin, calibration, red-team, structured-output, and integrated-gate
+features locally.
 
 ## CLI Reference
 
