@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Judge calibration & drift detection** — `llmci judge calibrate --eval <name>
+  --labels <file>` runs a configured judge over a human-labeled set and reports
+  judge↔human agreement (agreement rate, Cohen's kappa, MAE, Pearson r). A calibration
+  snapshot (`.llmci/calibration/<eval>.json`, written with `--save-snapshot`) records
+  the judge model and scores so a later run flags drift when the judge model changes.
+  Gate with `--min-agreement` and/or `--max-drift`.
 - **Machine-readable & shareable report formats** — `llmci run --output-format
   junit|sarif|json|html` for CI systems beyond GitHub Actions. `html` is a
   self-contained, shareable run report (summary, regressions, per-example results).

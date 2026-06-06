@@ -453,6 +453,45 @@ Gold retrieval labels live on each dataset row as `relevant_ids`:
 The retrieval criteria (`retrieval_recall` / `retrieval_precision`) are deterministic
 and need no API key; the faithfulness/relevance criteria call the configured judge model.
 
+## Judge Calibration & Drift
+
+An LLM judge is only worth gating on if it agrees with humans — and judges drift
+silently when you bump the judge model. `llmci judge calibrate` measures both:
+
+```bash
+llmci judge calibrate --eval support-replies --labels labels.jsonl --save-snapshot
+```
+
+The labeled set is JSONL where each row carries the output to score and a human label
+(`1`/`0`, `true`/`false`, `pass`/`fail`, or a float in `[0, 1]`):
+
+```json
+{"input": "How do I reset my password?", "output": "Click 'Forgot password'…", "human_score": 1}
+{"input": "Is my data encrypted?", "output": "idk", "human_score": 0}
+```
+
+It runs the eval's configured judge over those examples and reports agreement:
+
+| Metric | Meaning |
+|--------|---------|
+| Agreement rate | Fraction where judge and human agree on pass/fail (threshold 0.5) |
+| Cohen's kappa | Agreement beyond chance (`slight` … `almost perfect`) |
+| Mean abs error | Average distance between judge and human scores |
+| Pearson r | Correlation between judge and human scores |
+
+`--save-snapshot` records the judge model and its per-example scores under
+`.llmci/calibration/<eval>.json`. A later run compares against that snapshot and reports
+**drift** — the mean change in scores on the same labeled set — flagging when the judge
+model changed. Gate it in CI:
+
+```bash
+llmci judge calibrate --eval support-replies --labels labels.jsonl \
+  --min-agreement 0.80 --max-drift 0.10
+```
+
+`--min-agreement` fails when judge↔human agreement drops too low; `--max-drift` fails
+when a judge-model change shifts scores more than allowed.
+
 ## Dataset Tools
 
 ```bash
@@ -509,6 +548,7 @@ The [`llmci-testbed`](https://github.com/llmci-cli/llmci-testbed) repository is 
 ```
 llmci run              Run evals and report results
 llmci migrate          Optimize prompts for a new model
+llmci judge calibrate  Measure judge↔human agreement and detect drift
 llmci init             Generate llmci.yaml interactively
 llmci dataset init     Create a new eval dataset
 llmci dataset add      Add examples interactively
@@ -518,7 +558,7 @@ llmci import-promptfoo Convert a Promptfoo config
 ```
 
 Key `run` flags: `--config`, `--all`, `--compare-to`, `--update-baseline`,
-`--output`, `--output-format` (markdown/junit/sarif/json), `--no-cache`,
+`--output`, `--output-format` (markdown/junit/sarif/json/html), `--no-cache`,
 `--refresh-cache`, `--samples`, `--significance`, `--smoke`.
 
 Global flags: `-v` (verbose), `--debug` (full logging), `--version`.

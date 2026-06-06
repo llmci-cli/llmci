@@ -1,0 +1,293 @@
+"""Judge calibration and drift detection.
+
+LLM judges drift across model versions and can quietly disagree with humans, which
+erodes trust in the gate. ``llmci judge calibrate`` runs a configured judge over a
+human-labeled set and reports how well the judge agrees with the labels
+(agreement rate, Cohen's kappa, MAE, Pearson correlation).
+
+It also detects *drift*: a calibration snapshot records the judge model and its
+per-example scores. When you re-run with a different judge model, the mean absolute
+change in scores on the same labeled set is reported so a model swap can't silently
+shift the gate.
+"""
+
+from __future__ import annotations
+
+import json
+import math
+import statistics
+from dataclasses import dataclass, field
+from pathlib import Path
+
+from llmci.errors import DatasetError
+from llmci.judges.base import Judge
+from llmci.models import EvalExample, JudgeResult, TargetResult
+
+SNAPSHOT_DIR = Path(".llmci/calibration")
+
+
+@dataclass
+class LabeledExample:
+    """A judge calibration example: the output to judge plus a human score."""
+
+    input: str
+    expected: str
+    output: str
+    human_score: float
+
+
+def load_labeled_set(path: Path) -> list[LabeledExample]:
+    """Load a JSONL labeled set: {input, output, human_score, [expected]} per line.
+
+    ``human_score`` may be a number in [0, 1], a bool, or "pass"/"fail".
+    """
+    if not path.exists():
+        raise DatasetError(f"Labeled set not found: {path}")
+
+    labeled: list[LabeledExample] = []
+    with path.open() as f:
+        for line_num, line in enumerate(f, start=1):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError as e:
+                raise DatasetError(
+                    f"Malformed JSON at {path} line {line_num}: {e}"
+                ) from e
+            if "input" not in row or "output" not in row or "human_score" not in row:
+                raise DatasetError(
+                    f"Line {line_num} needs 'input', 'output', and 'human_score' fields."
+                )
+            labeled.append(LabeledExample(
+                input=row["input"],
+                expected=row.get("expected", ""),
+                output=row["output"],
+                human_score=_normalize_score(row["human_score"]),
+            ))
+
+    if not labeled:
+        raise DatasetError(f"Labeled set is empty: {path}")
+    return labeled
+
+
+def _normalize_score(value: object) -> float:
+    if isinstance(value, bool):
+        return 1.0 if value else 0.0
+    if isinstance(value, (int, float)):
+        return max(0.0, min(1.0, float(value)))
+    if isinstance(value, str):
+        v = value.strip().lower()
+        if v in ("pass", "true", "yes", "1"):
+            return 1.0
+        if v in ("fail", "false", "no", "0"):
+            return 0.0
+    raise DatasetError(f"Unrecognized human_score: {value!r}")
+
+
+@dataclass
+class CalibrationResult:
+    """Judge↔human agreement metrics plus the raw scores used to compute them."""
+
+    model: str
+    n: int
+    agreement_rate: float
+    cohens_kappa: float
+    mae: float
+    pearson: float
+    judge_scores: list[float] = field(default_factory=list)
+    human_scores: list[float] = field(default_factory=list)
+    inputs: list[str] = field(default_factory=list)
+
+
+def compute_agreement(
+    judge_scores: list[float],
+    human_scores: list[float],
+) -> tuple[float, float, float, float]:
+    """Return (agreement_rate, cohens_kappa, mae, pearson) for paired scores."""
+    n = len(judge_scores)
+    if n == 0:
+        return (0.0, 0.0, 0.0, 0.0)
+
+    judge_bin = [s >= 0.5 for s in judge_scores]
+    human_bin = [s >= 0.5 for s in human_scores]
+
+    agreements = sum(1 for j, h in zip(judge_bin, human_bin) if j == h)
+    agreement_rate = agreements / n
+
+    mae = sum(abs(j - h) for j, h in zip(judge_scores, human_scores)) / n
+    kappa = _cohens_kappa(judge_bin, human_bin)
+    pearson = _pearson(judge_scores, human_scores)
+    return (agreement_rate, kappa, mae, pearson)
+
+
+def _cohens_kappa(a: list[bool], b: list[bool]) -> float:
+    """Cohen's kappa for two binary raters."""
+    n = len(a)
+    if n == 0:
+        return 0.0
+    po = sum(1 for x, y in zip(a, b) if x == y) / n
+    pa_true = sum(a) / n
+    pb_true = sum(b) / n
+    pe = pa_true * pb_true + (1 - pa_true) * (1 - pb_true)
+    if pe >= 1.0:
+        return 1.0 if po >= 1.0 else 0.0
+    return (po - pe) / (1 - pe)
+
+
+def _pearson(x: list[float], y: list[float]) -> float:
+    """Pearson correlation; 0.0 when either series has no variance."""
+    n = len(x)
+    if n < 2:
+        return 0.0
+    mx = statistics.fmean(x)
+    my = statistics.fmean(y)
+    cov = sum((xi - mx) * (yi - my) for xi, yi in zip(x, y))
+    var_x = sum((xi - mx) ** 2 for xi in x)
+    var_y = sum((yi - my) ** 2 for yi in y)
+    if var_x == 0 or var_y == 0:
+        return 0.0
+    return cov / math.sqrt(var_x * var_y)
+
+
+async def run_calibration(
+    judge: Judge, model: str, labeled: list[LabeledExample]
+) -> CalibrationResult:
+    """Run the judge over the labeled set and compute agreement metrics."""
+    examples = [EvalExample(input=le.input, expected=le.expected) for le in labeled]
+    results = [TargetResult(output=le.output, latency_ms=0.0) for le in labeled]
+
+    judged: list[JudgeResult] = await judge.evaluate_dataset(examples, results)
+    judge_scores = [jr.score for jr in judged]
+    human_scores = [le.human_score for le in labeled]
+
+    agreement, kappa, mae, pearson = compute_agreement(judge_scores, human_scores)
+    return CalibrationResult(
+        model=model,
+        n=len(labeled),
+        agreement_rate=agreement,
+        cohens_kappa=kappa,
+        mae=mae,
+        pearson=pearson,
+        judge_scores=judge_scores,
+        human_scores=human_scores,
+        inputs=[le.input for le in labeled],
+    )
+
+
+@dataclass
+class DriftResult:
+    """Drift of judge scores vs a stored snapshot from a different model."""
+
+    previous_model: str
+    current_model: str
+    model_changed: bool
+    mean_abs_change: float
+    n_compared: int
+
+
+def snapshot_path(eval_name: str, snapshot_dir: Path | None = None) -> Path:
+    return (snapshot_dir or SNAPSHOT_DIR) / f"{eval_name}.json"
+
+
+def load_snapshot(eval_name: str, snapshot_dir: Path | None = None) -> dict | None:
+    path = snapshot_path(eval_name, snapshot_dir)
+    if not path.exists():
+        return None
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def save_snapshot(
+    eval_name: str,
+    result: CalibrationResult,
+    snapshot_dir: Path | None = None,
+) -> Path:
+    path = snapshot_path(eval_name, snapshot_dir)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "model": result.model,
+        "scores_by_input": dict(zip(result.inputs, result.judge_scores)),
+    }
+    path.write_text(json.dumps(payload, indent=2) + "\n")
+    return path
+
+
+def compute_drift(result: CalibrationResult, snapshot: dict | None) -> DriftResult | None:
+    """Compare current judge scores against a snapshot, matched by input."""
+    if not snapshot:
+        return None
+    prev_scores = snapshot.get("scores_by_input", {})
+    prev_model = snapshot.get("model", "unknown")
+
+    paired = [
+        (result.judge_scores[i], prev_scores[inp])
+        for i, inp in enumerate(result.inputs)
+        if inp in prev_scores
+    ]
+    if not paired:
+        return None
+
+    mean_abs_change = sum(abs(cur - prev) for cur, prev in paired) / len(paired)
+    return DriftResult(
+        previous_model=prev_model,
+        current_model=result.model,
+        model_changed=prev_model != result.model,
+        mean_abs_change=mean_abs_change,
+        n_compared=len(paired),
+    )
+
+
+def format_calibration_report(
+    result: CalibrationResult,
+    drift: DriftResult | None = None,
+) -> str:
+    """Render a human-readable calibration report."""
+    lines = [
+        "## Judge Calibration",
+        "",
+        f"Judge model: `{result.model}`  ·  labeled examples: {result.n}",
+        "",
+        "| Metric | Value |",
+        "|--------|-------|",
+        f"| Agreement rate | {result.agreement_rate:.3f} |",
+        f"| Cohen's kappa | {result.cohens_kappa:.3f} |",
+        f"| Mean abs error | {result.mae:.3f} |",
+        f"| Pearson r | {result.pearson:.3f} |",
+        "",
+        f"_Interpretation: {_kappa_label(result.cohens_kappa)} agreement beyond chance._",
+    ]
+    if drift is not None:
+        lines.append("")
+        lines.append("### Drift vs snapshot")
+        change = "changed" if drift.model_changed else "unchanged"
+        lines.append(
+            f"Judge model {change} (`{drift.previous_model}` → `{drift.current_model}`); "
+            f"mean score change {drift.mean_abs_change:.3f} over {drift.n_compared} examples."
+        )
+    return "\n".join(lines)
+
+
+def _kappa_label(kappa: float) -> str:
+    if kappa < 0.0:
+        return "worse-than-chance"
+    if kappa < 0.20:
+        return "slight"
+    if kappa < 0.40:
+        return "fair"
+    if kappa < 0.60:
+        return "moderate"
+    if kappa < 0.80:
+        return "substantial"
+    return "almost perfect"
+
+
+__all__ = [
+    "LabeledExample", "load_labeled_set", "CalibrationResult", "compute_agreement",
+    "run_calibration", "DriftResult", "compute_drift", "save_snapshot",
+    "load_snapshot", "format_calibration_report",
+]

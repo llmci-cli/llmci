@@ -519,6 +519,123 @@ def _format_optional_score(score: float | None) -> str:
 
 
 @cli.group()
+def judge() -> None:
+    """Calibrate and monitor LLM judges."""
+    pass
+
+
+@judge.command("calibrate")
+@click.option("--eval", "eval_name", required=True, help="Eval whose judge to calibrate.")
+@click.option(
+    "--labels",
+    required=True,
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="JSONL labeled set: {input, output, human_score, [expected]} per line.",
+)
+@click.option(
+    "--config",
+    "config_path",
+    default="llmci.yaml",
+    type=click.Path(exists=False, dir_okay=False, path_type=Path),
+    help="Path to llmci config file.",
+)
+@click.option(
+    "--min-agreement",
+    default=None,
+    type=float,
+    help="Fail (exit 1) if judge↔human agreement falls below this.",
+)
+@click.option(
+    "--max-drift",
+    default=None,
+    type=float,
+    help="Fail if mean score change vs the saved snapshot exceeds this.",
+)
+@click.option(
+    "--save-snapshot",
+    is_flag=True,
+    help="Write/update the calibration snapshot for future drift checks.",
+)
+@click.option("--output", default=None, type=click.Path(), help="Write report to file.")
+def judge_calibrate(
+    eval_name: str,
+    labels: Path,
+    config_path: Path,
+    min_agreement: float | None,
+    max_drift: float | None,
+    save_snapshot: bool,
+    output: str | None,
+) -> None:
+    """Measure judge↔human agreement and detect judge-model drift."""
+    from llmci.calibrate import (
+        compute_drift,
+        format_calibration_report,
+        load_labeled_set,
+        load_snapshot,
+        run_calibration,
+    )
+    from llmci.calibrate import save_snapshot as write_snapshot
+    from llmci.config import find_eval, load_config
+    from llmci.judges.factory import create_judge
+
+    try:
+        config = load_config(config_path)
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+    try:
+        eval_cfg = find_eval(config, eval_name)
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+    try:
+        judge_obj = create_judge(eval_cfg.judge)
+        labeled = load_labeled_set(labels)
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+    model = eval_cfg.judge.model or "default"
+    snapshot = load_snapshot(eval_name)
+
+    try:
+        result = asyncio.run(run_calibration(judge_obj, model, labeled))
+    except Exception as e:
+        click.echo(f"Error during calibration: {e}", err=True)
+        sys.exit(1)
+
+    drift = compute_drift(result, snapshot)
+    report = format_calibration_report(result, drift)
+
+    if output:
+        Path(output).write_text(report + "\n")
+    else:
+        click.echo(report)
+
+    if save_snapshot:
+        path = write_snapshot(eval_name, result)
+        click.echo(f"\nSnapshot saved: {path}")
+
+    exit_code = 0
+    if min_agreement is not None and result.agreement_rate < min_agreement:
+        click.echo(
+            f"\nFAIL: agreement {result.agreement_rate:.3f} < required {min_agreement:.3f}",
+            err=True,
+        )
+        exit_code = 1
+    if max_drift is not None and drift is not None and drift.mean_abs_change > max_drift:
+        click.echo(
+            f"\nFAIL: judge drift {drift.mean_abs_change:.3f} > allowed {max_drift:.3f}",
+            err=True,
+        )
+        exit_code = 1
+
+    sys.exit(exit_code)
+
+
+@cli.group()
 def dataset() -> None:
     """Create and manage eval datasets."""
     pass

@@ -55,6 +55,9 @@ Everything currently assumes GitHub Actions + PR comments. Structured output unl
 Once the gate is trustworthy, raise the ceiling on *what* it can catch and how
 reviewers act on failures.
 
+> **Status:** all five Next-tier items (5–9) have a working prototype landed (see
+> CHANGELOG `[Unreleased]`). Remaining follow-ups are noted per item below.
+
 ### 5. RAG-specific judges — `L` · ★★★ ✅ prototype
 The biggest demand gap vs DeepEval / Ragas.
 - Faithfulness / groundedness, context relevance, answer relevance, retrieval
@@ -85,10 +88,17 @@ _Landed: compares current vs baseline output per input; `win_rate` surfaced as a
 gateable metric; reuses per-example baseline outputs (item 6) and CI sampling (item 1).
 Follow-up: order-swap to control position bias, and judge-result caching._
 
-### 8. LLM-judge calibration & drift detection — `M` · ★★
+### 8. LLM-judge calibration & drift detection — `M` · ★★ ✅ prototype
 LLM judges drift across model versions and disagree with humans; trust erodes silently.
 - `llmci judge calibrate` to measure judge↔human agreement on a labeled set.
 - Detect judge-score drift when the judge model changes; warn in CI.
+
+_Landed: `llmci judge calibrate --eval <name> --labels <file>` runs the eval's judge
+over a human-labeled set and reports agreement rate, Cohen's kappa, MAE, and Pearson r.
+A snapshot (`.llmci/calibration/<eval>.json`, via `--save-snapshot`) records the judge
+model + scores; a later run flags drift when the model changes. Gate with
+`--min-agreement` / `--max-drift`. Follow-up: per-criterion calibration for composite/RAG
+judges, and trend history across snapshots._
 
 ### 9. Shareable HTML/Markdown run report — `S` · ★★ ✅ prototype
 A self-contained artifact beyond the PR comment.
