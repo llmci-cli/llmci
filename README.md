@@ -626,9 +626,10 @@ The [`llmci-testbed`](https://github.com/llmci-cli/llmci-testbed) repository is 
 | [`11-safety-pii`](examples/11-safety-pii/) | Safety judge with a deterministic PII-leakage gate |
 | [`12-rag-retrieval`](examples/12-rag-retrieval/) | RAG judge with deterministic retrieval recall/precision |
 | [`13-plugin-judge`](examples/13-plugin-judge/) | Custom judge type registered via the plugin API |
+| [`14-judge-calibration`](examples/14-judge-calibration/) | `judge calibrate`: judge↔human agreement + drift |
 
-Examples 11–13 are fully deterministic and run with **no API key** — handy for trying
-the safety, RAG, and plugin features locally.
+Examples 11–14 are fully deterministic and run with **no API key** — handy for trying
+the safety, RAG, plugin, and calibration features locally.
 
 ## CLI Reference
 

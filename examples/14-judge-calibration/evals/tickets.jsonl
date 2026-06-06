@@ -1,0 +1,6 @@
+{"input": "I was charged twice this month", "expected": "billing"}
+{"input": "The app crashes on startup", "expected": "technical"}
+{"input": "I can't log into my account", "expected": "account"}
+{"input": "My subscription renewed unexpectedly", "expected": "billing"}
+{"input": "Reset my password please", "expected": "account"}
+{"input": "The export button does nothing", "expected": "technical"}
