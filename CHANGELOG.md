@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **LLM attack mutation** — `llmci redteam generate --mutate` appends LLM-rephrased
+  variants of each built-in attack (`--mutate-model`, `--mutate-count`, `--no-cache`).
+  Mutated rows carry `parent_attack` and `mutated: true` metadata.
 - **Per-claim faithfulness** — RAG `faithfulness` criteria accept
   `decompose_claims: true` to extract atomic claims and score each against context
   (fraction supported), with unsupported claims listed in the judge reason.

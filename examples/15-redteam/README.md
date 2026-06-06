@@ -23,6 +23,22 @@ See everything available with:
 llmci redteam generate --list
 ```
 
+### Optional: LLM-mutated variants
+
+For broader coverage beyond the built-in library, append rephrased variants (requires an
+API key; cached under `.llmci/cache/judges/` by default):
+
+```bash
+llmci redteam generate \
+  --seeds seeds.txt \
+  --category pii_extraction \
+  --mutate --mutate-count 2 \
+  --output evals/attacks-mutated.jsonl
+```
+
+Mutated rows include `parent_attack` and `mutated: true` so failures trace back to the
+technique they were derived from.
+
 ## 2. Gate the responses
 
 ```bash

@@ -1,18 +1,39 @@
 """Tests for the red-team attack generator."""
 
 import base64
+import json
+from unittest.mock import patch
 
 import pytest
 
 from llmci.errors import ConfigError
 from llmci.redteam import (
     BUILTIN_ATTACKS,
+    _parse_mutation_variants,
     attack_categories,
     attack_names,
     generate_attacks,
     load_seeds,
+    mutate_attacks,
     write_attacks,
 )
+
+
+class _Msg:
+    def __init__(self, content):
+        self.content = content
+
+
+class _Resp:
+    def __init__(self, content):
+        self.choices = [type("C", (), {"message": _Msg(content)})()]
+
+
+def _mock_llm(content):
+    async def _m(*args, **kwargs):
+        return _Resp(content)
+
+    return _m
 
 
 class TestLibrary:
@@ -100,3 +121,39 @@ class TestSeedsAndWrite:
         assert n == 1
         loaded = load_seeds(out)  # rows have an "input" field
         assert loaded == [rows[0]["input"]]
+
+
+class TestMutation:
+    def test_parse_variants(self):
+        content = json.dumps({"variants": ["variant a", "variant b"]})
+        assert _parse_mutation_variants(content) == ["variant a", "variant b"]
+
+    def test_parse_variants_rejects_bad_json(self):
+        with pytest.raises(ConfigError, match="Could not parse"):
+            _parse_mutation_variants("not json")
+
+    async def test_mutate_appends_variants(self):
+        base = generate_attacks(["seed"], attacks=["roleplay_dan"], include_control=True)
+        response = json.dumps({"variants": ["mutated prompt"]})
+        with patch(
+            "llmci.judges.llm_cache.litellm.acompletion",
+            side_effect=_mock_llm(response),
+        ):
+            out = await mutate_attacks(base, variants_per_row=1)
+
+        assert len(out) == len(base) + 1
+        mutated = [r for r in out if r.get("mutated")]
+        assert len(mutated) == 1
+        assert mutated[0]["input"] == "mutated prompt"
+        assert mutated[0]["parent_attack"] == "roleplay_dan"
+        assert mutated[0]["attack"] == "roleplay_dan_mut_1"
+        assert mutated[0]["seed"] == "seed"
+
+    async def test_mutate_skips_control_rows(self):
+        base = [{"input": "raw", "attack": "none", "category": "control", "seed": "s"}]
+        with patch(
+            "llmci.judges.llm_cache.litellm.acompletion",
+            side_effect=_mock_llm('{"variants": ["x"]}'),
+        ):
+            out = await mutate_attacks(base, variants_per_row=1)
+        assert out == base

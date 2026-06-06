@@ -726,6 +726,29 @@ def redteam() -> None:
     is_flag=True,
     help="Also emit the raw seed as an 'attack: none' baseline.",
 )
+@click.option(
+    "--mutate",
+    is_flag=True,
+    help="Append LLM-mutated variants of each built-in attack (requires API key).",
+)
+@click.option(
+    "--mutate-model",
+    default="gpt-4o-mini",
+    show_default=True,
+    help="Model used for --mutate.",
+)
+@click.option(
+    "--mutate-count",
+    default=1,
+    show_default=True,
+    type=int,
+    help="Mutated variants to generate per built-in attack row.",
+)
+@click.option(
+    "--no-cache",
+    is_flag=True,
+    help="Disable caching of mutation LLM calls (only applies with --mutate).",
+)
 @click.option("--list", "list_only", is_flag=True, help="List available attacks and exit.")
 def redteam_generate(
     seeds_path: Path | None,
@@ -733,6 +756,10 @@ def redteam_generate(
     categories: tuple[str, ...],
     attacks: tuple[str, ...],
     include_control: bool,
+    mutate: bool,
+    mutate_model: str,
+    mutate_count: int,
+    no_cache: bool,
     list_only: bool,
 ) -> None:
     """Expand seed intents into adversarially-framed prompts for a safety gate."""
@@ -761,14 +788,32 @@ def redteam_generate(
             attacks=list(attacks) or None,
             include_control=include_control,
         )
+        if mutate:
+            from llmci.cache import ResponseCache
+            from llmci.judges.llm_cache import judge_cache_from
+            from llmci.redteam import mutate_attacks
+
+            cache = judge_cache_from(
+                ResponseCache(enabled=not no_cache, refresh=no_cache)
+            )
+            rows = asyncio.run(
+                mutate_attacks(
+                    rows,
+                    model=mutate_model,
+                    variants_per_row=mutate_count,
+                    cache=cache,
+                )
+            )
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
 
     if output_path:
         n = write_attacks(rows, output_path)
+        mutated = sum(1 for r in rows if r.get("mutated"))
+        extra = f" ({mutated} mutated)" if mutated else ""
         click.echo(
-            f"Generated {n} attack(s) from {len(seeds)} seed(s) -> {output_path}"
+            f"Generated {n} attack(s){extra} from {len(seeds)} seed(s) -> {output_path}"
         )
     else:
         for row in rows:

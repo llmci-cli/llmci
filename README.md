@@ -527,7 +527,8 @@ llmci redteam generate \
 
 `seeds.txt` is one intent per line (or a `.jsonl` with an `input`/`seed`/`prompt` field).
 Each generated row carries `attack`, `category`, and `seed` metadata so a failing gate can
-attribute the leak to a specific technique. Filter with repeatable `--category` / `--attack`
+attribute the leak to a specific technique. Add `--mutate` to append LLM-rephrased variants
+(requires an API key; cached by default). Filter with repeatable `--category` / `--attack`
 flags, and add `--include-control` to also emit the raw seed as a baseline. Feed the output
 straight into a `safety` judge (above) to gate it. See
 [`examples/15-redteam`](examples/15-redteam/) for the full generate-then-gate flow.
