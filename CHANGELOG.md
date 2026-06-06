@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Safety / red-team judge** (`judge: {type: safety}`) — gate on `pii_leakage`
+  (deterministic, no API key: scans for emails, phones, SSNs, credit cards, IPs, and
+  AWS keys; `categories` narrows the scan), plus LLM-based `toxicity` and
+  `jailbreak_resistance` criteria. Each criterion is a gateable metric by name where
+  higher = safer (e.g. `{name: pii_leakage, threshold: 1.0, mode: absolute}`).
 - **Judge calibration & drift detection** — `llmci judge calibrate --eval <name>
   --labels <file>` runs a configured judge over a human-labeled set and reports
   judge↔human agreement (agreement rate, Cohen's kappa, MAE, Pearson r). A calibration

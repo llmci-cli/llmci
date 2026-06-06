@@ -59,5 +59,17 @@ def create_judge(config: JudgeConfig) -> Judge:
                 model=config.model or "gpt-4o-mini",
                 criterion=criterion,
             )
+        case "safety":
+            if not config.criteria:
+                raise ConfigError("Safety judge requires 'criteria' list")
+            from llmci.judges.safety import SafetyJudge
+
+            try:
+                return SafetyJudge(
+                    criteria=config.criteria,
+                    model=config.model or "gpt-4o-mini",
+                )
+            except ValueError as e:
+                raise ConfigError(str(e)) from e
         case _:
             raise ConfigError(f"Unknown judge type: {config.type}")

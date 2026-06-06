@@ -148,6 +148,7 @@ target:
 | `composite` | Agent evaluation with multiple criteria | `judge: {type: composite, criteria: [...]}` |
 | `rag` | RAG pipelines (faithfulness, relevance, retrieval) | `judge: {type: rag, criteria: [...]}` |
 | `pairwise` | "Is the new output better than baseline?" (win rate) | `judge: {type: pairwise, model: gpt-4o}` |
+| `safety` | PII leakage, toxicity, jailbreak resistance | `judge: {type: safety, criteria: [...]}` |
 
 ### Metrics
 
@@ -452,6 +453,41 @@ Gold retrieval labels live on each dataset row as `relevant_ids`:
 
 The retrieval criteria (`retrieval_recall` / `retrieval_precision`) are deterministic
 and need no API key; the faithfulness/relevance criteria call the configured judge model.
+
+## Safety / Red-Team Assertions
+
+Catch safety regressions — leaked PII, toxic output, or a prompt that starts complying
+with disallowed requests — before they merge. The `safety` judge scores each criterion
+where **higher is safer** and exposes it as a gateable metric by name:
+
+```yaml
+evals:
+  - name: safety
+    dataset: ./evals/redteam.jsonl
+    judge:
+      type: safety
+      model: gpt-4o-mini          # used by the LLM-based criteria
+      criteria:
+        - {name: pii_leakage,          type: pii_leakage}            # deterministic
+        - {name: toxicity,             type: toxicity}               # LLM
+        - {name: jailbreak_resistance, type: jailbreak_resistance}   # LLM
+    metrics:
+      - {name: pii_leakage,          threshold: 1.00, mode: absolute}   # zero tolerance
+      - {name: jailbreak_resistance, threshold: 0.95, mode: absolute}
+      - {name: toxicity,             threshold: 0.02, mode: max_regression}
+```
+
+| Criterion | What it measures | Needs |
+|-----------|------------------|-------|
+| `pii_leakage` | Output is free of PII/secrets (1.0 clean, 0.0 leak) | nothing (deterministic) |
+| `toxicity` | Output is free of toxic/unsafe content | LLM |
+| `jailbreak_resistance` | Model refused/avoided a disallowed request | LLM |
+
+`pii_leakage` is deterministic and needs no API key: it scans for emails, phone numbers,
+SSNs, credit-card numbers, IPv4 addresses, and AWS keys. Narrow the scan with
+`categories: [email, ssn]` on the criterion. The `toxicity` and `jailbreak_resistance`
+criteria call the configured judge model — point your dataset's `input` at adversarial /
+red-team prompts so the judge scores how the model handled them.
 
 ## Judge Calibration & Drift
 

@@ -115,9 +115,14 @@ fold in the item-6 baseline-vs-current per-example diff once that lands._
 Valuable, but only after the gate is sticky. Several overlap with where promptfoo /
 DeepEval are already strong, so they're differentiators-of-degree, not of-kind.
 
-### 10. Safety / red-team assertions — `L` · ★★
+### 10. Safety / red-team assertions — `L` · ★★ ✅ prototype (assertions)
 - PII leakage, jailbreak resistance, toxicity checks as judge types / assertions.
 - Optional adversarial input generation for a `llmci redteam` mode.
+
+_Landed: `judge: {type: safety}` with `pii_leakage` (deterministic, no API key),
+`toxicity`, and `jailbreak_resistance` criteria; each surfaces as a gateable metric by
+name (higher = safer). Follow-up: the `llmci redteam` adversarial input-generation mode,
+and more PII categories / a configurable allow-list._
 
 ### 11. Multimodal & structured-output evals — `M` · ★
 - Image/audio inputs through litellm; JSON-schema / structured-output judging built in

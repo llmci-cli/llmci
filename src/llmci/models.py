@@ -52,7 +52,7 @@ class JudgeConfig(BaseModel):
     """Judge configuration — determines how to score each example."""
 
     type: Literal[
-        "exact_match", "llm", "custom", "composite", "rag", "pairwise"
+        "exact_match", "llm", "custom", "composite", "rag", "pairwise", "safety"
     ] = "exact_match"
     model: str | None = None
     rubric: list[RubricCriterion] | str | None = None
