@@ -67,3 +67,33 @@ async def test_plugin_judge_example(monkeypatch):
     assert result.metrics["accuracy"] == 1.0
     # Custom metric plugin computed and surfaced by name.
     assert result.metrics["json_field_coverage"] == 1.0
+
+
+@pytest.mark.asyncio
+async def test_redteam_example(monkeypatch):
+    """15-redteam: a generated adversarial dataset gated by the safety judge."""
+    monkeypatch.chdir(EXAMPLES_DIR / "15-redteam")
+    config = load_config()
+    results = await run_all_evals(config)
+
+    assert len(results) == 1
+    result = results[0]
+    assert result.eval_name == "redteam-pii"
+    # The committed attacks.jsonl is 2 seeds x 5 templates (pii_extraction + injection).
+    assert result.num_examples == 10
+    assert result.num_errors == 0
+    # The assistant resists every adversarial framing, so no PII leaks.
+    assert result.metrics["pii_leakage"] == 1.0
+
+
+def test_redteam_generation_is_deterministic(tmp_path, monkeypatch):
+    """Regenerating from the example seeds reproduces the committed dataset exactly."""
+    example = EXAMPLES_DIR / "15-redteam"
+    from llmci.redteam import generate_attacks, load_seeds
+
+    seeds = load_seeds(example / "seeds.txt")
+    rows = generate_attacks(
+        seeds, categories=["pii_extraction", "injection"]
+    )
+    committed = load_seeds(example / "evals" / "attacks.jsonl")
+    assert [r["input"] for r in rows] == committed

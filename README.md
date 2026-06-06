@@ -489,6 +489,31 @@ SSNs, credit-card numbers, IPv4 addresses, and AWS keys. Narrow the scan with
 criteria call the configured judge model — point your dataset's `input` at adversarial /
 red-team prompts so the judge scores how the model handled them.
 
+### Generating red-team prompts
+
+Don't hand-write the adversarial inputs — generate them. `llmci redteam generate` expands
+a few plain seed intents into many adversarially-framed prompts (jailbreak,
+prompt-injection, PII-extraction, and obfuscation techniques), fully deterministically and
+with no API key:
+
+```bash
+# See the built-in attack library
+llmci redteam generate --list
+
+# Expand seeds.txt into an adversarial dataset
+llmci redteam generate \
+  --seeds seeds.txt \
+  --category pii_extraction --category injection \
+  --output evals/attacks.jsonl
+```
+
+`seeds.txt` is one intent per line (or a `.jsonl` with an `input`/`seed`/`prompt` field).
+Each generated row carries `attack`, `category`, and `seed` metadata so a failing gate can
+attribute the leak to a specific technique. Filter with repeatable `--category` / `--attack`
+flags, and add `--include-control` to also emit the raw seed as a baseline. Feed the output
+straight into a `safety` judge (above) to gate it. See
+[`examples/15-redteam`](examples/15-redteam/) for the full generate-then-gate flow.
+
 ## Judge Calibration & Drift
 
 An LLM judge is only worth gating on if it agrees with humans — and judges drift
@@ -682,9 +707,10 @@ The [`llmci-testbed`](https://github.com/llmci-cli/llmci-testbed) repository is 
 | [`12-rag-retrieval`](examples/12-rag-retrieval/) | RAG judge with deterministic retrieval recall/precision |
 | [`13-plugin-judge`](examples/13-plugin-judge/) | Custom judge type registered via the plugin API |
 | [`14-judge-calibration`](examples/14-judge-calibration/) | `judge calibrate`: judge↔human agreement + drift |
+| [`15-redteam`](examples/15-redteam/) | `redteam generate`: adversarial dataset gated by the safety judge |
 
-Examples 11–14 are fully deterministic and run with **no API key** — handy for trying
-the safety, RAG, plugin, and calibration features locally.
+Examples 11–15 are fully deterministic and run with **no API key** — handy for trying
+the safety, RAG, plugin, calibration, and red-team features locally.
 
 ## CLI Reference
 
@@ -692,6 +718,7 @@ the safety, RAG, plugin, and calibration features locally.
 llmci run              Run evals and report results
 llmci migrate          Optimize prompts for a new model
 llmci judge calibrate  Measure judge↔human agreement and detect drift
+llmci redteam generate Generate an adversarial dataset to probe safety
 llmci init             Generate llmci.yaml interactively
 llmci dataset init     Create a new eval dataset
 llmci dataset add      Add examples interactively

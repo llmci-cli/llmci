@@ -663,6 +663,91 @@ def judge_calibrate(
 
 
 @cli.group()
+def redteam() -> None:
+    """Generate adversarial datasets to probe safety."""
+    pass
+
+
+@redteam.command("generate")
+@click.option(
+    "--seeds",
+    "seeds_path",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="Seed intents file (.txt one-per-line, or .jsonl with input/seed/prompt).",
+)
+@click.option(
+    "--output",
+    "output_path",
+    type=click.Path(dir_okay=False, path_type=Path),
+    help="Write generated attacks to this JSONL file (default: stdout).",
+)
+@click.option(
+    "--category",
+    "categories",
+    multiple=True,
+    help="Restrict to attack categories (repeatable).",
+)
+@click.option(
+    "--attack",
+    "attacks",
+    multiple=True,
+    help="Restrict to specific attack names (repeatable).",
+)
+@click.option(
+    "--include-control",
+    is_flag=True,
+    help="Also emit the raw seed as an 'attack: none' baseline.",
+)
+@click.option("--list", "list_only", is_flag=True, help="List available attacks and exit.")
+def redteam_generate(
+    seeds_path: Path | None,
+    output_path: Path | None,
+    categories: tuple[str, ...],
+    attacks: tuple[str, ...],
+    include_control: bool,
+    list_only: bool,
+) -> None:
+    """Expand seed intents into adversarially-framed prompts for a safety gate."""
+    from llmci.redteam import (
+        BUILTIN_ATTACKS,
+        generate_attacks,
+        load_seeds,
+        write_attacks,
+    )
+
+    if list_only:
+        click.echo("Available attacks (category · name — description):")
+        for a in sorted(BUILTIN_ATTACKS, key=lambda t: (t.category, t.name)):
+            click.echo(f"  {a.category:14} {a.name:20} {a.description}")
+        return
+
+    if not seeds_path:
+        click.echo("Error: --seeds is required (or use --list).", err=True)
+        sys.exit(1)
+
+    try:
+        seeds = load_seeds(seeds_path)
+        rows = generate_attacks(
+            seeds,
+            categories=list(categories) or None,
+            attacks=list(attacks) or None,
+            include_control=include_control,
+        )
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+    if output_path:
+        n = write_attacks(rows, output_path)
+        click.echo(
+            f"Generated {n} attack(s) from {len(seeds)} seed(s) -> {output_path}"
+        )
+    else:
+        for row in rows:
+            click.echo(json.dumps(row))
+
+
+@cli.group()
 def dataset() -> None:
     """Create and manage eval datasets."""
     pass

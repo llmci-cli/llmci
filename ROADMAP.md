@@ -115,14 +115,16 @@ fold in the item-6 baseline-vs-current per-example diff once that lands._
 Valuable, but only after the gate is sticky. Several overlap with where promptfoo /
 DeepEval are already strong, so they're differentiators-of-degree, not of-kind.
 
-### 10. Safety / red-team assertions — `L` · ★★ ✅ prototype (assertions)
+### 10. Safety / red-team assertions — `L` · ★★ ✅ prototype (assertions + generation)
 - PII leakage, jailbreak resistance, toxicity checks as judge types / assertions.
 - Optional adversarial input generation for a `llmci redteam` mode.
 
 _Landed: `judge: {type: safety}` with `pii_leakage` (deterministic, no API key),
 `toxicity`, and `jailbreak_resistance` criteria; each surfaces as a gateable metric by
-name (higher = safer). Follow-up: the `llmci redteam` adversarial input-generation mode,
-and more PII categories / a configurable allow-list._
+name (higher = safer). Plus `llmci redteam generate`: a deterministic attack library
+(jailbreak / injection / pii_extraction / obfuscation) that expands seed intents into an
+adversarial dataset for the safety judge to gate — see `examples/15-redteam`. Follow-up:
+LLM-based attack mutation, more PII categories / a configurable allow-list._
 
 ### 11. Multimodal & structured-output evals — `M` · ★
 - Image/audio inputs through litellm; JSON-schema / structured-output judging built in
@@ -151,7 +153,8 @@ complete._
 ## Cross-cutting / continuous
 
 - **Docs & examples** keep pace with each feature. Deterministic, API-key-free runnable
-  examples now cover the safety, RAG, plugin, and calibration judges (`examples/11-14`).
+  examples now cover the safety, RAG, plugin, calibration, and red-team flows
+  (`examples/11-15`).
   Integration tests also exercise pairwise judging, response caching, and flake-resistance
   sampling/CI through the runner (with a mocked LLM), plus the machine-readable report
   formats (JUnit/SARIF/JSON/HTML) on a real result, and custom report sinks end-to-end

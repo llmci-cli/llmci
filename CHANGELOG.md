@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Red-team attack generator** — `llmci redteam generate --seeds <file>` expands a few
+  plain seed intents into many adversarially-framed prompts (jailbreak, prompt-injection,
+  PII-extraction, and obfuscation techniques) for the `safety` judge to gate. Fully
+  deterministic and API-key-free, so the generated dataset is reproducible and diffable in
+  CI. Filter with `--category` / `--attack`, list the library with `--list`, and add
+  `--include-control` for a raw-seed baseline. Each row carries `attack`/`category`/`seed`
+  metadata so failures attribute to a specific technique. See `examples/15-redteam`.
 - **Custom report sinks** — register a `(ReportContext) -> None` callable with
   `register_reporter` to ship results after each run (Slack, dashboards, artifact
   uploads). Activate via `reporters:` in `llmci.yaml`; sinks load from local modules
