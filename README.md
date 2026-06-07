@@ -181,6 +181,16 @@ target:
 - `tokens_in_mean`, `tokens_out_mean`, `tokens_total_mean` — average token usage
 
 For **direct** targets, cost and token usage are read from the provider response.
+When litellm cannot price a model (common with internal proxies), configure overrides:
+
+```yaml
+settings:
+  price_overrides:
+    openai/gpt-4o-mini:
+      input_per_token: 0.00000015
+      output_per_token: 0.0000006
+```
+
 For **command** targets, your script can opt in by adding `"usage"` and `"cost"` to its
 output JSON:
 

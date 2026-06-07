@@ -71,6 +71,7 @@ async def run_target(
             base_url=target.base_url,
             cache=cache,
             media_base=media_base,
+            price_overrides=settings.price_overrides or None,
         )
 
 

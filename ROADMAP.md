@@ -39,7 +39,8 @@ A pre-merge gate should catch cost regressions, not just quality ones.
 - New metrics: `cost_total`, `cost_mean`, `tokens_in_mean`, `tokens_out_mean`.
 - Thresholds in both `absolute` and `max_regression` modes (e.g. "cost-per-eval may
   not rise >20% vs baseline").
-- Pull token/price data from litellm; allow a price override table for proxies.
+- Pull token/price data from litellm; `settings.price_overrides` supplies per-model
+  `input_per_token` / `output_per_token` rates when litellm cannot price a proxy.
 
 ### 4. CI portability: JUnit XML + SARIF output — `S` · ★★★ ✅ prototype
 Everything currently assumes GitHub Actions + PR comments. Structured output unlocks
@@ -110,8 +111,8 @@ A self-contained artifact beyond the PR comment.
 - `llmci run --output-format html --output report.html`; upload as a CI artifact.
 - Includes the summary table (with CIs), regressions, and per-example results.
 
-_Landed as an `--output-format html` value (inline CSS, no external assets). Follow-up:
-fold in the item-6 baseline-vs-current per-example diff once that lands._
+_Landed as an `--output-format html` value (inline CSS, no external assets), including
+the item-6 baseline-vs-current per-example diff section._
 
 ---
 

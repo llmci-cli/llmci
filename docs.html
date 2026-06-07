@@ -825,7 +825,7 @@ Ticket: <span class="string">{input}</span></pre>
           <tr><td><code>tokens_in_mean</code> / <code>tokens_out_mean</code></td><td>Average input/output tokens</td><td>Token budget monitoring</td></tr>
           <tr><td><code>tokens_total_mean</code></td><td>Average combined token usage</td><td>Overall spend drivers</td></tr>
         </table>
-        <p>Direct targets read usage from the provider. Command targets can opt in by adding <code>usage</code> and <code>cost</code> to output JSON. See <code>examples/17-integrated-ci-gate</code> for a stacked quality + cost + safety gate.</p>
+        <p>Direct targets read usage from the provider. When litellm cannot price a model (internal proxies), set <code>settings.price_overrides</code> with per-model <code>input_per_token</code> / <code>output_per_token</code> USD rates. Command targets can opt in by adding <code>usage</code> and <code>cost</code> to output JSON. See <code>examples/17-integrated-ci-gate</code> for a stacked quality + cost + safety gate.</p>
 
         <h3>Judge sub-scores</h3>
         <p>RAG, safety, pairwise, and composite judges expose each criterion as a gateable metric by name — e.g. <code>faithfulness</code>, <code>retrieval_recall</code>, <code>pii_leakage</code>, <code>win_rate</code>.</p>

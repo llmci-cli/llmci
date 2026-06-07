@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **`settings.price_overrides`** — per-model `input_per_token` / `output_per_token` rates
+  for direct targets when litellm cannot compute cost (e.g. internal LLM proxies).
+
 ## [0.4.0] - 2026-06-06
 
 Cross-provider migration, few-shot strategy, and PII allow-list for safety gates.

@@ -105,6 +105,9 @@ class Settings(BaseModel):
     # samples_per_example > 1, a max_regression failure is only enforced if the drop
     # exceeds the threshold beyond run-to-run noise.
     significance: float | None = None
+    # Per-model token pricing when litellm cannot compute cost (e.g. internal proxies).
+    # Keys: model id ("gpt-4o-mini" or "openai/gpt-4o-mini"). Values: USD per token.
+    price_overrides: dict[str, dict[str, float]] = Field(default_factory=dict)
 
 
 class LlmciConfig(BaseModel):
