@@ -1977,8 +1977,8 @@
           <div class="pr-gate" aria-label="GitHub pull request check showing llmci blocking a regression">
             <div class="pr-header">
               <div>
-                <div class="pr-title">Pull request #184: refactor answer pipeline</div>
-                <div class="pr-meta">llmci / eval gate compares this branch to origin/main</div>
+                <div class="pr-title">Pull request #1: demo — break classifier billing keywords</div>
+                <div class="pr-meta">llmci-testbed · 8 eval configs · compares to origin/main</div>
               </div>
               <div class="pr-status">Merge blocked</div>
             </div>
@@ -1993,7 +1993,7 @@
                 <div class="comment-kebab">...</div>
               </div>
               <div class="comment-body">
-                <div class="report-slice-title">08-fastapi-service · <code>llmci.yaml</code></div>
+                <div class="report-slice-title">ticket-classifier · <code>llmci.yaml</code></div>
                 <div class="report-title">llmci Eval Report</div>
                 <table class="report-table">
                   <thead>
@@ -2001,7 +2001,6 @@
                       <th>Eval</th>
                       <th>Metric</th>
                       <th>Score</th>
-                      <th>Baseline</th>
                       <th>Threshold</th>
                       <th>Status</th>
                     </tr>
@@ -2010,52 +2009,54 @@
                     <tr>
                       <td>service-classification</td>
                       <td>accuracy</td>
-                      <td>0.792</td>
-                      <td class="muted">0.950</td>
-                      <td>≥ 0.90</td>
+                      <td>0.583</td>
+                      <td>≥ 0.75</td>
                       <td class="status-cell">❌</td>
                     </tr>
                     <tr>
                       <td>service-classification</td>
                       <td>f1_weighted</td>
-                      <td>0.877</td>
-                      <td class="muted">0.940</td>
-                      <td>≥ 0.85</td>
+                      <td>0.650</td>
+                      <td>≥ 0.70</td>
+                      <td class="status-cell">❌</td>
+                    </tr>
+                    <tr>
+                      <td>rag-qa</td>
+                      <td>retrieval_recall</td>
+                      <td>1.000</td>
+                      <td>≥ 0.90</td>
                       <td class="status-cell">✅</td>
                     </tr>
                     <tr>
-                      <td>service-classification</td>
-                      <td>error_rate</td>
-                      <td>0.000</td>
-                      <td class="muted">0.000</td>
-                      <td>≤ 0.01</td>
+                      <td>ticket-safety</td>
+                      <td>pii_leakage</td>
+                      <td>1.000</td>
+                      <td>≥ 1.0</td>
                       <td class="status-cell">✅</td>
                     </tr>
                   </tbody>
                 </table>
-                <div class="failed-title">Failed Examples</div>
-                <div class="failed-summary">▼ service-classification: 5 failed</div>
+                <div class="failed-title">Regressions Detected</div>
+                <div class="failed-summary" style="margin-bottom: 8px;"><strong>service-classification / accuracy:</strong> Score 0.583 &lt; threshold 0.75</div>
+                <div class="failed-summary">▼ service-classification: 10 failed</div>
                 <table class="report-table failed-table">
                   <thead>
                     <tr>
                       <th>Input (truncated)</th>
                       <th>Expected</th>
                       <th>Got</th>
-                      <th>Reason</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
-                      <td>My printer keeps jamming every time I try to pr...</td>
-                      <td>hardware</td>
+                      <td>I was charged $49.99 twice for the same subscri...</td>
+                      <td>billing</td>
                       <td>general</td>
-                      <td>Hardware keywords were lost after preprocessing, so the classifier fell back to general.</td>
                     </tr>
                     <tr>
-                      <td>Dark mode is broken — text is invisible on seve...</td>
-                      <td>software</td>
+                      <td>I want to cancel my subscription and get a pror...</td>
+                      <td>billing</td>
                       <td>general</td>
-                      <td>Regression: app bug report no longer routes to software after the refactor.</td>
                     </tr>
                   </tbody>
                 </table>
@@ -2405,7 +2406,7 @@ json.dump({<span class="s">"output"</span>: result}, open(args.output, <span cla
           <div class="section-num">06</div>
           <div class="section-label">Config as Code</div>
           <h2>Your LLM quality,<br>version-controlled</h2>
-          <p>One YAML file defines the eval gate. Deterministic metrics for classification. LLM-as-judge for open-ended generation. Your pipeline runs as a subprocess: any language, any framework.</p>
+          <p>One YAML file defines the eval gate: quality floors, cost/token regression vs baseline, RAG retrieval metrics, and deterministic safety checks&mdash;all in the same PR comment.</p>
           <ul class="feature-stack">
             <li>
               <div class="f-icon">&#8646;</div>
@@ -2417,8 +2418,8 @@ json.dump({<span class="s">"output"</span>: result}, open(args.output, <span cla
             <li>
               <div class="f-icon">&#x2630;</div>
               <div>
-                <h4>Multiple judges</h4>
-                <p>Exact match, F1, accuracy for deterministic tasks. LLM-as-judge with custom rubrics for generation.</p>
+                <h4>Built-in judges</h4>
+                <p>Exact match and F1 for classification; RAG retrieval; safety (PII scan); pairwise vs baseline; structured JSON Schema validation.</p>
               </div>
             </li>
             <li>
@@ -2432,7 +2433,7 @@ json.dump({<span class="s">"output"</span>: result}, open(args.output, <span cla
               <div class="f-icon">&#x2261;</div>
               <div>
                 <h4>Flexible thresholds</h4>
-                <p>Absolute quality floors or max-regression limits. Smoke-test subsets for fast CI, full suites on merge.</p>
+                <p>Absolute quality floors or max-regression limits on accuracy, cost, tokens, and safety. JUnit/SARIF/HTML for any CI provider.</p>
               </div>
             </li>
             <li>
@@ -2500,6 +2501,10 @@ json.dump({<span class="s">"output"</span>: result}, open(args.output, <span cla
         <a class="also-card" href="use-cases.html#agent-testing">
           <h3>Agent trajectory checks <span>&rarr;</span></h3>
           <p>Evaluate tool use, cost budgets, and outcomes with the same black-box command contract.</p>
+        </a>
+        <a class="also-card" href="https://github.com/llmci-cli/llmci-testbed/pull/1">
+          <h3>Live demo PRs <span>&rarr;</span></h3>
+          <p>Open pre-built break branches on llmci-testbed to watch CI fail and read the merged eval comment.</p>
         </a>
         <a class="also-card" href="use-cases.html#dataset-creation">
           <h3>Dataset augmentation <span>&rarr;</span></h3>
