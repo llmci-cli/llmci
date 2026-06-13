@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation
+- Add **Dataset Schemas** reference (JSONL contracts, command I/O, agent rows, judge field names, metric names, baseline workflow, migration confirm prompt, privacy wording).
+
 ## [0.4.1] - 2026-06-07
 
 ### Added

@@ -402,10 +402,7 @@
         <a href="#installation"><span class="sidebar-icon">&#x2193;</span> Installation</a>
         <a href="#quickstart" class="active"><span class="sidebar-icon">&#x26A1;</span> Quickstart</a>
         <a href="#concepts"><span class="sidebar-icon">&#x1F4A1;</span> Core Concepts</a>
-      </div>
-
-      <div class="sidebar-section">
-        <div class="sidebar-heading">Configuration</div>
+        <a href="#dataset-schemas"><span class="sidebar-icon">&#x1F4CB;</span> Dataset Schemas</a>
         <a href="#config-file"><span class="sidebar-icon">&#x2699;</span> llmci.yaml</a>
         <a href="#targets"><span class="sidebar-icon">&#x25B6;</span> Targets</a>
         <a href="#judges"><span class="sidebar-icon">&#x2696;</span> Judges</a>
@@ -462,6 +459,11 @@
         <p>Verify your installation:</p>
 
 <pre><span class="cmd">llmci --version</span></pre>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">&#x2139;</div>
+          <p><strong>Privacy:</strong> llmci is a CLI you run in your own CI — there is no hosted llmci SaaS and eval data stays in your repo/runner by default. If you configure <strong>direct API targets</strong> or <strong>LLM judges</strong>, prompts and outputs are sent to the providers you choose (OpenAI, Anthropic, etc.) using your API keys. Deterministic judges (exact match, RAG retrieval, PII scan, structured JSON Schema) do not call external APIs.</p>
+        </div>
       </section>
 
       <hr>
@@ -507,6 +509,15 @@
 <span class="comment">| my-eval| accuracy | 0.950 | ≥ 0.9     | ✅     |</span></pre>
 
         <p>Exit code 0 means all thresholds passed. Exit code 1 means a regression was detected — perfect for CI gates.</p>
+
+        <h3>Recommended path (start here)</h3>
+        <ol>
+          <li><strong>Classification / deterministic</strong> — <code>examples/01-ci-regression</code>: command target + <code>exact_match</code> + <code>accuracy</code>.</li>
+          <li><strong>CI baselines</strong> — run <code>llmci run --update-baseline</code> on <code>main</code>, then <code>--compare-to=origin/main</code> on PRs (<a href="#baselines">Baselines &amp; CI</a>).</li>
+          <li><strong>Pipeline / RAG</strong> — <code>examples/12-rag-retrieval</code>: command target returns <code>contexts</code> / <code>retrieved_ids</code>; dataset rows include <code>relevant_ids</code>.</li>
+          <li><strong>Integrated gate</strong> — <code>examples/17-integrated-ci-gate</code>: quality + cost regression + safety in one config.</li>
+          <li><strong>Agents, migration, Promptfoo</strong> — optional workflows once the core gate is green (<a href="#agents">Agents</a>, <a href="#migration">Migration</a>, <a href="#promptfoo">Promptfoo</a>).</li>
+        </ol>
       </section>
 
       <hr>
@@ -537,7 +548,118 @@
         </ul>
 
         <h3>Baselines</h3>
-        <p>A <strong>baseline</strong> is a snapshot of metric scores on the main branch. PRs are compared against baselines to detect regressions.</p>
+        <p>A <strong>baseline</strong> is a snapshot of metric scores (and per-example outputs) stored under <code>.llmci/baselines/{eval_name}.json</code>. PRs compare against baselines to detect regressions. See <a href="#baselines">Baselines &amp; CI</a> for the full workflow.</p>
+      </section>
+
+      <hr>
+
+      <!-- DATASET SCHEMAS -->
+      <section class="doc-section" id="dataset-schemas">
+        <h2>Dataset Schemas</h2>
+        <p class="section-lead">Formal contracts for JSONL eval files, command-mode I/O, and judge-specific fields.</p>
+
+        <h3>File format</h3>
+        <ul>
+          <li>One <strong>JSON object per line</strong> (JSONL). Blank lines are ignored.</li>
+          <li>Each line must be a JSON <code>object</code> (not an array or string).</li>
+          <li>Standard evals and agent evals use <strong>different row shapes</strong> (see below).</li>
+        </ul>
+
+        <h3>Quick reference</h3>
+        <table>
+          <tr><th>Eval type</th><th>Required fields</th><th>Optional fields</th><th>Example JSONL row</th></tr>
+          <tr><td>Classification</td><td><code>input</code>, <code>expected</code></td><td><code>id</code>, <code>metadata</code>, <code>category</code></td><td><code>{"input": "Refund…", "expected": "billing"}</code></td></tr>
+          <tr><td>Reference-free LLM judge</td><td><code>input</code></td><td><code>metadata</code>, custom tags</td><td><code>{"input": "Summarize…"}</code></td></tr>
+          <tr><td>RAG</td><td><code>input</code></td><td><code>expected</code>, <code>relevant_ids</code></td><td><code>{"input": "…", "relevant_ids": ["doc1"]}</code></td></tr>
+          <tr><td>Safety / red-team</td><td><code>input</code></td><td><code>attack</code>, <code>category</code>, <code>seed</code></td><td><code>{"input": "…", "attack": "jailbreak"}</code></td></tr>
+          <tr><td>Agent single-turn</td><td><code>input</code>, <code>expected</code></td><td><code>expected.constraints</code></td><td><code>{"input": {"query": "…"}, "expected": {"outcome": "…"}}</code></td></tr>
+          <tr><td>Agent multi-turn</td><td><code>turns</code></td><td><code>conversation_constraints</code></td><td><code>{"turns": [{"user_message": "…", "expected": {"outcome": "…"}}]}</code></td></tr>
+        </table>
+
+        <h3>Standard eval rows (<code>level: prompt</code> or <code>level: pipeline</code>)</h3>
+        <p>Used for every eval except <code>level: agent</code>. Loaded into <code>input</code>, <code>expected</code>, and an <code>extra</code> bag for additional fields.</p>
+
+        <table>
+          <tr><th>Field</th><th>Required?</th><th>Type</th><th>Notes</th></tr>
+          <tr><td><code>input</code></td><td>Yes</td><td>string (recommended)</td><td>Prompt text or user message. Passed to your target and judges. Use strings for broadest compatibility.</td></tr>
+          <tr><td><code>expected</code></td><td>Depends on judge</td><td>string</td><td>Required for <code>exact_match</code> and classification metrics. Optional (defaults to <code>""</code>) for <code>llm</code>, <code>rag</code>, <code>safety</code>, <code>pairwise</code>, and <code>structured</code> judges.</td></tr>
+          <tr><td>Any other key</td><td>No</td><td>any JSON</td><td>Stored in <code>extra</code> — forwarded to your command's input file and visible to judges (e.g. <code>relevant_ids</code>, <code>images</code>).</td></tr>
+        </table>
+
+        <p><code>level: prompt</code> vs <code>level: pipeline</code> is a <strong>documentation label</strong> only (what you're testing). Runtime behavior is identical; both use this schema.</p>
+
+        <h4>Example rows</h4>
+        <table>
+          <tr><th>Use case</th><th>Example JSONL row</th></tr>
+          <tr><td>Classification</td><td><code>{"input": "Refund my subscription", "expected": "billing"}</code></td></tr>
+          <tr><td>Reference-free LLM judge</td><td><code>{"input": "Summarize this article…"}</code> (no <code>expected</code>)</td></tr>
+          <tr><td>RAG retrieval labels</td><td><code>{"input": "What is Python?", "expected": "…", "relevant_ids": ["python"]}</code></td></tr>
+          <tr><td>Multimodal direct target</td><td><code>{"input": "Describe this", "images": ["fixtures/photo.jpg"]}</code></td></tr>
+          <tr><td>Red-team metadata</td><td><code>{"input": "…", "attack": "jailbreak", "category": "injection"}</code></td></tr>
+        </table>
+
+        <h3>Command-mode input file (<code>{input_file}</code>)</h3>
+        <p>For each example, llmci writes <strong>one JSON object</strong> to a temp file and substitutes its path into your command. Your script reads that file — not the JSONL directly.</p>
+
+<pre>{
+  <span class="key">"input"</span>: <span class="string">"user text"</span>,
+  <span class="key">"expected"</span>: <span class="string">"gold label"</span>,
+  <span class="comment">// plus every field from extra, merged at the top level:</span>
+  <span class="key">"relevant_ids"</span>: [<span class="string">"doc1"</span>],
+  <span class="key">"category"</span>: <span class="string">"billing"</span>
+}</pre>
+
+        <p>Your command should write <strong>one JSON object</strong> to <code>{output_file}</code>:</p>
+
+<pre>{
+  <span class="key">"output"</span>: <span class="string">"model or pipeline answer"</span>,
+  <span class="comment">// optional — for cost/token gates:</span>
+  <span class="key">"usage"</span>: {<span class="key">"tokens_in"</span>: <span class="string">120</span>, <span class="key">"tokens_out"</span>: <span class="string">45</span>},
+  <span class="key">"cost"</span>: <span class="string">0.001</span>,
+  <span class="comment">// optional — for RAG judges (any other keys become judge metadata):</span>
+  <span class="key">"contexts"</span>: [<span class="string">"passage 1"</span>],
+  <span class="key">"retrieved_ids"</span>: [<span class="string">"doc1"</span>]
+}</pre>
+
+        <p>Reserved output keys: <code>output</code>, <code>usage</code>, <code>cost</code>. All other keys are passed to judges as metadata.</p>
+
+        <h3>Agent eval rows (<code>level: agent</code>)</h3>
+        <p>Agent datasets use a <strong>separate schema</strong> loaded by <code>load_agent_scenarios</code>. Requires a <code>composite</code> judge and a command-mode target. Set <code>mode: full_replay</code> (default) or <code>history_injection</code> on the eval.</p>
+
+        <h4>Single-turn</h4>
+<pre>{<span class="key">"input"</span>: {<span class="key">"query"</span>: <span class="string">"Return order #5678"</span>}, <span class="key">"expected"</span>: {
+  <span class="key">"outcome"</span>: <span class="string">"return initiated"</span>,
+  <span class="key">"constraints"</span>: {
+    <span class="key">"required_tools"</span>: [<span class="string">"lookup_order"</span>, <span class="string">"initiate_return"</span>],
+    <span class="key">"forbidden_tools"</span>: [<span class="string">"delete_account"</span>],
+    <span class="key">"max_tool_calls"</span>: <span class="string">4</span>
+  }
+}}</pre>
+        <p><code>input</code> may be a string or object. The command receives the object (or <code>{"input": "…"}</code> if string).</p>
+
+        <h4>Multi-turn</h4>
+<pre>{<span class="key">"turns"</span>: [
+  {<span class="key">"user_message"</span>: <span class="string">"What's my order status?"</span>, <span class="key">"expected"</span>: {<span class="key">"outcome"</span>: <span class="string">"status shown"</span>}},
+  {<span class="key">"user_message"</span>: <span class="string">"Cancel it"</span>, <span class="key">"expected"</span>: {<span class="key">"outcome"</span>: <span class="string">"cancelled"</span>,
+    <span class="key">"constraints"</span>: {<span class="key">"required_tools"</span>: [<span class="string">"cancel_order"</span>]}}
+]}</pre>
+
+        <p>Agent command input varies by turn: single-turn uses your <code>input</code> object; multi-turn sends <code>user_message</code>, <code>history</code>, and <code>turn_index</code>. Agent output must be trace JSON — see <a href="#agents">Agent Evaluation</a>.</p>
+
+        <h3>Judge config: <code>rubric</code> vs <code>criteria</code></h3>
+        <table>
+          <tr><th>Judge type</th><th>Config field</th><th>Shape</th></tr>
+          <tr><td><code>llm</code></td><td><code>rubric</code></td><td>String, or list of <code>{id, prompt}</code> criteria</td></tr>
+          <tr><td><code>composite</code>, <code>rag</code>, <code>safety</code></td><td><code>criteria</code></td><td>List of criterion objects (type-specific keys)</td></tr>
+          <tr><td><code>pairwise</code></td><td><code>rubric</code> (optional)</td><td>String comparison instruction</td></tr>
+          <tr><td><code>structured</code></td><td><code>json_schema</code></td><td>Inline schema or path to <code>.json</code> file</td></tr>
+          <tr><td><code>exact_match</code>, <code>custom</code></td><td>—</td><td>No rubric/criteria list</td></tr>
+        </table>
+
+        <h3>Metric names</h3>
+        <p>Threshold <code>name</code> must match a computed metric. Built-in aggregates:</p>
+        <p><code>accuracy</code>, <code>pass_rate</code>, <code>rubric_pass_rate</code> (alias of <code>pass_rate</code> for LLM rubrics), <code>mean_score</code>, <code>median_score</code>, <code>min_score</code>, <code>max_score</code>, <code>error_rate</code>, <code>f1_macro</code>, <code>f1_micro</code>, <code>f1_weighted</code>, <code>precision_*</code>, <code>recall_*</code>, <code>latency_mean</code>, <code>latency_p50</code>, <code>latency_p90</code>, <code>latency_p99</code>, <code>cost_total</code>, <code>cost_mean</code>, <code>tokens_in_mean</code>, <code>tokens_out_mean</code>, <code>tokens_total_mean</code>, <code>cosine_similarity</code>.</p>
+        <p>Multi-criterion judges also expose each criterion by name as a metric (e.g. <code>retrieval_recall</code>, <code>pii_leakage</code>, <code>win_rate</code>, <code>faithfulness</code>). Plugins may register additional metric names.</p>
       </section>
 
       <hr>
@@ -585,7 +707,13 @@
           <tr><td><code>version</code></td><td>int</td><td>Config version. Always <code>1</code>.</td></tr>
           <tr><td><code>target</code></td><td>object</td><td>What to test. See <a href="#targets">Targets</a>.</td></tr>
           <tr><td><code>evals</code></td><td>list</td><td>One or more eval definitions.</td></tr>
-          <tr><td><code>settings</code></td><td>object</td><td>Parallelism, timeouts, retries.</td></tr>
+          <tr><td><code>evals[].name</code></td><td>string</td><td>Eval identifier; used in reports and baseline filenames.</td></tr>
+          <tr><td><code>evals[].level</code></td><td>string</td><td><code>prompt</code>, <code>pipeline</code> (labels only), or <code>agent</code> (separate dataset schema). Default <code>pipeline</code>.</td></tr>
+          <tr><td><code>evals[].dataset</code></td><td>string | object</td><td>Path to JSONL, or S3/HTTPS source. See <a href="#dataset-schemas">Dataset Schemas</a>.</td></tr>
+          <tr><td><code>evals[].judge</code></td><td>object | string</td><td>Scoring method. See <a href="#judges">Judges</a>.</td></tr>
+          <tr><td><code>evals[].metrics</code></td><td>list</td><td>Thresholds to gate on. Names must match computed metrics.</td></tr>
+          <tr><td><code>evals[].mode</code></td><td>string</td><td>Agent only: <code>full_replay</code> or <code>history_injection</code>.</td></tr>
+          <tr><td><code>settings</code></td><td>object</td><td>Parallelism, timeouts, retries, sampling, price overrides.</td></tr>
         </table>
       </section>
 
@@ -602,11 +730,7 @@
 <pre><span class="key">target</span>:
   <span class="key">command</span>: <span class="string">"python3 my_script.py --input {input_file} --output {output_file}"</span></pre>
 
-        <p>Input file format:</p>
-<pre><span class="string">{"input": "user question here", "expected": "correct answer"}</span></pre>
-
-        <p>Output file format:</p>
-<pre><span class="string">{"output": "model response here"}</span></pre>
+        <p>See <a href="#dataset-schemas">Dataset Schemas</a> for the exact input/output JSON contracts. In short: llmci writes one merged JSON object per example to <code>{input_file}</code> (including <code>input</code>, <code>expected</code>, and any extra dataset fields); your script writes a JSON object with at least <code>output</code> to <code>{output_file}</code>.</p>
 
         <div class="callout callout-tip">
           <div class="callout-icon">&#x2713;</div>
@@ -866,14 +990,21 @@ Ticket: <span class="string">{input}</span></pre>
         <p class="section-lead">Store baseline scores and detect regressions in pull requests.</p>
 
         <h3>Storing baselines</h3>
-        <p>On your main branch, save the current metric scores:</p>
-<pre><span class="cmd">llmci run --update-baseline</span></pre>
-        <p>This writes JSON files to <code>.llmci/baselines/</code>. Commit them to your repo.</p>
+        <p>Baselines live at <code>.llmci/baselines/{eval_name}.json</code> — one file per eval, containing aggregate metrics, per-example outputs/scores, timestamp, and commit SHA.</p>
+        <p><strong>Initialize on main</strong> (after your eval passes):</p>
+<pre><span class="cmd">llmci run --update-baseline</span>
+<span class="cmd">git add .llmci/baselines/ && git commit -m "Add eval baselines"</span></pre>
 
-        <h3>Comparing against baselines</h3>
-        <p>On a PR branch, compare against the main branch:</p>
-<pre><span class="cmd">llmci run --compare-to=main</span></pre>
-        <p>Committed baselines under <code>.llmci/baselines/</code> are also loaded automatically when you omit <code>--compare-to</code> — useful for repos that check baselines into git. Baselines store per-example outputs; regressed examples show an <strong>Output Diffs vs Baseline</strong> section in markdown and HTML reports.</p>
+        <h3>Comparing on pull requests</h3>
+        <p>Three ways to load baselines (first match wins when multiple are available):</p>
+        <ol>
+          <li><code>--compare-to=origin/main</code> — read baseline files from a git ref (typical CI: checkout with <code>fetch-depth: 0</code>).</li>
+          <li>Committed files in <code>.llmci/baselines/</code> on the current branch — loaded automatically when you omit <code>--compare-to</code>.</li>
+          <li>No baseline — <code>absolute</code> thresholds still work; <code>max_regression</code> and pairwise judges warn and skip.</li>
+        </ol>
+<pre><span class="cmd">llmci run --compare-to=origin/main</span></pre>
+        <p>On <code>main</code> pushes, re-run with <code>--update-baseline</code> to refresh committed baselines after intentional changes.</p>
+        <p>Baselines store per-example outputs; regressed examples show an <strong>Output Diffs vs Baseline</strong> section in markdown and HTML reports.</p>
 
         <h3>Output formats</h3>
         <p>PR comments stay markdown. For GitLab, Bitbucket, Azure DevOps, Jenkins, or artifacts, use <code>--output-format</code>:</p>
@@ -985,7 +1116,7 @@ Ticket: <span class="string">{input}</span></pre>
 
         <div class="callout callout-warn">
           <div class="callout-icon">&#x26A0;</div>
-          <p>Migration requires <code>target.prompt_file</code> in your config (direct API mode). The optimizer modifies this file.</p>
+          <p>Migration requires <code>target.prompt_file</code> in your config (direct API mode). The optimizer reads that file but <strong>does not write automatically</strong> — after the run, llmci prints a report and prompts <code>Write optimized prompt to disk? [y/N]</code>. Decline to dry-run; re-run with the original prompt to roll back. Few-shot strategy inlines examples into the prompt text the same way.</p>
         </div>
       </section>
 

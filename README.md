@@ -113,7 +113,7 @@ target:
   command: "python3 my_pipeline.py --input {input_file} --output {output_file}"
 ```
 
-Your script reads a JSON input file and writes a JSON output file with an `"output"` key.
+Your script reads a JSON input file and writes a JSON output file with an `"output"` key. llmci writes `{input, expected, ...extra fields}` to `{input_file}` — see [Dataset schemas](https://llmci-cli.github.io/llmci/docs.html#dataset-schemas) for the full contract.
 
 **Direct API mode** — call an LLM provider directly:
 
@@ -141,6 +141,25 @@ target:
     base_url: https://llm-proxy.internal.company.com/v1
   prompt_file: prompt.txt
 ```
+
+### Dataset schemas
+
+Eval data is JSONL (one JSON object per line). **Standard evals** (`level: prompt` or `pipeline`) require `input`; `expected` is required for `exact_match` but optional for LLM/RAG/safety judges. Any other keys (`relevant_ids`, `images`, `metadata`, …) are preserved and forwarded to command-mode input files.
+
+**Agent evals** (`level: agent`) use a separate schema: single-turn rows have `input` + `expected.outcome` (+ optional `constraints`); multi-turn rows use `turns[]`.
+
+| Eval type | Required fields | Common optional fields |
+|-----------|-----------------|------------------------|
+| Classification | `input`, `expected` | `id`, `category`, custom tags |
+| Reference-free LLM judge | `input` | `metadata` |
+| RAG | `input` | `expected`, `relevant_ids` |
+| Safety / red-team | `input` | `attack`, `category`, `seed` |
+| Agent single-turn | `input`, `expected` | `expected.constraints` |
+| Agent multi-turn | `turns` | `conversation_constraints` |
+
+Judge config: **`rubric`** for `llm` and optional `pairwise`; **`criteria`** for `composite`, `rag`, and `safety`. Metric threshold names must match built-in aggregates (`accuracy`, `pass_rate`, `mean_score`, …) or judge sub-score names (`retrieval_recall`, `pii_leakage`, `win_rate`, …). `rubric_pass_rate` is an alias for `pass_rate`.
+
+Full contracts (command I/O, baselines, migration safety, privacy): **[docs — Dataset Schemas](https://llmci-cli.github.io/llmci/docs.html#dataset-schemas)**.
 
 ### Judges
 
