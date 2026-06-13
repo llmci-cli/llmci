@@ -14,7 +14,21 @@ pip install llmci
 
 Requires Python 3.10+.
 
-## Quick Start
+## First Run (no API key)
+
+Try the deterministic ticket-classifier example first. It does not call an LLM provider,
+so it works without credentials:
+
+```bash
+git clone https://github.com/llmci-cli/llmci.git
+cd llmci/examples/01-ci-regression
+llmci run
+```
+
+You should see a passing eval report. This is the smallest llmci loop: a JSONL eval
+dataset, a command target, an `exact_match` judge, and thresholded metrics.
+
+## Quick Start: add llmci to your project
 
 ### 1. Initialize
 
@@ -26,6 +40,9 @@ This creates a `llmci.yaml` config and a starter eval dataset. You'll be asked:
 - **Target mode** — `command` (run any script) or `direct` (call an LLM API)
 - **Task type** — classification, open-ended, or agent
 - **Eval name** — what to call this eval
+
+If you are not sure what to pick, start with `command`, `classification`, and the
+default eval name. That path is deterministic and does not require an API key.
 
 ### 2. Define your eval dataset
 
@@ -42,7 +59,33 @@ Or add examples interactively:
 llmci dataset add --name my-eval
 ```
 
-### 3. Run
+### 3. Connect your target
+
+For **command mode**, create the adapter script referenced by `llmci.yaml`. It should
+read the JSON file passed as `--input` and write a JSON object with an `"output"` key to
+the path passed as `--output`:
+
+```python
+import argparse
+import json
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--input", required=True)
+parser.add_argument("--output", required=True)
+args = parser.parse_args()
+
+row = json.load(open(args.input))
+actual = classify(row["input"])  # call your app, prompt, pipeline, or service here
+json.dump({"output": actual}, open(args.output, "w"))
+```
+
+For **direct API mode**, set the provider credential your model needs, for example:
+
+```bash
+export OPENAI_API_KEY=...
+```
+
+### 4. Run
 
 ```bash
 llmci run
@@ -60,6 +103,18 @@ Output:
 ```
 
 Exit code 0 = all thresholds pass. Exit code 1 = regression detected.
+
+## Which Path Should I Start With?
+
+| Goal | Start here | API key? |
+|------|------------|----------|
+| Try llmci locally | [`examples/01-ci-regression`](examples/01-ci-regression/) | No |
+| Test a classifier or deterministic pipeline | `llmci init` with `command` + `classification` | No |
+| Test an LLM prompt directly | `llmci init` with `direct` + `open_ended` | Yes |
+| Gate a RAG pipeline | [`examples/12-rag-retrieval`](examples/12-rag-retrieval/) | No for retrieval metrics |
+| Add a full CI gate | [`examples/17-integrated-ci-gate`](examples/17-integrated-ci-gate/) | No |
+| Evaluate an agent | [`examples/05-agent-single-turn`](examples/05-agent-single-turn/) | No for constraint checks |
+| Migrate models or providers | [`examples/19-cross-provider-migration`](examples/19-cross-provider-migration/) | Usually yes |
 
 ## Configuration
 
@@ -798,31 +853,41 @@ The [`llmci-testbed`](https://github.com/llmci-cli/llmci-testbed) repository is 
 
 ## Examples
 
-| Example | What it demonstrates |
-|---------|---------------------|
-| [`01-ci-regression`](examples/01-ci-regression/) | Ticket classifier with exact_match + F1 |
-| [`02-model-migration`](examples/02-model-migration/) | Prompt optimization across models |
-| [`03-llm-as-judge`](examples/03-llm-as-judge/) | Open-ended generation with rubric judging |
-| [`04-custom-judge`](examples/04-custom-judge/) | JSON schema validation with a Python judge |
-| [`05-agent-single-turn`](examples/05-agent-single-turn/) | Tool-using agent with constraint checking |
-| [`06-agent-multi-turn`](examples/06-agent-multi-turn/) | Multi-turn conversation testing |
-| [`07-pipeline-level`](examples/07-pipeline-level/) | Full RAG pipeline end-to-end |
-| [`08-fastapi-service`](examples/08-fastapi-service/) | Pre/post processing pipeline with dual-level testing |
-| [`09-summarization-qa`](examples/09-summarization-qa/) | Multi-criteria LLM judge with reference-free evaluation |
-| [`10-agent-openai-agents`](examples/10-agent-openai-agents/) | TraceBuilder + OpenAI Agents SDK adapter |
-| [`11-safety-pii`](examples/11-safety-pii/) | Safety judge with a deterministic PII-leakage gate |
-| [`12-rag-retrieval`](examples/12-rag-retrieval/) | RAG judge with deterministic retrieval recall/precision |
-| [`13-plugin-judge`](examples/13-plugin-judge/) | Custom judge type registered via the plugin API |
-| [`14-judge-calibration`](examples/14-judge-calibration/) | `judge calibrate`: judge↔human agreement + drift |
-| [`15-redteam`](examples/15-redteam/) | `redteam generate`: adversarial dataset gated by the safety judge |
-| [`16-structured-output`](examples/16-structured-output/) | `structured` judge: validate JSON output against a JSON Schema |
-| [`17-integrated-ci-gate`](examples/17-integrated-ci-gate/) | Stacked Now-tier gate: quality + cost regression + safety |
-| [`18-multimodal-vision`](examples/18-multimodal-vision/) | Direct target with `images` on dataset rows (API key) |
-| [`19-cross-provider-migration`](examples/19-cross-provider-migration/) | `migrate` across providers + few-shot strategy |
+| Example | Best for | API key? |
+|---------|----------|----------|
+| [`01-ci-regression`](examples/01-ci-regression/) | First local run; exact_match + F1 | No |
+| [`02-model-migration`](examples/02-model-migration/) | Prompt optimization across models | Usually yes |
+| [`03-llm-as-judge`](examples/03-llm-as-judge/) | Open-ended generation with rubric judging | Yes |
+| [`04-custom-judge`](examples/04-custom-judge/) | Python custom judge | No |
+| [`05-agent-single-turn`](examples/05-agent-single-turn/) | Tool-using agent constraints | No |
+| [`06-agent-multi-turn`](examples/06-agent-multi-turn/) | Multi-turn conversation testing | No |
+| [`07-pipeline-level`](examples/07-pipeline-level/) | Full RAG pipeline end-to-end | No |
+| [`08-fastapi-service`](examples/08-fastapi-service/) | Service-level pipeline testing | No |
+| [`09-summarization-qa`](examples/09-summarization-qa/) | Reference-free LLM judge | Yes |
+| [`10-agent-openai-agents`](examples/10-agent-openai-agents/) | OpenAI Agents SDK adapter | Yes, unless mocked |
+| [`11-safety-pii`](examples/11-safety-pii/) | Deterministic PII leakage gate | No |
+| [`12-rag-retrieval`](examples/12-rag-retrieval/) | Deterministic retrieval recall/precision | No |
+| [`13-plugin-judge`](examples/13-plugin-judge/) | Custom judge + metric plugin API | No |
+| [`14-judge-calibration`](examples/14-judge-calibration/) | Judge↔human agreement + drift | No |
+| [`15-redteam`](examples/15-redteam/) | Adversarial dataset + safety gate | No |
+| [`16-structured-output`](examples/16-structured-output/) | JSON Schema validation judge | No |
+| [`17-integrated-ci-gate`](examples/17-integrated-ci-gate/) | Quality + cost regression + safety | No |
+| [`18-multimodal-vision`](examples/18-multimodal-vision/) | Vision-capable direct target | Yes |
+| [`19-cross-provider-migration`](examples/19-cross-provider-migration/) | Cross-provider migration + few-shot | Usually yes |
 
 Examples 11–17 are fully deterministic and run with **no API key** — handy for trying
 the safety, RAG, plugin, calibration, red-team, structured-output, and integrated-gate
 features locally. Example 18 exercises multimodal vision and requires a provider API key.
+
+## Troubleshooting First Runs
+
+| Symptom | Likely cause | Fix |
+|---------|--------------|-----|
+| `python3: can't open file 'run.py'` | `llmci init` created a command target, but your adapter script does not exist yet | Create the script referenced by `target.command`, or start from [`examples/01-ci-regression`](examples/01-ci-regression/) |
+| `OPENAI_API_KEY` or provider auth error | You chose direct mode or an LLM judge | Export the provider API key, or use a deterministic command-mode example first |
+| Dataset parse error | JSONL requires one complete JSON object per line | Run `llmci dataset check --name <eval-name>` and fix the reported line |
+| Eval fails with low score | The gate is working: actual output does not match the expected value or threshold | Inspect the per-example output in the report, then adjust the target, dataset, judge, or threshold |
+| `max_regression` is skipped | There is no baseline to compare against | Run `llmci run --update-baseline` on your main branch, then compare PRs with `--compare-to=origin/main` |
 
 ## CLI Reference
 

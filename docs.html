@@ -428,6 +428,7 @@
 
       <div class="sidebar-section">
         <div class="sidebar-heading">Reference</div>
+        <a href="#troubleshooting"><span class="sidebar-icon">&#x2753;</span> Troubleshooting</a>
         <a href="#cli-ref"><span class="sidebar-icon">&#x276F;</span> CLI Reference</a>
         <a href="#github-action"><span class="sidebar-icon">&#x2693;</span> GitHub Action</a>
         <a href="#promptfoo"><span class="sidebar-icon">&#x27A1;</span> Promptfoo Migration</a>
@@ -473,7 +474,16 @@
         <h2>Quickstart</h2>
         <p class="section-lead">Get up and running in under 5 minutes.</p>
 
-        <h3>1. Initialize</h3>
+        <h3>1. Try a deterministic example</h3>
+        <p>Start with the ticket-classifier example. It does not call an LLM provider, so it works without credentials:</p>
+
+<pre><span class="cmd">git clone https://github.com/llmci-cli/llmci.git</span>
+<span class="cmd">cd llmci/examples/01-ci-regression</span>
+<span class="cmd">llmci run</span></pre>
+
+        <p>You should see a passing eval report. This is the smallest llmci loop: a JSONL dataset, a command target, an <code>exact_match</code> judge, and thresholded metrics.</p>
+
+        <h3>2. Initialize your project</h3>
         <p>Run <code>llmci init</code> to generate a config and starter dataset interactively:</p>
 
 <pre><span class="cmd">llmci init</span>
@@ -484,8 +494,9 @@
 <span class="comment">#   Eval name:    my-eval</span></pre>
 
         <p>This creates <code>llmci.yaml</code> and <code>evals/my-eval.jsonl</code> with starter examples.</p>
+        <p>If you are not sure what to pick, start with <code>command</code>, <code>classification</code>, and the default eval name. That path is deterministic and does not require an API key.</p>
 
-        <h3>2. Add your eval data</h3>
+        <h3>3. Add your eval data</h3>
         <p>Edit the generated JSONL file. Each line is one test case:</p>
 
 <pre><span class="string">{"input": "My printer won't connect to wifi", "expected": "hardware"}</span>
@@ -501,7 +512,24 @@
           <p><strong>Schema rules:</strong> required vs optional fields, command I/O, judge config, and eval <code>level</code> values are defined in one place — the <a href="#dataset-schemas">Contracts Reference</a>.</p>
         </div>
 
-        <h3>3. Run evals</h3>
+        <h3>4. Connect your target</h3>
+        <p>For <strong>command mode</strong>, create the adapter script referenced by <code>llmci.yaml</code>. It reads the JSON file passed as <code>--input</code> and writes a JSON object with an <code>output</code> key to <code>--output</code>:</p>
+
+<pre><span class="key">import</span> argparse
+<span class="key">import</span> json
+
+parser = argparse.ArgumentParser()
+parser.add_argument(<span class="string">"--input"</span>, required=True)
+parser.add_argument(<span class="string">"--output"</span>, required=True)
+args = parser.parse_args()
+
+row = json.load(open(args.input))
+actual = classify(row[<span class="string">"input"</span>])
+json.dump({<span class="string">"output"</span>: actual}, open(args.output, <span class="string">"w"</span>))</pre>
+
+        <p>For <strong>direct API mode</strong>, set the provider credential your model needs, for example <code>OPENAI_API_KEY</code>.</p>
+
+        <h3>5. Run evals</h3>
 
 <pre><span class="cmd">llmci run</span></pre>
 
@@ -515,7 +543,19 @@
 
         <p>Exit code 0 means all thresholds passed. Exit code 1 means a regression was detected — perfect for CI gates.</p>
 
-        <h3>Recommended path (start here)</h3>
+        <h3>Which path should I start with?</h3>
+        <table>
+          <tr><th>Goal</th><th>Start here</th><th>API key?</th></tr>
+          <tr><td>Try llmci locally</td><td><code>examples/01-ci-regression</code></td><td>No</td></tr>
+          <tr><td>Test a classifier or deterministic pipeline</td><td><code>llmci init</code> with <code>command</code> + <code>classification</code></td><td>No</td></tr>
+          <tr><td>Test an LLM prompt directly</td><td><code>llmci init</code> with <code>direct</code> + <code>open_ended</code></td><td>Yes</td></tr>
+          <tr><td>Gate a RAG pipeline</td><td><code>examples/12-rag-retrieval</code></td><td>No for retrieval metrics</td></tr>
+          <tr><td>Add a full CI gate</td><td><code>examples/17-integrated-ci-gate</code></td><td>No</td></tr>
+          <tr><td>Evaluate an agent</td><td><code>examples/05-agent-single-turn</code></td><td>No for constraint checks</td></tr>
+          <tr><td>Migrate models or providers</td><td><code>examples/19-cross-provider-migration</code></td><td>Usually yes</td></tr>
+        </table>
+
+        <h3>Recommended path</h3>
         <ol>
           <li><strong>Classification / deterministic</strong> — <code>examples/01-ci-regression</code>: command target + <code>exact_match</code> + <code>accuracy</code>.</li>
           <li><strong>CI baselines</strong> — run <code>llmci run --update-baseline</code> on <code>main</code>, then <code>--compare-to=origin/main</code> on PRs (<a href="#baselines">Baselines &amp; CI</a>).</li>
@@ -1290,6 +1330,43 @@ result = run_for_llmci_sync(build_agent(), {<span class="string">"query"</span>:
 
       <hr>
 
+      <!-- TROUBLESHOOTING -->
+      <section class="doc-section" id="troubleshooting">
+        <h2>Troubleshooting First Runs</h2>
+        <p class="section-lead">Common setup errors and the fastest fix.</p>
+
+        <table>
+          <tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr>
+          <tr>
+            <td><code>python3: can't open file 'run.py'</code></td>
+            <td><code>llmci init</code> created a command target, but your adapter script does not exist yet.</td>
+            <td>Create the script referenced by <code>target.command</code>, or start from <code>examples/01-ci-regression</code>.</td>
+          </tr>
+          <tr>
+            <td>Provider auth error, such as missing <code>OPENAI_API_KEY</code></td>
+            <td>You chose direct mode or an LLM judge.</td>
+            <td>Export the provider API key, or use a deterministic command-mode example first.</td>
+          </tr>
+          <tr>
+            <td>Dataset parse error</td>
+            <td>JSONL requires one complete JSON object per line.</td>
+            <td>Run <code>llmci dataset check --name &lt;eval-name&gt;</code> and fix the reported line.</td>
+          </tr>
+          <tr>
+            <td>Eval fails with a low score</td>
+            <td>The actual output does not match the expected value or threshold.</td>
+            <td>Inspect the per-example output in the report, then adjust the target, dataset, judge, or threshold.</td>
+          </tr>
+          <tr>
+            <td><code>max_regression</code> is skipped</td>
+            <td>There is no baseline to compare against.</td>
+            <td>Run <code>llmci run --update-baseline</code> on your main branch, then compare PRs with <code>--compare-to=origin/main</code>.</td>
+          </tr>
+        </table>
+      </section>
+
+      <hr>
+
       <!-- CLI REFERENCE -->
       <section class="doc-section" id="cli-ref">
         <h2>CLI Reference</h2>
@@ -1685,26 +1762,26 @@ json.dump({<span class="string">"output"</span>: result[<span class="string">"ca
         <p class="section-lead">Runnable examples in the <code>examples/</code> directory.</p>
 
         <table>
-          <tr><th>Example</th><th>Demonstrates</th><th>Case Study</th></tr>
-          <tr><td><code>01-ci-regression</code></td><td>Ticket classifier with exact_match + F1</td><td>—</td></tr>
-          <tr><td><code>02-model-migration</code></td><td>Prompt optimization across models</td><td><a href="#cs-migration">Multi-Model Migration</a></td></tr>
-          <tr><td><code>03-llm-as-judge</code></td><td>Open-ended generation with rubric judging</td><td>—</td></tr>
-          <tr><td><code>04-custom-judge</code></td><td>JSON schema validation with a Python judge</td><td>—</td></tr>
-          <tr><td><code>05-agent-single-turn</code></td><td>Tool-using agent with constraint checking</td><td><a href="#cs-agent">Support Agent</a></td></tr>
-          <tr><td><code>06-agent-multi-turn</code></td><td>Multi-turn conversation testing</td><td><a href="#cs-agent">Support Agent</a></td></tr>
-          <tr><td><code>07-pipeline-level</code></td><td>Full RAG pipeline end-to-end</td><td><a href="#cs-rag">RAG Pipeline</a></td></tr>
-          <tr><td><code>08-fastapi-service</code></td><td>Pre/post processing pipeline with dual-level testing</td><td><a href="#cs-fastapi">FastAPI Service</a></td></tr>
-          <tr><td><code>09-summarization-qa</code></td><td>Multi-criteria rubric with reference-free evaluation</td><td><a href="#cs-summarization">Summarization QA</a></td></tr>
-          <tr><td><code>10-agent-openai-agents</code></td><td>TraceBuilder + OpenAI Agents SDK adapter</td><td><a href="#cs-agent">Support Agent</a></td></tr>
-          <tr><td><code>11-safety-pii</code></td><td>Deterministic PII-leakage safety gate</td><td>—</td></tr>
-          <tr><td><code>12-rag-retrieval</code></td><td>RAG judge: retrieval recall/precision</td><td><a href="#cs-rag">RAG Pipeline</a></td></tr>
-          <tr><td><code>13-plugin-judge</code></td><td>Plugin API: custom judge + metric</td><td>—</td></tr>
-          <tr><td><code>14-judge-calibration</code></td><td>Judge calibration and drift detection</td><td>—</td></tr>
-          <tr><td><code>15-redteam</code></td><td>Adversarial dataset generation + safety gate</td><td>—</td></tr>
-          <tr><td><code>16-structured-output</code></td><td>JSON Schema validation judge</td><td>—</td></tr>
-          <tr><td><code>17-integrated-ci-gate</code></td><td>Quality + cost regression + safety in one gate</td><td>—</td></tr>
-          <tr><td><code>18-multimodal-vision</code></td><td>Direct target with <code>images</code> on dataset rows</td><td>—</td></tr>
-          <tr><td><code>19-cross-provider-migration</code></td><td>Cross-provider migrate + few-shot strategy</td><td><a href="#cs-migration">Multi-Model Migration</a></td></tr>
+          <tr><th>Example</th><th>Best for</th><th>API key?</th><th>Case Study</th></tr>
+          <tr><td><code>01-ci-regression</code></td><td>First local run; exact_match + F1</td><td>No</td><td>—</td></tr>
+          <tr><td><code>02-model-migration</code></td><td>Prompt optimization across models</td><td>Usually yes</td><td><a href="#cs-migration">Multi-Model Migration</a></td></tr>
+          <tr><td><code>03-llm-as-judge</code></td><td>Open-ended generation with rubric judging</td><td>Yes</td><td>—</td></tr>
+          <tr><td><code>04-custom-judge</code></td><td>Python custom judge</td><td>No</td><td>—</td></tr>
+          <tr><td><code>05-agent-single-turn</code></td><td>Tool-using agent constraints</td><td>No</td><td><a href="#cs-agent">Support Agent</a></td></tr>
+          <tr><td><code>06-agent-multi-turn</code></td><td>Multi-turn conversation testing</td><td>No</td><td><a href="#cs-agent">Support Agent</a></td></tr>
+          <tr><td><code>07-pipeline-level</code></td><td>Full RAG pipeline end-to-end</td><td>No</td><td><a href="#cs-rag">RAG Pipeline</a></td></tr>
+          <tr><td><code>08-fastapi-service</code></td><td>Service-level pipeline testing</td><td>No</td><td><a href="#cs-fastapi">FastAPI Service</a></td></tr>
+          <tr><td><code>09-summarization-qa</code></td><td>Reference-free LLM judge</td><td>Yes</td><td><a href="#cs-summarization">Summarization QA</a></td></tr>
+          <tr><td><code>10-agent-openai-agents</code></td><td>OpenAI Agents SDK adapter</td><td>Yes, unless mocked</td><td><a href="#cs-agent">Support Agent</a></td></tr>
+          <tr><td><code>11-safety-pii</code></td><td>Deterministic PII-leakage gate</td><td>No</td><td>—</td></tr>
+          <tr><td><code>12-rag-retrieval</code></td><td>Deterministic retrieval recall/precision</td><td>No</td><td><a href="#cs-rag">RAG Pipeline</a></td></tr>
+          <tr><td><code>13-plugin-judge</code></td><td>Custom judge + metric plugin API</td><td>No</td><td>—</td></tr>
+          <tr><td><code>14-judge-calibration</code></td><td>Judge calibration and drift detection</td><td>No</td><td>—</td></tr>
+          <tr><td><code>15-redteam</code></td><td>Adversarial dataset + safety gate</td><td>No</td><td>—</td></tr>
+          <tr><td><code>16-structured-output</code></td><td>JSON Schema validation judge</td><td>No</td><td>—</td></tr>
+          <tr><td><code>17-integrated-ci-gate</code></td><td>Quality + cost regression + safety</td><td>No</td><td>—</td></tr>
+          <tr><td><code>18-multimodal-vision</code></td><td>Vision-capable direct target</td><td>Yes</td><td>—</td></tr>
+          <tr><td><code>19-cross-provider-migration</code></td><td>Cross-provider migrate + few-shot strategy</td><td>Usually yes</td><td><a href="#cs-migration">Multi-Model Migration</a></td></tr>
         </table>
 
         <p>Examples 11–17 run with <strong>no API key</strong> (fully deterministic). Example 18 requires a vision-capable provider.</p>
