@@ -402,7 +402,7 @@
         <a href="#installation"><span class="sidebar-icon">&#x2193;</span> Installation</a>
         <a href="#quickstart" class="active"><span class="sidebar-icon">&#x26A1;</span> Quickstart</a>
         <a href="#concepts"><span class="sidebar-icon">&#x1F4A1;</span> Core Concepts</a>
-        <a href="#dataset-schemas"><span class="sidebar-icon">&#x1F4CB;</span> Dataset Schemas</a>
+        <a href="#dataset-schemas"><span class="sidebar-icon">&#x1F4CB;</span> Contracts Reference</a>
         <a href="#config-file"><span class="sidebar-icon">&#x2699;</span> llmci.yaml</a>
         <a href="#targets"><span class="sidebar-icon">&#x25B6;</span> Targets</a>
         <a href="#judges"><span class="sidebar-icon">&#x2696;</span> Judges</a>
@@ -496,6 +496,11 @@
 
 <pre><span class="cmd">llmci dataset add --name my-eval</span></pre>
 
+        <div class="callout callout-info">
+          <div class="callout-icon">&#x2139;</div>
+          <p><strong>Schema rules:</strong> required vs optional fields, command I/O, judge config, and eval <code>level</code> values are defined in one place — the <a href="#dataset-schemas">Contracts Reference</a>.</p>
+        </div>
+
         <h3>3. Run evals</h3>
 
 <pre><span class="cmd">llmci run</span></pre>
@@ -553,12 +558,23 @@
 
       <hr>
 
-      <!-- DATASET SCHEMAS -->
+      <!-- CONTRACTS REFERENCE -->
       <section class="doc-section" id="dataset-schemas">
-        <h2>Dataset Schemas</h2>
-        <p class="section-lead">Formal contracts for JSONL eval files, command-mode I/O, and judge-specific fields.</p>
+        <h2>Contracts Reference</h2>
+        <p class="section-lead">The authoritative reference for eval data, command I/O, judge config, and <code>llmci.yaml</code> fields. Use this section when wiring CI — examples elsewhere link back here.</p>
 
-        <h3>File format</h3>
+        <p><strong>In this section:</strong> <a href="#contract-levels">Eval levels</a> · <a href="#contract-dataset-rows">Dataset rows</a> · <a href="#contract-command-io">Command I/O</a> · <a href="#contract-agent-io">Agent command I/O</a> · <a href="#contract-judge-config">Judge config</a> · <a href="#contract-eval-config">Eval config</a> · <a href="#contract-metrics">Metric names</a></p>
+
+        <h3 id="contract-levels">Eval <code>level</code> values</h3>
+        <table>
+          <tr><th><code>level</code></th><th>Runtime effect</th><th>Dataset schema</th><th>Required eval fields</th></tr>
+          <tr><td><code>pipeline</code> (default)</td><td>Standard eval loop: load JSONL → run target → judge each example</td><td>Standard JSONL (<code>input</code> + optional <code>expected</code>)</td><td><code>name</code>, <code>dataset</code>, <code>judge</code>, <code>metrics</code></td></tr>
+          <tr><td><code>prompt</code></td><td><strong>Same as <code>pipeline</code></strong> — documentation label for prompt-only testing</td><td>Standard JSONL</td><td>Same as <code>pipeline</code></td></tr>
+          <tr><td><code>agent</code></td><td>Agent runner: single- or multi-turn scenarios, trace output, composite judge</td><td>Agent JSONL (separate schema)</td><td>Above + <code>level: agent</code>, command target, <code>composite</code> judge; optional <code>mode</code></td></tr>
+        </table>
+        <p>Only <code>agent</code> changes loader, target runner, and dataset shape. <code>prompt</code> vs <code>pipeline</code> is for humans reading the config — pick whichever label matches what you are testing.</p>
+
+        <h3 id="contract-dataset-rows">Dataset rows (JSONL file format)</h3>
         <ul>
           <li>One <strong>JSON object per line</strong> (JSONL). Blank lines are ignored.</li>
           <li>Each line must be a JSON <code>object</code> (not an array or string).</li>
@@ -576,17 +592,15 @@
           <tr><td>Agent multi-turn</td><td><code>turns</code></td><td><code>conversation_constraints</code></td><td><code>{"turns": [{"user_message": "…", "expected": {"outcome": "…"}}]}</code></td></tr>
         </table>
 
-        <h3>Standard eval rows (<code>level: prompt</code> or <code>level: pipeline</code>)</h3>
-        <p>Used for every eval except <code>level: agent</code>. Loaded into <code>input</code>, <code>expected</code>, and an <code>extra</code> bag for additional fields.</p>
+        <h4>Standard eval rows (<code>level: prompt</code> or <code>level: pipeline</code>)</h4>
+        <p>Used for every eval except <code>level: agent</code>. Each row is loaded into <code>input</code>, <code>expected</code>, and an <code>extra</code> bag for additional fields.</p>
 
         <table>
           <tr><th>Field</th><th>Required?</th><th>Type</th><th>Notes</th></tr>
-          <tr><td><code>input</code></td><td>Yes</td><td>string (recommended)</td><td>Prompt text or user message. Passed to your target and judges. Use strings for broadest compatibility.</td></tr>
-          <tr><td><code>expected</code></td><td>Depends on judge</td><td>string</td><td>Required for <code>exact_match</code> and classification metrics. Optional (defaults to <code>""</code>) for <code>llm</code>, <code>rag</code>, <code>safety</code>, <code>pairwise</code>, and <code>structured</code> judges.</td></tr>
-          <tr><td>Any other key</td><td>No</td><td>any JSON</td><td>Stored in <code>extra</code> — forwarded to your command's input file and visible to judges (e.g. <code>relevant_ids</code>, <code>images</code>).</td></tr>
+          <tr><td><code>input</code></td><td>Yes</td><td>string</td><td>Prompt text or user message. Must be a JSON string (not an object) for standard evals.</td></tr>
+          <tr><td><code>expected</code></td><td>Depends on judge</td><td>string</td><td>Required for <code>exact_match</code> and classification metrics. May be omitted for <code>llm</code>, <code>rag</code>, <code>safety</code>, <code>pairwise</code>, and <code>structured</code> judges (defaults to <code>""</code>).</td></tr>
+          <tr><td>Any other key</td><td>No</td><td>any JSON</td><td><strong>Allowed.</strong> Stored in <code>extra</code>, merged into command input files, and available to judges (e.g. <code>id</code>, <code>metadata</code>, <code>relevant_ids</code>, <code>images</code>).</td></tr>
         </table>
-
-        <p><code>level: prompt</code> vs <code>level: pipeline</code> is a <strong>documentation label</strong> only (what you're testing). Runtime behavior is identical; both use this schema.</p>
 
         <h4>Example rows</h4>
         <table>
@@ -598,7 +612,7 @@
           <tr><td>Red-team metadata</td><td><code>{"input": "…", "attack": "jailbreak", "category": "injection"}</code></td></tr>
         </table>
 
-        <h3>Command-mode input file (<code>{input_file}</code>)</h3>
+        <h3 id="contract-command-io">Command-mode input / output (<code>{input_file}</code> / <code>{output_file}</code>)</h3>
         <p>For each example, llmci writes <strong>one JSON object</strong> to a temp file and substitutes its path into your command. Your script reads that file — not the JSONL directly.</p>
 
 <pre>{
@@ -623,8 +637,8 @@
 
         <p>Reserved output keys: <code>output</code>, <code>usage</code>, <code>cost</code>. All other keys are passed to judges as metadata.</p>
 
-        <h3>Agent eval rows (<code>level: agent</code>)</h3>
-        <p>Agent datasets use a <strong>separate schema</strong> loaded by <code>load_agent_scenarios</code>. Requires a <code>composite</code> judge and a command-mode target. Set <code>mode: full_replay</code> (default) or <code>history_injection</code> on the eval.</p>
+        <h4>Agent eval rows (<code>level: agent</code>)</h4>
+        <p>Agent datasets use a <strong>separate schema</strong>. Requires a <code>composite</code> judge and a command-mode target. Set <code>mode: full_replay</code> (default) or <code>history_injection</code> on the eval.</p>
 
         <h4>Single-turn</h4>
 <pre>{<span class="key">"input"</span>: {<span class="key">"query"</span>: <span class="string">"Return order #5678"</span>}, <span class="key">"expected"</span>: {
@@ -644,19 +658,71 @@
     <span class="key">"constraints"</span>: {<span class="key">"required_tools"</span>: [<span class="string">"cancel_order"</span>]}}
 ]}</pre>
 
-        <p>Agent command input varies by turn: single-turn uses your <code>input</code> object; multi-turn sends <code>user_message</code>, <code>history</code>, and <code>turn_index</code>. Agent output must be trace JSON — see <a href="#agents">Agent Evaluation</a>.</p>
+        <h3 id="contract-agent-io">Agent command input by mode</h3>
+        <p>Agent evals also write one JSON object to <code>{input_file}</code> per invocation. Output is trace JSON (see <a href="#agents">Agent Evaluation</a>).</p>
 
-        <h3>Judge config: <code>rubric</code> vs <code>criteria</code></h3>
+        <h4>Single-turn</h4>
+        <p>If dataset <code>input</code> is a string, the command receives <code>{"input": "…"}</code>. If it is an object, that object is written as-is:</p>
+<pre>{<span class="key">"query"</span>: <span class="string">"Return order #5678"</span>}</pre>
+
+        <h4>Multi-turn — <code>full_replay</code> (one command call per turn)</h4>
+        <p>Turn 0 — empty history:</p>
+<pre>{
+  <span class="key">"user_message"</span>: <span class="string">"What's my order status?"</span>,
+  <span class="key">"history"</span>: [],
+  <span class="key">"turn_index"</span>: <span class="string">0</span>
+}</pre>
+        <p>Turn 1 — history includes prior user/assistant messages from actual agent outputs:</p>
+<pre>{
+  <span class="key">"user_message"</span>: <span class="string">"Cancel it"</span>,
+  <span class="key">"history"</span>: [
+    {<span class="key">"role"</span>: <span class="string">"user"</span>, <span class="key">"content"</span>: <span class="string">"What's my order status?"</span>},
+    {<span class="key">"role"</span>: <span class="string">"assistant"</span>, <span class="key">"content"</span>: <span class="string">"Order #1234 is shipped."</span>}
+  ],
+  <span class="key">"turn_index"</span>: <span class="string">1</span>
+}</pre>
+
+        <h4>Multi-turn — <code>history_injection</code> (one command call total)</h4>
+        <p>Prior turns are pre-filled with placeholder assistant text <code>"(prior response)"</code>; only the final user message is executed. For a two-turn scenario:</p>
+<pre>{
+  <span class="key">"user_message"</span>: <span class="string">"Cancel it"</span>,
+  <span class="key">"history"</span>: [
+    {<span class="key">"role"</span>: <span class="string">"user"</span>, <span class="key">"content"</span>: <span class="string">"What's my order status?"</span>},
+    {<span class="key">"role"</span>: <span class="string">"assistant"</span>, <span class="key">"content"</span>: <span class="string">"(prior response)"</span>}
+  ],
+  <span class="key">"turn_index"</span>: <span class="string">1</span>
+}</pre>
+        <p>Optional per-turn <code>context</code> from the dataset is merged into the input object when present.</p>
+
+        <h3 id="contract-judge-config">Judge config schema</h3>
+        <p><code>type: llm</code> uses <code>rubric</code> only — not <code>criteria</code>. The word "criteria" in prose refers to rubric items evaluated pass/fail.</p>
         <table>
-          <tr><th>Judge type</th><th>Config field</th><th>Shape</th></tr>
-          <tr><td><code>llm</code></td><td><code>rubric</code></td><td>String, or list of <code>{id, prompt}</code> criteria</td></tr>
-          <tr><td><code>composite</code>, <code>rag</code>, <code>safety</code></td><td><code>criteria</code></td><td>List of criterion objects (type-specific keys)</td></tr>
-          <tr><td><code>pairwise</code></td><td><code>rubric</code> (optional)</td><td>String comparison instruction</td></tr>
-          <tr><td><code>structured</code></td><td><code>json_schema</code></td><td>Inline schema or path to <code>.json</code> file</td></tr>
-          <tr><td><code>exact_match</code>, <code>custom</code></td><td>—</td><td>No rubric/criteria list</td></tr>
+          <tr><th>Judge <code>type</code></th><th>Required fields</th><th>Scoring config field</th><th>Shape</th></tr>
+          <tr><td><code>exact_match</code></td><td>—</td><td>—</td><td>Shorthand: <code>judge: exact_match</code></td></tr>
+          <tr><td><code>llm</code></td><td><code>model</code>, <code>rubric</code></td><td><code>rubric</code></td><td>String, or list of <code>{id, prompt}</code></td></tr>
+          <tr><td><code>custom</code></td><td><code>module</code>, <code>function</code></td><td>—</td><td>Python file with <code>evaluate(input, expected, actual)</code> — all three args are strings (see <a href="#judges">Judges</a>)</td></tr>
+          <tr><td><code>composite</code></td><td><code>criteria</code></td><td><code>criteria</code></td><td>List of <code>{name, type, weight, …}</code> — trajectory entries may include a nested <code>rubric</code> string</td></tr>
+          <tr><td><code>rag</code></td><td><code>criteria</code></td><td><code>criteria</code></td><td>List of RAG criterion objects (<code>retrieval_recall</code>, <code>faithfulness</code>, …)</td></tr>
+          <tr><td><code>safety</code></td><td><code>criteria</code></td><td><code>criteria</code></td><td>List of safety criterion objects (<code>pii_leakage</code>, <code>toxicity</code>, …)</td></tr>
+          <tr><td><code>pairwise</code></td><td><code>model</code></td><td><code>rubric</code> (optional)</td><td>String comparison instruction</td></tr>
+          <tr><td><code>structured</code></td><td><code>json_schema</code></td><td><code>json_schema</code></td><td>Inline schema or path to <code>.json</code> file</td></tr>
         </table>
 
-        <h3>Metric names</h3>
+        <h3 id="contract-eval-config"><code>llmci.yaml</code> eval fields</h3>
+        <table>
+          <tr><th>Field</th><th>Required?</th><th>Description</th></tr>
+          <tr><td><code>evals[].name</code></td><td>Yes</td><td>Eval identifier; baseline filename and report label.</td></tr>
+          <tr><td><code>evals[].dataset</code></td><td>Yes</td><td>Path to JSONL, or S3/HTTPS <code>{source, cache}</code> object.</td></tr>
+          <tr><td><code>evals[].judge</code></td><td>Yes</td><td>Judge config (see table above).</td></tr>
+          <tr><td><code>evals[].metrics</code></td><td>Yes (for gating)</td><td>List of <code>{name, threshold, mode}</code> — names must match computed metrics.</td></tr>
+          <tr><td><code>evals[].level</code></td><td>No</td><td><code>pipeline</code> (default), <code>prompt</code>, or <code>agent</code>.</td></tr>
+          <tr><td><code>evals[].mode</code></td><td>No</td><td>Agent only: <code>full_replay</code> (default) or <code>history_injection</code>.</td></tr>
+          <tr><td><code>evals[].target</code></td><td>No</td><td>Override root <code>target</code> for this eval only.</td></tr>
+          <tr><td><code>target</code></td><td>Yes</td><td><code>command</code> or <code>provider</code>+<code>model</code> (+ optional <code>prompt_file</code>, <code>base_url</code>).</td></tr>
+          <tr><td><code>settings</code></td><td>No</td><td><code>parallelism</code>, <code>timeout_per_call</code>, <code>retries</code>, sampling, <code>price_overrides</code>, etc.</td></tr>
+        </table>
+
+        <h3 id="contract-metrics">Metric names</h3>
         <p>Threshold <code>name</code> must match a computed metric. Built-in aggregates:</p>
         <p><code>accuracy</code>, <code>pass_rate</code>, <code>rubric_pass_rate</code> (alias of <code>pass_rate</code> for LLM rubrics), <code>mean_score</code>, <code>median_score</code>, <code>min_score</code>, <code>max_score</code>, <code>error_rate</code>, <code>f1_macro</code>, <code>f1_micro</code>, <code>f1_weighted</code>, <code>precision_*</code>, <code>recall_*</code>, <code>latency_mean</code>, <code>latency_p50</code>, <code>latency_p90</code>, <code>latency_p99</code>, <code>cost_total</code>, <code>cost_mean</code>, <code>tokens_in_mean</code>, <code>tokens_out_mean</code>, <code>tokens_total_mean</code>, <code>cosine_similarity</code>.</p>
         <p>Multi-criterion judges also expose each criterion by name as a metric (e.g. <code>retrieval_recall</code>, <code>pii_leakage</code>, <code>win_rate</code>, <code>faithfulness</code>). Plugins may register additional metric names.</p>
@@ -667,7 +733,7 @@
       <!-- LLMCI.YAML -->
       <section class="doc-section" id="config-file">
         <h2>llmci.yaml</h2>
-        <p class="section-lead">The config file defines your target, evals, and settings.</p>
+        <p class="section-lead">The config file defines your target, evals, and settings. Field-level contracts (dataset rows, judge shapes, metric names) are in the <a href="#dataset-schemas">Contracts Reference</a>.</p>
 
 <pre><span class="key">version</span>: <span class="string">1</span>
 
@@ -730,7 +796,7 @@
 <pre><span class="key">target</span>:
   <span class="key">command</span>: <span class="string">"python3 my_script.py --input {input_file} --output {output_file}"</span></pre>
 
-        <p>See <a href="#dataset-schemas">Dataset Schemas</a> for the exact input/output JSON contracts. In short: llmci writes one merged JSON object per example to <code>{input_file}</code> (including <code>input</code>, <code>expected</code>, and any extra dataset fields); your script writes a JSON object with at least <code>output</code> to <code>{output_file}</code>.</p>
+        <p>See <a href="#dataset-schemas">Contracts Reference</a> for the exact input/output JSON contracts. In short: llmci writes one merged JSON object per example to <code>{input_file}</code> (including <code>input</code>, <code>expected</code>, and any extra dataset fields); your script writes a JSON object with at least <code>output</code> to <code>{output_file}</code>.</p>
 
         <div class="callout callout-tip">
           <div class="callout-icon">&#x2713;</div>
@@ -776,7 +842,7 @@ Ticket: <span class="string">{input}</span></pre>
       <!-- JUDGES -->
       <section class="doc-section" id="judges">
         <h2>Judges</h2>
-        <p class="section-lead">Judges score each example by comparing the target's output against the expected value.</p>
+        <p class="section-lead">Judges score each example by comparing the target's output against the expected value. Config shapes and field names: <a href="#contract-judge-config">Contracts Reference — Judge config</a>.</p>
 
         <h3>Exact Match</h3>
         <p>For classification and deterministic tasks:</p>
@@ -835,11 +901,14 @@ Ticket: <span class="string">{input}</span></pre>
   <span class="key">module</span>: <span class="string">./my_judge.py</span>
   <span class="key">function</span>: <span class="string">evaluate</span></pre>
 
-        <p>Your function signature:</p>
+        <p>Your function receives three <strong>strings</strong> — llmci always passes string values at the Python boundary:</p>
 
 <pre><span class="key">def</span> <span class="cmd">evaluate</span>(input: str, expected: str, actual: str) -> dict:
-    <span class="comment"># Your logic here</span>
+    <span class="comment"># input / expected: from the dataset row (expected is "" when omitted)</span>
+    <span class="comment"># actual: target output string</span>
     <span class="key">return</span> {<span class="string">"score"</span>: 1.0, <span class="string">"reason"</span>: <span class="string">"Looks good"</span>}</pre>
+
+        <p>Standard eval datasets require <code>input</code> as a JSON string. Use type hints like <code>Any</code> only if you parse JSON inside the function yourself.</p>
 
         <p>Return a dict with <code>score</code> (0.0–1.0) and optionally <code>reason</code>.</p>
 
@@ -1114,9 +1183,18 @@ Ticket: <span class="string">{input}</span></pre>
           <tr><td><code>--max-few-shot</code></td><td>5</td><td>Cap for <code>few_shot</code> strategy</td></tr>
         </table>
 
+        <h3>Writing changes safely</h3>
+        <p>Migration is designed to be non-destructive by default:</p>
+        <ol>
+          <li><strong>Read-only optimization</strong> — llmci reads <code>target.prompt_file</code> but never writes without confirmation.</li>
+          <li><strong>Report with diff</strong> — stdout includes scores, parity verdict, a unified <code>diff</code> of original vs optimized prompt, and iteration history.</li>
+          <li><strong>Confirm before write</strong> — only if the prompt changed, llmci prompts <code>Write optimized prompt to disk? [y/N]</code>. Answer <code>N</code> for a dry run.</li>
+          <li><strong>No automatic backup</strong> — commit your prompt to git before migrating; rollback is <code>git checkout -- prompt.txt</code> (or decline the write).</li>
+        </ol>
+
         <div class="callout callout-warn">
           <div class="callout-icon">&#x26A0;</div>
-          <p>Migration requires <code>target.prompt_file</code> in your config (direct API mode). The optimizer reads that file but <strong>does not write automatically</strong> — after the run, llmci prints a report and prompts <code>Write optimized prompt to disk? [y/N]</code>. Decline to dry-run; re-run with the original prompt to roll back. Few-shot strategy inlines examples into the prompt text the same way.</p>
+          <p>Requires <code>target.prompt_file</code> in direct API mode. The <code>few_shot</code> strategy inlines selected train examples into the prompt text — same confirm-before-write flow applies.</p>
         </div>
       </section>
 
@@ -1125,10 +1203,10 @@ Ticket: <span class="string">{input}</span></pre>
       <!-- AGENT EVALUATION -->
       <section class="doc-section" id="agents">
         <h2>Agent Evaluation</h2>
-        <p class="section-lead">Test tool-using and conversational agents with composite judging.</p>
+        <p class="section-lead">Test tool-using and conversational agents with composite judging. Dataset and command I/O contracts: <a href="#contract-agent-io">Contracts Reference — Agent command input</a>.</p>
 
         <h3>Agent Scenarios</h3>
-        <p>Agent eval datasets use a different format. Single-turn:</p>
+        <p>Agent eval datasets use a different format from standard JSONL. See the quick-reference table in <a href="#dataset-schemas">Contracts Reference</a>. Single-turn:</p>
 
 <pre><span class="string">{"input": {"query": "What's the weather?"}, "expected": {"outcome": "weather info", "constraints": {"max_tool_calls": 3, "required_tools": ["get_weather"]}}}</span></pre>
 
@@ -1180,9 +1258,10 @@ result = run_for_llmci_sync(build_agent(), {<span class="string">"query"</span>:
 
         <h3>Multi-Turn Modes</h3>
         <ul>
-          <li><code>full_replay</code> — command is invoked once per turn with cumulative conversation history</li>
-          <li><code>history_injection</code> — command is invoked once with all prior turns pre-filled</li>
+          <li><code>full_replay</code> — command is invoked once per turn with cumulative conversation history built from real prior outputs</li>
+          <li><code>history_injection</code> — command is invoked once; prior turns are injected with placeholder assistant replies</li>
         </ul>
+        <p>Exact JSON written to <code>{input_file}</code> for each mode is documented in <a href="#contract-agent-io">Agent command input by mode</a>.</p>
       </section>
 
       <hr>
@@ -1475,11 +1554,11 @@ json.dump({<span class="string">"output"</span>: result[<span class="string">"ca
         <ol>
           <li>Establishes the quality bar on the old model (holdout score)</li>
           <li>Iteratively optimizes the prompt for the new model</li>
-          <li>Reports whether parity was achieved or a gap remains</li>
-          <li>Optionally writes the optimized prompt to disk</li>
+          <li>Prints a report with scores, a prompt diff, and parity verdict</li>
+          <li>Prompts before writing — you confirm per service (<code>Write optimized prompt to disk? [y/N]</code>)</li>
         </ol>
 
-        <p>Services where parity is achieved get their prompts committed automatically. Services with remaining gaps get flagged for manual review — typically 1-2 out of 12, not all 12.</p>
+        <p>Commit optimized prompts only after reviewing the diff. Services with remaining quality gaps get flagged for manual review — typically 1–2 out of 12, not all 12.</p>
 
       </section>
 
@@ -1551,7 +1630,7 @@ json.dump({<span class="string">"output"</span>: result[<span class="string">"ca
         <p>Exact-match judging doesn't work here. Two perfectly good summaries of the same article can share zero words. What matters is whether the summary is <em>faithful</em> to the source, <em>concise</em>, and <em>complete</em> in covering key points. These qualities require LLM-as-Judge evaluation with clearly defined rubrics.</p>
 
         <h4>Multi-criteria rubric</h4>
-        <p>Define an LLM-as-Judge eval with criteria that capture what "good" means for your summaries:</p>
+        <p>Define an LLM-as-Judge eval with a <code>rubric</code> (not <code>criteria</code> — that field is for composite/RAG/safety judges):</p>
 
 <pre><span class="key">evals</span>:
   - <span class="key">name</span>: <span class="string">summary-quality</span>
@@ -1559,13 +1638,13 @@ json.dump({<span class="string">"output"</span>: result[<span class="string">"ca
     <span class="key">judge</span>:
       <span class="key">type</span>: <span class="string">llm</span>
       <span class="key">model</span>: <span class="string">gpt-4o</span>
-      <span class="key">criteria</span>:
-        - <span class="key">name</span>: <span class="string">faithfulness</span>
-          <span class="key">rubric</span>: <span class="string">"Does the summary only contain claims supported by the source article? Penalize any hallucinated facts or unsupported conclusions."</span>
-        - <span class="key">name</span>: <span class="string">completeness</span>
-          <span class="key">rubric</span>: <span class="string">"Does the summary cover the main points of the article? Key findings, conclusions, and context should be present."</span>
-        - <span class="key">name</span>: <span class="string">conciseness</span>
-          <span class="key">rubric</span>: <span class="string">"Is the summary free of filler, redundancy, and unnecessary detail? It should be tight and to the point."</span>
+      <span class="key">rubric</span>:
+        - <span class="key">id</span>: <span class="string">faithfulness</span>
+          <span class="key">prompt</span>: <span class="string">"Does the summary only contain claims supported by the source article? Penalize any hallucinated facts or unsupported conclusions."</span>
+        - <span class="key">id</span>: <span class="string">completeness</span>
+          <span class="key">prompt</span>: <span class="string">"Does the summary cover the main points of the article? Key findings, conclusions, and context should be present."</span>
+        - <span class="key">id</span>: <span class="string">conciseness</span>
+          <span class="key">prompt</span>: <span class="string">"Is the summary free of filler, redundancy, and unnecessary detail? It should be tight and to the point."</span>
     <span class="key">metrics</span>:
       - <span class="key">name</span>: <span class="string">mean_score</span>
         <span class="key">threshold</span>: <span class="string">0.75</span>

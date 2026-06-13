@@ -8,7 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Documentation
-- Add **Dataset Schemas** reference (JSONL contracts, command I/O, agent rows, judge field names, metric names, baseline workflow, migration confirm prompt, privacy wording).
+- Add **Contracts Reference** — centralized dataset, command I/O, judge config, eval `level`, agent mode input JSON, and metric name contracts.
+- Fix summarization case study (`type: llm` uses `rubric`, not `criteria`); clarify migration confirm/diff flow and custom judge string args.
 
 ## [0.4.1] - 2026-06-07
 

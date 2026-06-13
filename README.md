@@ -113,7 +113,7 @@ target:
   command: "python3 my_pipeline.py --input {input_file} --output {output_file}"
 ```
 
-Your script reads a JSON input file and writes a JSON output file with an `"output"` key. llmci writes `{input, expected, ...extra fields}` to `{input_file}` — see [Dataset schemas](https://llmci-cli.github.io/llmci/docs.html#dataset-schemas) for the full contract.
+Your script reads a JSON input file and writes a JSON output file with an `"output"` key. llmci writes `{input, expected, ...extra fields}` to `{input_file}` — see [Contracts Reference](https://llmci-cli.github.io/llmci/docs.html#dataset-schemas) for the full contract.
 
 **Direct API mode** — call an LLM provider directly:
 
@@ -142,11 +142,17 @@ target:
   prompt_file: prompt.txt
 ```
 
-### Dataset schemas
+### Contracts reference
 
-Eval data is JSONL (one JSON object per line). **Standard evals** (`level: prompt` or `pipeline`) require `input`; `expected` is required for `exact_match` but optional for LLM/RAG/safety judges. Any other keys (`relevant_ids`, `images`, `metadata`, …) are preserved and forwarded to command-mode input files.
+Eval data is JSONL (one JSON object per line). **Standard evals** (`level: prompt` or `pipeline`) require `input` as a string; `expected` is required for `exact_match` but optional for LLM/RAG/safety judges. **Custom fields are allowed** — any key besides `input`/`expected` is preserved and forwarded to command-mode input files.
 
-**Agent evals** (`level: agent`) use a separate schema: single-turn rows have `input` + `expected.outcome` (+ optional `constraints`); multi-turn rows use `turns[]`.
+**Agent evals** (`level: agent`) use a separate schema: single-turn rows have `input` (string or object) + `expected`; multi-turn rows use `turns[]`.
+
+| `level` | Runtime effect |
+|---------|----------------|
+| `pipeline` (default) | Standard eval loop |
+| `prompt` | Same as `pipeline` — label only |
+| `agent` | Separate dataset schema, trace output, composite judge |
 
 | Eval type | Required fields | Common optional fields |
 |-----------|-----------------|------------------------|
@@ -157,9 +163,9 @@ Eval data is JSONL (one JSON object per line). **Standard evals** (`level: promp
 | Agent single-turn | `input`, `expected` | `expected.constraints` |
 | Agent multi-turn | `turns` | `conversation_constraints` |
 
-Judge config: **`rubric`** for `llm` and optional `pairwise`; **`criteria`** for `composite`, `rag`, and `safety`. Metric threshold names must match built-in aggregates (`accuracy`, `pass_rate`, `mean_score`, …) or judge sub-score names (`retrieval_recall`, `pii_leakage`, `win_rate`, …). `rubric_pass_rate` is an alias for `pass_rate`.
+Judge config: **`rubric`** for `type: llm` (not `criteria`); **`criteria`** for `composite`, `rag`, and `safety`. Custom judges receive `(input, expected, actual)` as strings. Migration prints a prompt diff and asks `Write optimized prompt to disk? [y/N]` before any write.
 
-Full contracts (command I/O, baselines, migration safety, privacy): **[docs — Dataset Schemas](https://llmci-cli.github.io/llmci/docs.html#dataset-schemas)**.
+Full contracts: **[docs — Contracts Reference](https://llmci-cli.github.io/llmci/docs.html#dataset-schemas)**.
 
 ### Judges
 
