@@ -1352,6 +1352,104 @@
     .comp-table .ck { color: var(--accent); font-weight: 600; }
     .comp-table .cx { color: var(--text-tertiary); }
 
+    /* BLOG */
+    .blog-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 32px;
+      margin-bottom: 42px;
+    }
+
+    .blog-header .section-desc {
+      margin-bottom: 0;
+    }
+
+    .blog-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.95fr 0.95fr;
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .blog-card {
+      min-height: 260px;
+      padding: 30px;
+      background: var(--bg);
+      color: inherit;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: background 0.15s;
+    }
+
+    .blog-card:hover {
+      background: var(--accent-bg);
+    }
+
+    .blog-card.featured {
+      min-height: 300px;
+      background:
+        linear-gradient(180deg, rgba(5, 150, 105, 0.055), rgba(255, 255, 255, 0)),
+        var(--bg);
+    }
+
+    .blog-card.featured:hover {
+      background:
+        linear-gradient(180deg, rgba(5, 150, 105, 0.09), rgba(255, 255, 255, 0.02)),
+        var(--bg);
+    }
+
+    .blog-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 18px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .blog-meta span {
+      width: 4px;
+      height: 4px;
+      border-radius: 999px;
+      background: var(--border-strong);
+    }
+
+    .blog-card h3 {
+      font-size: 1.05rem;
+      font-weight: 800;
+      line-height: 1.25;
+      letter-spacing: 0;
+      margin-bottom: 12px;
+    }
+
+    .blog-card.featured h3 {
+      font-size: 1.35rem;
+      line-height: 1.18;
+    }
+
+    .blog-card p {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.65;
+    }
+
+    .blog-link {
+      margin-top: 28px;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
     /* CONTRAST BAR */
     .contrast-bar {
       text-align: center;
@@ -1455,7 +1553,7 @@
     /* ALSO SUPPORTS */
     .also-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 1px;
       background: var(--border);
       border: 1px solid var(--border);
@@ -1688,10 +1786,12 @@
 
     /* RESPONSIVE */
     @media (max-width: 768px) {
-      .steps-grid, .cards-3, .also-grid, .pain-grid, .platform-panel { grid-template-columns: 1fr; }
+      .steps-grid, .cards-3, .also-grid, .pain-grid, .platform-panel, .blog-grid { grid-template-columns: 1fr; }
       .gate-flow, .blackbox-flow { grid-template-columns: 1fr; }
       .gate-step:not(:last-child)::after,
       .blackbox-node::after { display: none !important; }
+      .blog-header { display: block; }
+      .blog-card, .blog-card.featured { min-height: auto; }
       .pr-gate { padding: 20px; }
       .pr-header { flex-direction: column; }
       .blackbox-node.core { min-height: 150px; }
@@ -1939,6 +2039,7 @@
         <a href="#example">Example</a>
         <a href="#why-llmci">Why llmci</a>
         <a href="#compare">Compare</a>
+        <a href="#blog">Blog</a>
         <a href="docs.html">Docs</a>
         <a href="https://github.com/llmci-cli/llmci" class="btn btn-nav">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 4px;"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
@@ -2502,9 +2603,9 @@ json.dump({<span class="s">"output"</span>: result}, open(args.output, <span cla
           <h3>Agent trajectory checks <span>&rarr;</span></h3>
           <p>Evaluate tool use, cost budgets, and outcomes with the same black-box command contract.</p>
         </a>
-        <a class="also-card" href="https://github.com/llmci-cli/llmci-testbed/pull/1">
+        <a class="also-card" href="https://github.com/llmci-cli/llmci-testbed/pull/7">
           <h3>Live demo PRs <span>&rarr;</span></h3>
-          <p>Open pre-built break branches on llmci-testbed to watch CI fail and read the merged eval comment.</p>
+          <p>Open the focused ticket-classifier demo PR to watch the prompt regression gate fail.</p>
         </a>
         <a class="also-card" href="use-cases.html#dataset-creation">
           <h3>Dataset augmentation <span>&rarr;</span></h3>
@@ -2574,6 +2675,51 @@ json.dump({<span class="s">"output"</span>: result}, open(args.output, <span cla
     </div>
   </section>
 
+  <!-- 09 BLOG -->
+  <section id="blog">
+    <div class="container">
+      <div class="blog-header">
+        <div>
+          <div class="section-num">09</div>
+          <div class="section-label">Blog</div>
+          <h2>Notes from building<br>LLM regression gates.</h2>
+        </div>
+        <p class="section-desc">
+          Practical guides for teams moving evals from notebooks into pull requests.
+        </p>
+      </div>
+
+      <div class="blog-grid" aria-label="Featured blog articles">
+        <a class="blog-card featured" href="blog/real-llm-regression-ci.html">
+          <div>
+            <div class="blog-meta">Guide <span></span> 7 min read</div>
+            <h3>A prompt change that regresses an LLM classifier</h3>
+            <p>Walk through a public llmci-testbed classifier, the prompt diff that breaks billing routes, and the CI gate that catches it.</p>
+          </div>
+          <div class="blog-link">Read the post &rarr;</div>
+        </a>
+
+        <a class="blog-card" href="docs.html#baselines">
+          <div>
+            <div class="blog-meta">Playbook <span></span> 5 min read</div>
+            <h3>Choosing thresholds teams will actually trust</h3>
+            <p>Use baseline comparisons, absolute floors, and focused metrics to avoid noisy gates while still blocking meaningful behavior drops.</p>
+          </div>
+          <div class="blog-link">Open playbook &rarr;</div>
+        </a>
+
+        <a class="blog-card" href="docs.html#agents">
+          <div>
+            <div class="blog-meta">Agents <span></span> 6 min read</div>
+            <h3>Testing agent behavior without rewriting your app</h3>
+            <p>Wrap the system boundary your users hit, evaluate tool calls and outcomes, and keep agent checks versioned with the code.</p>
+          </div>
+          <div class="blog-link">Explore agents &rarr;</div>
+        </a>
+      </div>
+    </div>
+  </section>
+
   <!-- CTA -->
   <section class="cta-section">
     <div class="container">
@@ -2594,6 +2740,7 @@ json.dump({<span class="s">"output"</span>: result}, open(args.output, <span cla
         <a href="https://github.com/llmci-cli/llmci">GitHub</a>
         <a href="docs.html">Docs</a>
         <a href="use-cases.html">Use Cases</a>
+        <a href="#blog">Blog</a>
       </div>
     </div>
   </footer>
