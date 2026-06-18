@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>A Prompt Change That Regresses an LLM Classifier - llmci Blog</title>
-  <meta name="description" content="A walkthrough of a real LiteLLM-backed support-ticket classifier in llmci-testbed, a prompt change that regresses billing classification, and the llmci gate that catches it before merge.">
+  <title>An Agent Tool Registry Change That Regresses Tool Routing - llmci Blog</title>
+  <meta name="description" content="A walkthrough of a real OpenAI Agents SDK support agent where a plausible tool registry refactor swaps bound implementations and llmci catches the regression in CI.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -234,6 +234,7 @@
     }
 
     .hero-report-col {
+      min-width: 0;
       padding: 22px;
       background: var(--bg);
     }
@@ -383,6 +384,7 @@
     }
 
     pre {
+      max-width: 100%;
       margin: 0;
       overflow-x: auto;
       background: var(--bg-code);
@@ -606,47 +608,54 @@
 
   <header class="post-hero">
     <div class="container">
-      <div class="breadcrumb"><a href="../index.html#blog">Blog</a><span>/</span><span>Prompt Regression</span></div>
+      <div class="breadcrumb"><a href="../index.html#blog">Blog</a><span>/</span><span>Agent Tool Routing Regression</span></div>
       <div class="post-meta">
         <span>Guide</span>
         <span>7 min read</span>
-        <span>June 14, 2026</span>
+        <span>June 18, 2026</span>
       </div>
-      <h1>A prompt change that regresses an LLM classifier</h1>
+      <h1>An agent tool registry change that routes users to the wrong action</h1>
       <p class="dek">
-        Take the public llmci testbed, change one rule in a LiteLLM-backed support-ticket classifier prompt, and some billing tickets start falling through to <code>general</code>. This is the kind of product regression a pull request should catch before merge.
+        The prompt can be fine. The model can choose the right tool name. A normal-looking framework refactor can still bind that tool name to the wrong Python function, turning returns into refunds and status checks into cancellations.
       </p>
 
-      <div class="hero-report" aria-label="Prompt regression summary">
+      <div class="hero-report" aria-label="Agent tool routing regression summary">
         <div class="hero-report-header">
-          <span>ticket-classifier / llmci-prompt.yaml</span>
+          <span>support-agent / llmci-single-full.yaml</span>
           <div class="hero-report-actions">
-            <a class="hero-report-link" href="https://github.com/llmci-cli/llmci-testbed/pull/7">View focused PR</a>
+            <a class="hero-report-link" href="https://github.com/llmci-cli/llmci-testbed/pull/11">View focused PR</a>
             <span class="status-fail">failed check</span>
           </div>
         </div>
         <div class="hero-report-body">
           <div class="hero-report-col">
-            <h3>Prompt diff</h3>
-            <pre class="code-diff"><code><span class="diff-del">- "billing" = payments, subscriptions, charges, refunds</span>
-<span class="diff-add">+ "billing" = invoice documents and payment method updates only;</span>
-<span class="diff-add">+             do not use for subscription changes, refunds, cancellations,</span>
-<span class="diff-add">+             discounts, renewals, or price disputes</span>
-<span class="diff-add">+ Prefer product issue categories when money is mentioned.</span></code></pre>
+            <h3>Registry diff</h3>
+            <pre class="code-diff"><code><span class="diff-hunk">@@ tool registry</span>
+return_action = (
+    issue_refund
+    if SWAP_RETURN_REFUND_TOOL_IMPLS
+    else initiate_return
+)
+
+_make_order_tool(
+    name="initiate_return",
+    description="Start a customer return...",
+    implementation=return_action,
+)</code></pre>
           </div>
           <div class="hero-report-col">
             <h3>llmci result</h3>
             <div class="hero-report-metric">
-              <strong>accuracy</strong>
-              <span class="pass">0.917 >= 0.90</span>
+              <strong>mean_score</strong>
+              <span class="fail">0.472 &lt; 0.85</span>
             </div>
             <div class="hero-report-metric">
-              <strong>f1_macro</strong>
-              <span class="fail">0.760 &lt; 0.85</span>
+              <strong>judge</strong>
+              <span class="fail">composite agent</span>
             </div>
             <div class="hero-report-metric">
-              <strong>failed examples</strong>
-              <span class="fail">2</span>
+              <strong>route type</strong>
+              <span class="fail">tool call</span>
             </div>
           </div>
         </div>
@@ -656,203 +665,241 @@
 
   <main class="article">
     <article class="article-container">
-      <h2>Start with an ordinary support classifier</h2>
+      <h2>The model can choose the right label and still do the wrong thing</h2>
       <p class="lead">
-        The example lives in <a href="https://github.com/llmci-cli/llmci-testbed">llmci-cli/llmci-testbed</a>, a public repository with several small LLM-powered services. This one routes support tickets into <code>hardware</code>, <code>billing</code>, <code>account</code>, <code>software</code>, or <code>general</code>.
+        The example lives in <a href="https://github.com/llmci-cli/llmci-testbed">llmci-cli/llmci-testbed</a>, a public repository with small LLM-powered services. This one is a support agent built around the OpenAI Agents SDK: declare function tools, let a model choose one, execute the bound implementation, and return the tool result.
       </p>
       <p>
-        It is a useful CI example because the output is compact, user-visible, and easy to score. If billing tickets fall through to <code>general</code>, the product got worse, even if the app still returns a valid category.
+        The focused <a href="https://github.com/llmci-cli/llmci-testbed/pull/11">testbed PR</a> does not change the eval data or the user questions. It changes the tool registry. The model still sees a tool named <code>initiate_return</code> with a return-specific description. The problem is that the tool name is now wired to the refund function underneath.
       </p>
 
       <div class="repo-card">
         <div class="card-title">Relevant testbed files</div>
-        <pre><code>services/ticket-classifier/app/classifier.py
-services/ticket-classifier/app/prompts/classify.txt
-services/ticket-classifier/evals/tickets.jsonl
-services/ticket-classifier/llmci-prompt.yaml
-services/ticket-classifier/scripts/run_prompt.py
+        <pre><code>services/support-agent/agent/run_agent.py
+services/support-agent/agent/tools.py
+services/support-agent/evals/scenarios.jsonl
+services/support-agent/llmci-single-full.yaml
 .github/workflows/llmci.yml</code></pre>
       </div>
 
-      <h2>The regression is one prompt rule</h2>
+      <h2>The regression looks like a registry refactor</h2>
       <p>
-        The original prompt treats payments, subscriptions, charges, and refunds as <code>billing</code>. A pull request tries to make that rule more precise, but it narrows the category so far that plan-change and discount-code tickets fall out of it.
+        The support tools themselves are simple and stable. <code>lookup_order</code> looks up order state, <code>initiate_return</code> starts a return, <code>issue_refund</code> issues a refund, and <code>cancel_order</code> cancels an order. The risky part is the framework registry that exposes those functions to the model.
       </p>
 
       <div class="diff-card">
-        <div class="card-title">services/ticket-classifier/app/prompts/classify.txt</div>
-        <pre class="code-diff"><code><span class="diff-hunk">@@ Rules</span>
-  "hardware" = physical devices, peripherals, connectivity issues
-<span class="diff-del">- "billing" = payments, subscriptions, charges, refunds</span>
-<span class="diff-add">+ "billing" = invoice documents and payment method updates only;</span>
-<span class="diff-add">+             do not use for subscription changes, refunds, cancellations,</span>
-<span class="diff-add">+             discounts, renewals, or price disputes</span>
-  "account" = login, passwords, profile, permissions
-  "software" = apps, crashes, bugs, updates
-  "general" = anything that doesn't clearly fit above
-<span class="diff-add">+</span>
-<span class="diff-add">+If a ticket mentions both money and a product issue, prefer the product issue category.</span></code></pre>
+        <div class="card-title">services/support-agent/agent/run_agent.py</div>
+        <pre class="code-diff"><code><span class="diff-hunk">@@ tool implementation bindings</span>
+<span class="diff-add">+SWAP_RETURN_REFUND_TOOL_IMPLS = True</span>
+<span class="diff-add">+SWAP_STATUS_CANCEL_TOOL_IMPLS = True</span>
+
+lookup_action = cancel_order <span class="k">if</span> SWAP_STATUS_CANCEL_TOOL_IMPLS <span class="k">else</span> lookup_order
+cancel_action = lookup_order <span class="k">if</span> SWAP_STATUS_CANCEL_TOOL_IMPLS <span class="k">else</span> cancel_order
+return_action = issue_refund <span class="k">if</span> SWAP_RETURN_REFUND_TOOL_IMPLS <span class="k">else</span> initiate_return
+refund_action = initiate_return <span class="k">if</span> SWAP_RETURN_REFUND_TOOL_IMPLS <span class="k">else</span> issue_refund</code></pre>
       </div>
 
       <p>
-        In isolation, the change looks reasonable. It is trying to reduce ambiguous billing routes. In behavior, it breaks plan-upgrade and discount-code tickets that should still route to billing.
+        That is intentionally blunt in the demo, but the failure mode is real. In a larger app, this can happen through dependency injection, renamed functions, generated tool wrappers, a shared registry, or a provider migration. The tool schema that the model sees can look correct while the callable behind it does the wrong business action.
       </p>
 
-      <h2>The eval runs the real classifier</h2>
+      <h2>The agent uses a real framework path</h2>
       <p>
-        The eval does not inspect the prompt in isolation. It runs the same classifier wrapper the app uses: read the prompt template, fill in the ticket, and call a model through LiteLLM. The default is <code>openai/gpt-4o-mini</code>, but the same wrapper can point at any LiteLLM-supported provider through <code>CLASSIFIER_MODEL</code>.
+        This is not just a hand-written router with an LLM call bolted on. In CI, the single-turn path builds an OpenAI Agents SDK <code>Agent</code>, registers <code>FunctionTool</code> objects, and calls <code>Runner.run_sync()</code>. The framework handles the model-driven tool choice.
       </p>
 
       <div class="diff-card">
-        <div class="card-title">services/ticket-classifier/app/classifier.py</div>
-        <pre><code>prompt_template = PROMPT_PATH.<span class="f">read_text</span>()
-prompt = prompt_template.<span class="f">replace</span>(<span class="s">"{input}"</span>, text)
-model = os.environ.<span class="f">get</span>(<span class="s">"CLASSIFIER_MODEL"</span>, <span class="s">"openai/gpt-4o-mini"</span>)
+        <div class="card-title">Framework agent setup</div>
+        <pre><code><span class="k">def</span> <span class="f">_build_support_agent</span>(trace: list, step_ref: dict[str, int]) -&gt; Any:
+    <span class="k">from</span> agents <span class="k">import</span> Agent, ModelSettings
 
-category = <span class="f">complete</span>(prompt, model=model).<span class="f">strip</span>().<span class="f">lower</span>()
-<span class="k">if</span> category <span class="k">not in</span> CATEGORY_KEYWORDS:
-    <span class="k">return</span> <span class="s">"general"</span>, <span class="n">0</span>
-<span class="k">return</span> category, CONFIDENCE_THRESHOLD</code></pre>
+    tools = [
+        <span class="f">_make_order_tool</span>(
+            name=<span class="s">"lookup_order"</span>,
+            description=<span class="s">"Look up order status before giving status updates..."</span>,
+            implementation=lookup_action,
+            tokens=<span class="n">25</span>,
+        ),
+        <span class="f">_make_order_tool</span>(
+            name=<span class="s">"initiate_return"</span>,
+            description=<span class="s">"Start a customer return for an eligible order."</span>,
+            implementation=return_action,
+            tokens=<span class="n">30</span>,
+        ),
+        <span class="f">_make_order_tool</span>(
+            name=<span class="s">"issue_refund"</span>,
+            description=<span class="s">"Issue a refund for an order."</span>,
+            implementation=refund_action,
+            tokens=<span class="n">30</span>,
+        ),
+    ]
+
+    <span class="k">return</span> <span class="f">Agent</span>(
+        name=<span class="s">"Support agent"</span>,
+        model=os.environ.<span class="f">get</span>(<span class="s">"AGENT_MODEL"</span>, <span class="s">"gpt-4o-mini"</span>),
+        instructions=<span class="s">"Use exactly one tool for each request..."</span>,
+        tools=tools,
+        model_settings=<span class="f">ModelSettings</span>(temperature=<span class="n">0.0</span>),
+        tool_use_behavior=<span class="s">"stop_on_first_tool"</span>,
+    )</code></pre>
       </div>
 
       <p>
-        llmci does not need to know anything special about that code. It only needs a command that accepts an input file and writes an output file.
+        The wrapper records the framework tool call in llmci's agent trace shape. That trace is the important bit. A text-only check might see a reasonable sentence. An agent gate can inspect which tool ran, how many steps it took, and whether the final action matched the task.
       </p>
 
       <div class="diff-card">
-        <div class="card-title">services/ticket-classifier/scripts/run_prompt.py</div>
-        <pre><code>data = json.<span class="f">loads</span>(<span class="f">Path</span>(args.input).<span class="f">read_text</span>())
-category, _ = <span class="f">classify_core</span>(data[<span class="s">"input"</span>])
-<span class="f">Path</span>(args.output).<span class="f">write_text</span>(json.<span class="f">dumps</span>({<span class="s">"output"</span>: category}))</code></pre>
+        <div class="card-title">Tool trace adapter</div>
+        <pre><code><span class="k">async def</span> <span class="f">invoke</span>(_ctx: Any, args: str) -&gt; str:
+    order_id = <span class="f">_parse_order_args</span>(args)
+    content = <span class="f">implementation</span>(order_id)
+    step_ref[<span class="s">"step"</span>] = <span class="f">_append_tool</span>(
+        trace,
+        step_ref[<span class="s">"step"</span>],
+        name,
+        {<span class="s">"order_id"</span>: order_id},
+        content,
+        tokens,
+    )
+    <span class="k">return</span> content</code></pre>
       </div>
 
-      <h2>The eval is small on purpose</h2>
+      <h2>The eval says what the agent must do</h2>
       <p>
-        The dataset is not a giant benchmark. It is a focused set of normal support tickets that should keep working across prompt edits.
+        The eval rows are not trying to simulate every support conversation. They pin down the critical tool-use contract: returns should verify and initiate returns, refunds should verify and issue refunds, status should look up status, and cancellation should call the cancellation tool.
       </p>
 
       <div class="diff-card">
-        <div class="card-title">evals/tickets.jsonl</div>
-        <pre><code>{<span class="k">"input"</span>: <span class="s">"Can I upgrade from the Basic to Pro plan mid-cycle..."</span>,
- <span class="k">"expected"</span>: <span class="s">"billing"</span>}
-{<span class="k">"input"</span>: <span class="s">"I was given a 20% discount code but it says expired..."</span>,
- <span class="k">"expected"</span>: <span class="s">"billing"</span>}
-{<span class="k">"input"</span>: <span class="s">"I received an invoice for $299 but my plan is supposed to be $199..."</span>,
- <span class="k">"expected"</span>: <span class="s">"billing"</span>}</code></pre>
+        <div class="card-title">services/support-agent/evals/scenarios.jsonl</div>
+        <pre><code>{<span class="k">"input"</span>: {<span class="k">"query"</span>: <span class="s">"I want to return order #5678"</span>},
+ <span class="k">"expected"</span>: {
+   <span class="k">"outcome"</span>: <span class="s">"return initiated"</span>,
+   <span class="k">"constraints"</span>: {
+     <span class="k">"required_tools"</span>: [<span class="s">"lookup_order"</span>, <span class="s">"initiate_return"</span>],
+     <span class="k">"forbidden_tools"</span>: [<span class="s">"delete_account"</span>],
+     <span class="k">"max_tool_calls"</span>: <span class="n">4</span>
+   }
+ }}
+{<span class="k">"input"</span>: {<span class="k">"query"</span>: <span class="s">"Can I get a refund for order #3456?"</span>},
+ <span class="k">"expected"</span>: {
+   <span class="k">"outcome"</span>: <span class="s">"refund processed"</span>,
+   <span class="k">"constraints"</span>: {
+     <span class="k">"required_tools"</span>: [<span class="s">"lookup_order"</span>, <span class="s">"issue_refund"</span>],
+     <span class="k">"forbidden_tools"</span>: [<span class="s">"delete_account"</span>],
+     <span class="k">"max_tool_calls"</span>: <span class="n">4</span>
+   }
+ }}</code></pre>
       </div>
 
       <p>
-        These are the kinds of examples the prompt diff endangers. If the model stops treating plan changes and discount problems as billing, the output still looks valid; it is just wrong.
+        That gives the judge both semantic expectations and trajectory constraints. If the model calls a tool that looks plausible but the bound function returns the wrong action, the final output and the trace no longer satisfy the contract.
       </p>
 
-      <h2>The config turns it into a CI gate</h2>
+      <h2>The config turns trajectories into a CI gate</h2>
       <p>
-        The llmci config ties the wrapper and dataset together, then sets two thresholds: accuracy must stay at or above <code>0.90</code>, and macro F1 must stay at or above <code>0.85</code>.
+        The focused config uses llmci's agent-level composite judge. It combines deterministic constraints with model-judged outcome and trajectory checks, then blocks the PR when <code>mean_score</code> falls below <code>0.85</code>. Outcome is weighted heavily here because the regression is specifically about the business action the agent performs.
       </p>
 
       <div class="diff-card">
-        <div class="card-title">services/ticket-classifier/llmci-prompt.yaml</div>
+        <div class="card-title">services/support-agent/llmci-single-full.yaml</div>
         <pre><code><span class="k">target</span>:
-  <span class="k">command</span>: <span class="s">"python3 scripts/run_prompt.py --input {input_file} --output {output_file}"</span>
+  <span class="k">command</span>: <span class="s">"python3 agent/run_agent.py --input {input_file} --output {output_file}"</span>
 
 <span class="k">evals</span>:
-  - <span class="k">name</span>: <span class="s">prompt-classification</span>
-    <span class="k">level</span>: <span class="s">prompt</span>
-    <span class="k">dataset</span>: <span class="s">./evals/tickets.jsonl</span>
-    <span class="k">judge</span>: <span class="s">exact_match</span>
+  - <span class="k">name</span>: <span class="s">support-agent-single-full</span>
+    <span class="k">level</span>: <span class="s">agent</span>
+    <span class="k">dataset</span>: <span class="s">./evals/scenarios.jsonl</span>
+    <span class="k">judge</span>:
+      <span class="k">type</span>: <span class="s">composite</span>
+      <span class="k">model</span>: <span class="s">openai/gpt-4o-mini</span>
+      <span class="k">criteria</span>:
+        - {<span class="k">name</span>: <span class="s">safety</span>, <span class="k">type</span>: <span class="s">constraint</span>, <span class="k">weight</span>: <span class="n">1.0</span>}
+        - {<span class="k">name</span>: <span class="s">correctness</span>, <span class="k">type</span>: <span class="s">outcome</span>, <span class="k">weight</span>: <span class="n">5.0</span>}
+        - {<span class="k">name</span>: <span class="s">efficiency</span>, <span class="k">type</span>: <span class="s">trajectory</span>, <span class="k">weight</span>: <span class="n">1.0</span>}
     <span class="k">metrics</span>:
-      - <span class="k">name</span>: <span class="s">accuracy</span>
-        <span class="k">threshold</span>: <span class="n">0.90</span>
-        <span class="k">mode</span>: <span class="s">absolute</span>
-      - <span class="k">name</span>: <span class="s">f1_macro</span>
-        <span class="k">threshold</span>: <span class="n">0.85</span>
-        <span class="k">mode</span>: <span class="s">absolute</span></code></pre>
+      - {<span class="k">name</span>: <span class="s">mean_score</span>, <span class="k">threshold</span>: <span class="n">0.85</span>, <span class="k">mode</span>: <span class="s">absolute</span>}</code></pre>
       </div>
 
       <p>
-        For a real-model run, CI only needs the same pieces the application already needs: provider credentials, a model name, and the normal pull request comparison.
+        The workflow narrows the demo branch to this one support-agent config and runs the real model path with <code>AGENT_MODEL=openai/gpt-4o-mini</code>.
       </p>
 
       <div class="diff-card">
-        <div class="card-title">GitHub Actions: real-model run</div>
-        <pre><code>- <span class="k">name</span>: <span class="s">Run focused classifier prompt eval</span>
-  <span class="k">working-directory</span>: <span class="s">services/ticket-classifier</span>
+        <div class="card-title">GitHub Actions: focused agent eval</div>
+        <pre><code>- <span class="k">name</span>: <span class="s">Run focused support agent eval</span>
+  <span class="k">working-directory</span>: <span class="s">services/support-agent</span>
   <span class="k">env</span>:
-    <span class="k">MOCK_LLM</span>: <span class="s">"0"</span>
     <span class="k">OPENAI_API_KEY</span>: <span class="s">${{ secrets.OPENAI_API_KEY }}</span>
-    <span class="k">CLASSIFIER_MODEL</span>: <span class="s">openai/gpt-4o-mini</span>
+    <span class="k">AGENT_MODEL</span>: <span class="s">openai/gpt-4o-mini</span>
     <span class="k">GITHUB_TOKEN</span>: <span class="s">${{ secrets.GITHUB_TOKEN }}</span>
-  <span class="k">run</span>: <span class="s">llmci run --config llmci-prompt.yaml --compare-to=origin/main</span></code></pre>
+    <span class="k">LLMCI_REPORT_SLICE</span>: <span class="s">support-agent/llmci-single-full.yaml</span>
+  <span class="k">run</span>: <span class="s">llmci run --config llmci-single-full.yaml --compare-to=origin/main</span></code></pre>
       </div>
 
-      <h2>The report explains the failure</h2>
+      <h2>The report catches the tool-routing regression</h2>
       <p>
-        When the prompt change runs through the gate, llmci reports both the aggregate drop and the concrete tickets that changed. The public <a href="https://github.com/llmci-cli/llmci-testbed/pull/7">focused testbed PR</a> applies this exact prompt regression and adds a dedicated workflow job for <code>ticket-classifier / llmci-prompt.yaml</code>.
+        The public <a href="https://github.com/llmci-cli/llmci-testbed/pull/11">focused agent PR</a> fails as a normal GitHub check. The score lands below the configured gate because the agent's tool path no longer produces reliable support actions.
       </p>
 
-      <div class="result-grid" aria-label="llmci report highlights">
+      <div class="result-grid" aria-label="llmci agent report highlights">
         <div class="result-card">
-          <div class="label">Accuracy</div>
-          <div class="value pass">0.917</div>
-          <p>Above the configured <code>0.90</code> quality floor.</p>
+          <div class="label">Mean Score</div>
+          <div class="value fail">0.472</div>
+          <p>Below the configured <code>0.85</code> agent gate.</p>
         </div>
         <div class="result-card">
-          <div class="label">Macro F1</div>
-          <div class="value fail">0.760</div>
-          <p>Below the configured <code>0.85</code> threshold.</p>
+          <div class="label">Eval Level</div>
+          <div class="value fail">agent</div>
+          <p>The judge reads the final answer and the tool trajectory.</p>
         </div>
         <div class="result-card">
-          <div class="label">Failures</div>
-          <div class="value fail">2</div>
-          <p>Failed examples attached to the review comment.</p>
+          <div class="label">Examples</div>
+          <div class="value fail">3</div>
+          <p>The PR comment lists concrete failed support requests.</p>
         </div>
       </div>
 
       <figure class="screenshot-figure">
-        <img src="../assets/blog/prompt-regression-pr-comment.png" alt="GitHub Actions llmci report comment showing prompt-classification macro F1 failing and two billing examples routed to general" loading="lazy">
+        <img src="../assets/blog/agent-tool-routing-regression-pr-comment.png" alt="GitHub Actions llmci report comment showing support-agent mean score failing with three failed tool-routing examples" loading="lazy">
         <figcaption>
-          The focused testbed PR gets a real GitHub Actions comment: accuracy still clears the floor, but macro F1 catches the billing-category regression and shows the two changed examples.
+          The PR comment shows the concrete requests that regressed. The model path is real, and the failed rows make the business impact visible: returns become refunds, and a cancellation request becomes a status lookup.
         </figcaption>
       </figure>
 
-      <p>
-        The failed examples make the regression obvious. Billing tickets that should route to the billing queue are now falling through to <code>general</code>.
-      </p>
-
       <h2>What review alone can miss</h2>
       <p>
-        A reviewer can read the prompt diff and still miss how it changes model behavior across the examples that matter. llmci turns that question into a repeatable gate.
+        Tool schemas and tool implementations often live in different places. A reviewer may inspect the prompt and the visible tool descriptions and see nothing suspicious. The model might even choose the right tool name. But the application behavior depends on what is bound behind that name.
       </p>
 
       <ul>
-        <li><strong>It runs the model-backed path.</strong> The target command calls the same classifier wrapper used by the app.</li>
-        <li><strong>It reports product-level behavior.</strong> The failure is framed as macro F1, with classifier accuracy shown alongside it.</li>
-        <li><strong>It gives examples.</strong> Reviewers see which tickets changed and what they changed into.</li>
-        <li><strong>It fits CI.</strong> The result is a normal pass/fail check and a pull request comment.</li>
+        <li><strong>It runs the framework boundary.</strong> The command exercises the SDK agent, not a mock-only router.</li>
+        <li><strong>It checks actions, not just words.</strong> The eval asks whether the right support action happened.</li>
+        <li><strong>It captures trajectories.</strong> The trace records which tool was called and with what arguments.</li>
+        <li><strong>It fails in CI.</strong> The result is a normal pull request check and comment.</li>
       </ul>
 
       <div class="callout">
-        <p>The lesson is not that prompts are uniquely fragile. The lesson is that LLM app regressions often look like ordinary application changes until you run behavioral checks against the model-backed product boundary.</p>
+        <p>Agent regressions often hide between the model-visible tool schema and the application function actually bound to it. CI should test that boundary directly.</p>
       </div>
 
       <h2>Try it yourself</h2>
       <p>
-        Open the <a href="https://github.com/llmci-cli/llmci-testbed">testbed repository</a>, inspect the ticket classifier service, and apply the prompt diff above on a branch. The smallest useful version of this pattern is:
+        Open the <a href="https://github.com/llmci-cli/llmci-testbed">testbed repository</a>, inspect <code>services/support-agent</code>, and look at <a href="https://github.com/llmci-cli/llmci-testbed/pull/11">PR #11</a>. The smallest useful version of this pattern is:
       </p>
 
       <ul>
-        <li>Commit representative examples in <code>evals/*.jsonl</code>.</li>
-        <li>Add a target command that runs your model-backed wrapper.</li>
-        <li>Set one or two thresholds your team actually trusts.</li>
-        <li>Run <code>llmci run --config llmci-prompt.yaml --compare-to=origin/main</code> on pull requests.</li>
+        <li>Represent tools as the same framework objects your app uses in production.</li>
+        <li>Emit a trace with tool names, arguments, outputs, and final response text.</li>
+        <li>Write eval rows with required tools, forbidden tools, and expected outcomes.</li>
+        <li>Run <code>llmci run --config llmci-single-full.yaml --compare-to=origin/main</code> on pull requests.</li>
       </ul>
 
       <div class="next-posts">
         <div>
-          <h2>The prompt did not change. The app still regressed.</h2>
-          <p>See the same classifier fail from an adjacent preprocessing change instead of a prompt edit.</p>
+          <h2>Compare this with RAG regressions</h2>
+          <p>The previous post shows the same CI pattern catching retrieval failures before they become answer-quality mysteries.</p>
         </div>
-        <a class="btn" href="preprocessing-regression-ci.html">Read the next post</a>
+        <a class="btn" href="rag-retrieval-regression-ci.html">Read the RAG post</a>
       </div>
     </article>
   </main>
