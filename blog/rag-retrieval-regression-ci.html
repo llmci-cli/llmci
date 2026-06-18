@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>A Prompt Change That Regresses an LLM Classifier - llmci Blog</title>
-  <meta name="description" content="A walkthrough of a real LiteLLM-backed support-ticket classifier in llmci-testbed, a prompt change that regresses billing classification, and the llmci gate that catches it before merge.">
+  <title>A Retrieval Change That Regresses a RAG App - llmci Blog</title>
+  <meta name="description" content="A walkthrough of a real LiteLLM-backed RAG QA service where a plausible retrieval precision filter regresses recall and leaves valid questions without context.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -606,47 +606,47 @@
 
   <header class="post-hero">
     <div class="container">
-      <div class="breadcrumb"><a href="../index.html#blog">Blog</a><span>/</span><span>Prompt Regression</span></div>
+      <div class="breadcrumb"><a href="../index.html#blog">Blog</a><span>/</span><span>RAG Retrieval Regression</span></div>
       <div class="post-meta">
         <span>Guide</span>
         <span>7 min read</span>
-        <span>June 14, 2026</span>
+        <span>June 17, 2026</span>
       </div>
-      <h1>A prompt change that regresses an LLM classifier</h1>
+      <h1>A retrieval change that regresses a RAG app</h1>
       <p class="dek">
-        Take the public llmci testbed, change one rule in a LiteLLM-backed support-ticket classifier prompt, and some billing tickets start falling through to <code>general</code>. This is the kind of product regression a pull request should catch before merge.
+        The generator still calls a real model. The eval dataset still asks the same questions. A normal-looking retrieval precision filter removes useful context for short informational queries, and the RAG app starts answering that it does not know.
       </p>
 
-      <div class="hero-report" aria-label="Prompt regression summary">
+      <div class="hero-report" aria-label="RAG retrieval regression summary">
         <div class="hero-report-header">
-          <span>ticket-classifier / llmci-prompt.yaml</span>
+          <span>rag-qa / llmci.yaml</span>
           <div class="hero-report-actions">
-            <a class="hero-report-link" href="https://github.com/llmci-cli/llmci-testbed/pull/7">View focused PR</a>
+            <a class="hero-report-link" href="https://github.com/llmci-cli/llmci-testbed/pull/10">View focused PR</a>
             <span class="status-fail">failed check</span>
           </div>
         </div>
         <div class="hero-report-body">
           <div class="hero-report-col">
-            <h3>Prompt diff</h3>
-            <pre class="code-diff"><code><span class="diff-del">- "billing" = payments, subscriptions, charges, refunds</span>
-<span class="diff-add">+ "billing" = invoice documents and payment method updates only;</span>
-<span class="diff-add">+             do not use for subscription changes, refunds, cancellations,</span>
-<span class="diff-add">+             discounts, renewals, or price disputes</span>
-<span class="diff-add">+ Prefer product issue categories when money is mentioned.</span></code></pre>
+            <h3>Retrieval diff</h3>
+            <pre class="code-diff"><code><span class="diff-hunk">@@ retrieve(query)</span>
+score = sum(1 for kw in entry["keywords"] if kw in query_lower)
+- if score &gt; 0:
++ if score &gt;= MIN_KEYWORD_MATCHES:
+      scored.append((score, doc_id, entry["doc"]))</code></pre>
           </div>
           <div class="hero-report-col">
             <h3>llmci result</h3>
             <div class="hero-report-metric">
-              <strong>accuracy</strong>
-              <span class="pass">0.917 >= 0.90</span>
+              <strong>retrieval_recall</strong>
+              <span class="fail">0.636 &lt; 0.90</span>
             </div>
             <div class="hero-report-metric">
-              <strong>f1_macro</strong>
-              <span class="fail">0.760 &lt; 0.85</span>
+              <strong>retrieval_precision</strong>
+              <span class="pass">0.636 &ge; 0.50</span>
             </div>
             <div class="hero-report-metric">
               <strong>failed examples</strong>
-              <span class="fail">2</span>
+              <span class="fail">4</span>
             </div>
           </div>
         </div>
@@ -656,203 +656,213 @@
 
   <main class="article">
     <article class="article-container">
-      <h2>Start with an ordinary support classifier</h2>
+      <h2>The generator is not the only thing that can regress</h2>
       <p class="lead">
-        The example lives in <a href="https://github.com/llmci-cli/llmci-testbed">llmci-cli/llmci-testbed</a>, a public repository with several small LLM-powered services. This one routes support tickets into <code>hardware</code>, <code>billing</code>, <code>account</code>, <code>software</code>, or <code>general</code>.
+        The example lives in <a href="https://github.com/llmci-cli/llmci-testbed">llmci-cli/llmci-testbed</a>, a public repository with small LLM-powered services. This one is a RAG QA service: retrieve documentation passages, pass them to a LiteLLM-backed generator, and answer user questions.
       </p>
       <p>
-        It is a useful CI example because the output is compact, user-visible, and easy to score. If billing tickets fall through to <code>general</code>, the product got worse, even if the app still returns a valid category.
+        The focused <a href="https://github.com/llmci-cli/llmci-testbed/pull/10">testbed PR</a> does not change the eval data or the user questions. It changes the retriever. The generator can still call <code>openai/gpt-4o-mini</code>, but if retrieval silently drops useful context, the model has nothing to work with.
       </p>
 
       <div class="repo-card">
         <div class="card-title">Relevant testbed files</div>
-        <pre><code>services/ticket-classifier/app/classifier.py
-services/ticket-classifier/app/prompts/classify.txt
-services/ticket-classifier/evals/tickets.jsonl
-services/ticket-classifier/llmci-prompt.yaml
-services/ticket-classifier/scripts/run_prompt.py
+        <pre><code>services/rag-qa/pipeline/retrieve.py
+services/rag-qa/pipeline/generate.py
+services/rag-qa/pipeline/run.py
+services/rag-qa/evals/qa.jsonl
+services/rag-qa/llmci.yaml
 .github/workflows/llmci.yml</code></pre>
       </div>
 
-      <h2>The regression is one prompt rule</h2>
+      <h2>The regression looks like precision tuning</h2>
       <p>
-        The original prompt treats payments, subscriptions, charges, and refunds as <code>billing</code>. A pull request tries to make that rule more precise, but it narrows the category so far that plan-change and discount-code tickets fall out of it.
+        The original retriever ranks documents by keyword overlap and returns any document with at least one matching keyword. The pull request adds a minimum-match filter. In review, that can look reasonable: fewer weak matches, less noisy context, cleaner answers.
       </p>
 
       <div class="diff-card">
-        <div class="card-title">services/ticket-classifier/app/prompts/classify.txt</div>
-        <pre class="code-diff"><code><span class="diff-hunk">@@ Rules</span>
-  "hardware" = physical devices, peripherals, connectivity issues
-<span class="diff-del">- "billing" = payments, subscriptions, charges, refunds</span>
-<span class="diff-add">+ "billing" = invoice documents and payment method updates only;</span>
-<span class="diff-add">+             do not use for subscription changes, refunds, cancellations,</span>
-<span class="diff-add">+             discounts, renewals, or price disputes</span>
-  "account" = login, passwords, profile, permissions
-  "software" = apps, crashes, bugs, updates
-  "general" = anything that doesn't clearly fit above
-<span class="diff-add">+</span>
-<span class="diff-add">+If a ticket mentions both money and a product issue, prefer the product issue category.</span></code></pre>
+        <div class="card-title">services/rag-qa/pipeline/retrieve.py</div>
+        <pre class="code-diff"><code><span class="diff-hunk">@@ retrieval scoring</span>
+<span class="diff-add">+MIN_KEYWORD_MATCHES = 2</span>
+
+score = <span class="f">sum</span>(<span class="n">1</span> <span class="k">for</span> kw <span class="k">in</span> entry[<span class="s">"keywords"</span>] <span class="k">if</span> kw <span class="k">in</span> query_lower)
+<span class="diff-del">-if score &gt; 0:</span>
+<span class="diff-add">+if score &gt;= MIN_KEYWORD_MATCHES:</span>
+    scored.<span class="f">append</span>((score, doc_id, entry[<span class="s">"doc"</span>]))</code></pre>
       </div>
 
       <p>
-        In isolation, the change looks reasonable. It is trying to reduce ambiguous billing routes. In behavior, it breaks plan-upgrade and discount-code tickets that should still route to billing.
+        The bug is subtle because the new rule does improve the shape of some retrieval results: weak single-keyword matches disappear. But short, valid questions often contain only one domain term. <code>What is Python?</code> has the important word <code>python</code>. <code>What is Kubernetes?</code> has <code>kubernetes</code>. The new filter drops both before the generator ever runs.
       </p>
 
-      <h2>The eval runs the real classifier</h2>
+      <h2>The app still calls a real model</h2>
       <p>
-        The eval does not inspect the prompt in isolation. It runs the same classifier wrapper the app uses: read the prompt template, fill in the ticket, and call a model through LiteLLM. The default is <code>openai/gpt-4o-mini</code>, but the same wrapper can point at any LiteLLM-supported provider through <code>CLASSIFIER_MODEL</code>.
+        This is not a fake model-path example. In the focused GitHub Actions job, <code>MOCK_LLM</code> is off and the generator calls LiteLLM. The deterministic mock path still exists for cheap local smoke runs, but the PR comment comes from the real-model CI path.
       </p>
 
       <div class="diff-card">
-        <div class="card-title">services/ticket-classifier/app/classifier.py</div>
-        <pre><code>prompt_template = PROMPT_PATH.<span class="f">read_text</span>()
-prompt = prompt_template.<span class="f">replace</span>(<span class="s">"{input}"</span>, text)
-model = os.environ.<span class="f">get</span>(<span class="s">"CLASSIFIER_MODEL"</span>, <span class="s">"openai/gpt-4o-mini"</span>)
+        <div class="card-title">services/rag-qa/pipeline/generate.py</div>
+        <pre><code><span class="k">def</span> <span class="f">generate</span>(query: str, context: list[str]) -&gt; str:
+    <span class="k">if</span> <span class="k">not</span> context:
+        <span class="k">return</span> <span class="s">"I don't have enough information to answer that question."</span>
 
-category = <span class="f">complete</span>(prompt, model=model).<span class="f">strip</span>().<span class="f">lower</span>()
-<span class="k">if</span> category <span class="k">not in</span> CATEGORY_KEYWORDS:
-    <span class="k">return</span> <span class="s">"general"</span>, <span class="n">0</span>
-<span class="k">return</span> category, CONFIDENCE_THRESHOLD</code></pre>
+    combined_context = <span class="s">" "</span>.<span class="f">join</span>(context)
+    <span class="k">if</span> <span class="k">not</span> <span class="f">is_mock</span>():
+        model = os.environ.<span class="f">get</span>(<span class="s">"RAG_MODEL"</span>, <span class="s">"openai/gpt-4o-mini"</span>)
+        prompt = (
+            <span class="s">"Answer the user's question using only the provided documentation.\n"</span>
+            <span class="s">"If the documentation does not contain the answer, say you do not have enough information.\n\n"</span>
+            <span class="s">f"Question: {query}\n\nDocumentation:\n{combined_context}\n\nAnswer:"</span>
+        )
+        <span class="k">return</span> <span class="f">complete</span>(prompt, model=model)</code></pre>
       </div>
 
       <p>
-        llmci does not need to know anything special about that code. It only needs a command that accepts an input file and writes an output file.
+        The pipeline wrapper preserves the structured RAG output llmci needs: the generated answer, retrieved contexts, and retrieved document IDs.
       </p>
 
       <div class="diff-card">
-        <div class="card-title">services/ticket-classifier/scripts/run_prompt.py</div>
-        <pre><code>data = json.<span class="f">loads</span>(<span class="f">Path</span>(args.input).<span class="f">read_text</span>())
-category, _ = <span class="f">classify_core</span>(data[<span class="s">"input"</span>])
-<span class="f">Path</span>(args.output).<span class="f">write_text</span>(json.<span class="f">dumps</span>({<span class="s">"output"</span>: category}))</code></pre>
+        <div class="card-title">services/rag-qa/pipeline/run.py</div>
+        <pre><code><span class="k">def</span> <span class="f">run_pipeline</span>(input_data: dict) -&gt; dict:
+    query = input_data[<span class="s">"input"</span>]
+    doc_ids, docs = <span class="f">retrieve</span>(query)
+    answer = <span class="f">generate</span>(query, docs)
+    <span class="k">return</span> {
+        <span class="s">"output"</span>: answer,
+        <span class="s">"contexts"</span>: docs,
+        <span class="s">"retrieved_ids"</span>: doc_ids,
+    }</code></pre>
       </div>
 
-      <h2>The eval is small on purpose</h2>
+      <h2>The eval targets retrieval quality</h2>
       <p>
-        The dataset is not a giant benchmark. It is a focused set of normal support tickets that should keep working across prompt edits.
+        The eval dataset is small and plain. Each row names the user question, the answer text that should be supported, and the document ID that should be retrieved.
       </p>
 
       <div class="diff-card">
-        <div class="card-title">evals/tickets.jsonl</div>
-        <pre><code>{<span class="k">"input"</span>: <span class="s">"Can I upgrade from the Basic to Pro plan mid-cycle..."</span>,
- <span class="k">"expected"</span>: <span class="s">"billing"</span>}
-{<span class="k">"input"</span>: <span class="s">"I was given a 20% discount code but it says expired..."</span>,
- <span class="k">"expected"</span>: <span class="s">"billing"</span>}
-{<span class="k">"input"</span>: <span class="s">"I received an invoice for $299 but my plan is supposed to be $199..."</span>,
- <span class="k">"expected"</span>: <span class="s">"billing"</span>}</code></pre>
+        <div class="card-title">services/rag-qa/evals/qa.jsonl</div>
+        <pre><code>{<span class="k">"input"</span>: <span class="s">"What is Python?"</span>,
+ <span class="k">"expected"</span>: <span class="s">"high-level programming language"</span>,
+ <span class="k">"relevant_ids"</span>: [<span class="s">"python"</span>]}
+{<span class="k">"input"</span>: <span class="s">"Explain Docker containers"</span>,
+ <span class="k">"expected"</span>: <span class="s">"containerization"</span>,
+ <span class="k">"relevant_ids"</span>: [<span class="s">"docker"</span>]}
+{<span class="k">"input"</span>: <span class="s">"What is Kubernetes?"</span>,
+ <span class="k">"expected"</span>: <span class="s">"orchestrates containerized"</span>,
+ <span class="k">"relevant_ids"</span>: [<span class="s">"kubernetes"</span>]}</code></pre>
       </div>
 
       <p>
-        These are the kinds of examples the prompt diff endangers. If the model stops treating plan changes and discount problems as billing, the output still looks valid; it is just wrong.
+        This is the right level for a RAG gate. You do not need the model to hallucinate before you notice the regression. If the correct document never appears in <code>retrieved_ids</code>, the product is already off the rails.
       </p>
 
-      <h2>The config turns it into a CI gate</h2>
+      <h2>The config turns retrieval into a CI gate</h2>
       <p>
-        The llmci config ties the wrapper and dataset together, then sets two thresholds: accuracy must stay at or above <code>0.90</code>, and macro F1 must stay at or above <code>0.85</code>.
+        The RAG judge scores retrieval recall and precision at <code>k=2</code>. Recall has the tighter gate because missing the right document is the failure mode this service cannot tolerate.
       </p>
 
       <div class="diff-card">
-        <div class="card-title">services/ticket-classifier/llmci-prompt.yaml</div>
+        <div class="card-title">services/rag-qa/llmci.yaml</div>
         <pre><code><span class="k">target</span>:
-  <span class="k">command</span>: <span class="s">"python3 scripts/run_prompt.py --input {input_file} --output {output_file}"</span>
+  <span class="k">command</span>: <span class="s">"python3 pipeline/run.py --input {input_file} --output {output_file}"</span>
 
 <span class="k">evals</span>:
-  - <span class="k">name</span>: <span class="s">prompt-classification</span>
-    <span class="k">level</span>: <span class="s">prompt</span>
-    <span class="k">dataset</span>: <span class="s">./evals/tickets.jsonl</span>
-    <span class="k">judge</span>: <span class="s">exact_match</span>
+  - <span class="k">name</span>: <span class="s">rag-qa</span>
+    <span class="k">level</span>: <span class="s">pipeline</span>
+    <span class="k">dataset</span>: <span class="s">./evals/qa.jsonl</span>
+    <span class="k">judge</span>:
+      <span class="k">type</span>: <span class="s">rag</span>
+      <span class="k">criteria</span>:
+        - {<span class="k">name</span>: <span class="s">retrieval_recall</span>, <span class="k">type</span>: <span class="s">retrieval_recall</span>, <span class="k">k</span>: <span class="n">2</span>}
+        - {<span class="k">name</span>: <span class="s">retrieval_precision</span>, <span class="k">type</span>: <span class="s">retrieval_precision</span>, <span class="k">k</span>: <span class="n">2</span>}
     <span class="k">metrics</span>:
-      - <span class="k">name</span>: <span class="s">accuracy</span>
-        <span class="k">threshold</span>: <span class="n">0.90</span>
-        <span class="k">mode</span>: <span class="s">absolute</span>
-      - <span class="k">name</span>: <span class="s">f1_macro</span>
-        <span class="k">threshold</span>: <span class="n">0.85</span>
-        <span class="k">mode</span>: <span class="s">absolute</span></code></pre>
+      - {<span class="k">name</span>: <span class="s">retrieval_recall</span>, <span class="k">threshold</span>: <span class="n">0.90</span>, <span class="k">mode</span>: <span class="s">absolute</span>}
+      - {<span class="k">name</span>: <span class="s">retrieval_precision</span>, <span class="k">threshold</span>: <span class="n">0.50</span>, <span class="k">mode</span>: <span class="s">absolute</span>}</code></pre>
       </div>
 
       <p>
-        For a real-model run, CI only needs the same pieces the application already needs: provider credentials, a model name, and the normal pull request comparison.
+        The focused workflow job runs only this RAG config on the demo branch, using the real LiteLLM-backed generator path.
       </p>
 
       <div class="diff-card">
-        <div class="card-title">GitHub Actions: real-model run</div>
-        <pre><code>- <span class="k">name</span>: <span class="s">Run focused classifier prompt eval</span>
-  <span class="k">working-directory</span>: <span class="s">services/ticket-classifier</span>
+        <div class="card-title">GitHub Actions: focused RAG eval</div>
+        <pre><code>- <span class="k">name</span>: <span class="s">Run focused RAG eval</span>
+  <span class="k">working-directory</span>: <span class="s">services/rag-qa</span>
   <span class="k">env</span>:
-    <span class="k">MOCK_LLM</span>: <span class="s">"0"</span>
     <span class="k">OPENAI_API_KEY</span>: <span class="s">${{ secrets.OPENAI_API_KEY }}</span>
-    <span class="k">CLASSIFIER_MODEL</span>: <span class="s">openai/gpt-4o-mini</span>
+    <span class="k">RAG_MODEL</span>: <span class="s">openai/gpt-4o-mini</span>
     <span class="k">GITHUB_TOKEN</span>: <span class="s">${{ secrets.GITHUB_TOKEN }}</span>
-  <span class="k">run</span>: <span class="s">llmci run --config llmci-prompt.yaml --compare-to=origin/main</span></code></pre>
+    <span class="k">LLMCI_REPORT_SLICE</span>: <span class="s">rag-qa/llmci.yaml</span>
+  <span class="k">run</span>: <span class="s">llmci run --config llmci.yaml --compare-to=origin/main</span></code></pre>
       </div>
 
-      <h2>The report explains the failure</h2>
+      <h2>The report catches the real failure</h2>
       <p>
-        When the prompt change runs through the gate, llmci reports both the aggregate drop and the concrete tickets that changed. The public <a href="https://github.com/llmci-cli/llmci-testbed/pull/7">focused testbed PR</a> applies this exact prompt regression and adds a dedicated workflow job for <code>ticket-classifier / llmci-prompt.yaml</code>.
+        The public <a href="https://github.com/llmci-cli/llmci-testbed/pull/10">focused RAG PR</a> fails in exactly the way a reviewer should care about. Precision still passes, so the retriever is not completely broken. Recall fails because useful short questions no longer retrieve their relevant documents.
       </p>
 
-      <div class="result-grid" aria-label="llmci report highlights">
+      <div class="result-grid" aria-label="llmci RAG report highlights">
         <div class="result-card">
-          <div class="label">Accuracy</div>
-          <div class="value pass">0.917</div>
-          <p>Above the configured <code>0.90</code> quality floor.</p>
+          <div class="label">Retrieval Recall</div>
+          <div class="value fail">0.636</div>
+          <p>Below the configured <code>0.90</code> recall floor.</p>
         </div>
         <div class="result-card">
-          <div class="label">Macro F1</div>
-          <div class="value fail">0.760</div>
-          <p>Below the configured <code>0.85</code> threshold.</p>
+          <div class="label">Retrieval Precision</div>
+          <div class="value pass">0.636</div>
+          <p>Still above the configured <code>0.50</code> precision floor.</p>
         </div>
         <div class="result-card">
           <div class="label">Failures</div>
-          <div class="value fail">2</div>
-          <p>Failed examples attached to the review comment.</p>
+          <div class="value fail">4</div>
+          <p>Questions now retrieve no documents and get no useful answer.</p>
         </div>
       </div>
 
       <figure class="screenshot-figure">
-        <img src="../assets/blog/prompt-regression-pr-comment.png" alt="GitHub Actions llmci report comment showing prompt-classification macro F1 failing and two billing examples routed to general" loading="lazy">
+        <img src="../assets/blog/rag-retrieval-regression-pr-comment.png" alt="GitHub Actions llmci report comment showing RAG retrieval recall failing while retrieval precision passes, with failed RAG examples" loading="lazy">
         <figcaption>
-          The focused testbed PR gets a real GitHub Actions comment: accuracy still clears the floor, but macro F1 catches the billing-category regression and shows the two changed examples.
+          The PR comment makes the shape of the regression visible: recall fails, precision still passes, and the failed examples show the model answering without retrieved context.
         </figcaption>
       </figure>
 
       <p>
-        The failed examples make the regression obvious. Billing tickets that should route to the billing queue are now falling through to <code>general</code>.
+        That mix matters. A coarse smoke test might only check whether the app returns text. A prompt-only eval might focus on answer wording after context is supplied. This gate catches the upstream retrieval failure before it becomes an answer-quality mystery.
       </p>
 
       <h2>What review alone can miss</h2>
       <p>
-        A reviewer can read the prompt diff and still miss how it changes model behavior across the examples that matter. llmci turns that question into a repeatable gate.
+        The diff looks like a common retrieval hardening change. Teams often add score thresholds, minimum match counts, metadata filters, recency windows, or reranker cutoffs to reduce noisy context. Each of those changes can improve one slice of quality while cutting away another.
       </p>
 
       <ul>
-        <li><strong>It runs the model-backed path.</strong> The target command calls the same classifier wrapper used by the app.</li>
-        <li><strong>It reports product-level behavior.</strong> The failure is framed as macro F1, with classifier accuracy shown alongside it.</li>
-        <li><strong>It gives examples.</strong> Reviewers see which tickets changed and what they changed into.</li>
+        <li><strong>It runs the full RAG boundary.</strong> The command includes retrieval, generation, and structured output.</li>
+        <li><strong>It separates recall from precision.</strong> The report says what got better, what got worse, and where the real risk is.</li>
+        <li><strong>It gives examples.</strong> Reviewers see the exact questions that lost context.</li>
         <li><strong>It fits CI.</strong> The result is a normal pass/fail check and a pull request comment.</li>
       </ul>
 
       <div class="callout">
-        <p>The lesson is not that prompts are uniquely fragile. The lesson is that LLM app regressions often look like ordinary application changes until you run behavioral checks against the model-backed product boundary.</p>
+        <p>RAG quality is a pipeline property. If retrieval drops the right document, the model can be perfectly reasonable and still produce a bad product outcome.</p>
       </div>
 
       <h2>Try it yourself</h2>
       <p>
-        Open the <a href="https://github.com/llmci-cli/llmci-testbed">testbed repository</a>, inspect the ticket classifier service, and apply the prompt diff above on a branch. The smallest useful version of this pattern is:
+        Open the <a href="https://github.com/llmci-cli/llmci-testbed">testbed repository</a>, inspect <code>services/rag-qa</code>, and apply the retrieval diff above on a branch. The smallest useful version of this pattern is:
       </p>
 
       <ul>
-        <li>Commit representative examples in <code>evals/*.jsonl</code>.</li>
-        <li>Add a target command that runs your model-backed wrapper.</li>
-        <li>Set one or two thresholds your team actually trusts.</li>
-        <li>Run <code>llmci run --config llmci-prompt.yaml --compare-to=origin/main</code> on pull requests.</li>
+        <li>Store representative RAG questions with <code>relevant_ids</code>.</li>
+        <li>Emit <code>output</code>, <code>contexts</code>, and <code>retrieved_ids</code> from your app wrapper.</li>
+        <li>Gate retrieval recall separately from retrieval precision.</li>
+        <li>Run <code>llmci run --config llmci.yaml --compare-to=origin/main</code> on pull requests.</li>
       </ul>
 
       <div class="next-posts">
         <div>
-          <h2>The prompt did not change. The app still regressed.</h2>
-          <p>See the same classifier fail from an adjacent preprocessing change instead of a prompt edit.</p>
+          <h2>Next: agent tool routing</h2>
+          <p>The next example shows the same CI pattern catching a framework-backed support agent whose tool registry was wired incorrectly.</p>
         </div>
-        <a class="btn" href="preprocessing-regression-ci.html">Read the next post</a>
+        <a class="btn" href="agent-tool-routing-regression-ci.html">Read the agent post</a>
       </div>
     </article>
   </main>

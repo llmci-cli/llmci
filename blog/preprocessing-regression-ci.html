@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>A Prompt Change That Regresses an LLM Classifier - llmci Blog</title>
-  <meta name="description" content="A walkthrough of a real LiteLLM-backed support-ticket classifier in llmci-testbed, a prompt change that regresses billing classification, and the llmci gate that catches it before merge.">
+  <title>A Preprocessing Change That Regresses an LLM Classifier - llmci Blog</title>
+  <meta name="description" content="A walkthrough of a real LiteLLM-backed ticket classifier where an over-broad preprocessing rule regresses service behavior even though the prompt and dataset stay unchanged.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -606,47 +606,48 @@
 
   <header class="post-hero">
     <div class="container">
-      <div class="breadcrumb"><a href="../index.html#blog">Blog</a><span>/</span><span>Prompt Regression</span></div>
+      <div class="breadcrumb"><a href="../index.html#blog">Blog</a><span>/</span><span>Preprocessing Regression</span></div>
       <div class="post-meta">
         <span>Guide</span>
         <span>7 min read</span>
-        <span>June 14, 2026</span>
+        <span>June 16, 2026</span>
       </div>
-      <h1>A prompt change that regresses an LLM classifier</h1>
+      <h1>A preprocessing change that regresses an LLM classifier</h1>
       <p class="dek">
-        Take the public llmci testbed, change one rule in a LiteLLM-backed support-ticket classifier prompt, and some billing tickets start falling through to <code>general</code>. This is the kind of product regression a pull request should catch before merge.
+        The prompt stays the same. The dataset stays the same. A normal-looking PII scrubber changes the text before it reaches a LiteLLM-backed ticket classifier, and service routing falls apart. This is exactly the kind of adjacent code regression CI should catch before merge.
       </p>
 
-      <div class="hero-report" aria-label="Prompt regression summary">
+      <div class="hero-report" aria-label="Preprocessing regression summary">
         <div class="hero-report-header">
-          <span>ticket-classifier / llmci-prompt.yaml</span>
+          <span>ticket-classifier / llmci.yaml</span>
           <div class="hero-report-actions">
-            <a class="hero-report-link" href="https://github.com/llmci-cli/llmci-testbed/pull/7">View focused PR</a>
+            <a class="hero-report-link" href="https://github.com/llmci-cli/llmci-testbed/pull/9">View focused PR</a>
             <span class="status-fail">failed check</span>
           </div>
         </div>
         <div class="hero-report-body">
           <div class="hero-report-col">
-            <h3>Prompt diff</h3>
-            <pre class="code-diff"><code><span class="diff-del">- "billing" = payments, subscriptions, charges, refunds</span>
-<span class="diff-add">+ "billing" = invoice documents and payment method updates only;</span>
-<span class="diff-add">+             do not use for subscription changes, refunds, cancellations,</span>
-<span class="diff-add">+             discounts, renewals, or price disputes</span>
-<span class="diff-add">+ Prefer product issue categories when money is mentioned.</span></code></pre>
+            <h3>Preprocessing diff</h3>
+            <pre class="code-diff"><code><span class="diff-hunk">@@ PII_PATTERNS</span>
+  (r"\b\d{3}[-.]?\d{3}[-.]?\d{4}\b", "[PHONE]")
+  (r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", "[EMAIL]")
+  (r"\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b", "[CARD]")
+  (r"\b\d{3}-\d{2}-\d{4}\b", "[SSN]")
+<span class="diff-add">+ (r"\b[A-Za-z]{4,}\b", "[NAME]")</span></code></pre>
           </div>
           <div class="hero-report-col">
             <h3>llmci result</h3>
             <div class="hero-report-metric">
               <strong>accuracy</strong>
-              <span class="pass">0.917 >= 0.90</span>
+              <span class="fail">0.333 &lt; 0.75</span>
             </div>
             <div class="hero-report-metric">
-              <strong>f1_macro</strong>
-              <span class="fail">0.760 &lt; 0.85</span>
+              <strong>f1_weighted</strong>
+              <span class="fail">0.449 &lt; 0.70</span>
             </div>
             <div class="hero-report-metric">
               <strong>failed examples</strong>
-              <span class="fail">2</span>
+              <span class="fail">16</span>
             </div>
           </div>
         </div>
@@ -656,51 +657,69 @@
 
   <main class="article">
     <article class="article-container">
-      <h2>Start with an ordinary support classifier</h2>
+      <h2>The prompt is innocent</h2>
       <p class="lead">
         The example lives in <a href="https://github.com/llmci-cli/llmci-testbed">llmci-cli/llmci-testbed</a>, a public repository with several small LLM-powered services. This one routes support tickets into <code>hardware</code>, <code>billing</code>, <code>account</code>, <code>software</code>, or <code>general</code>.
       </p>
       <p>
-        It is a useful CI example because the output is compact, user-visible, and easy to score. If billing tickets fall through to <code>general</code>, the product got worse, even if the app still returns a valid category.
+        The first classifier post showed a prompt diff causing a regression. This one is more mundane: the prompt does not change at all. A nearby preprocessing rule changes the text that reaches the model, and the service starts misrouting tickets.
       </p>
 
       <div class="repo-card">
         <div class="card-title">Relevant testbed files</div>
         <pre><code>services/ticket-classifier/app/classifier.py
+services/ticket-classifier/app/pipeline.py
 services/ticket-classifier/app/prompts/classify.txt
 services/ticket-classifier/evals/tickets.jsonl
-services/ticket-classifier/llmci-prompt.yaml
-services/ticket-classifier/scripts/run_prompt.py
+services/ticket-classifier/llmci.yaml
+services/ticket-classifier/scripts/eval_service.py
 .github/workflows/llmci.yml</code></pre>
       </div>
 
-      <h2>The regression is one prompt rule</h2>
+      <h2>The regression is one preprocessing rule</h2>
       <p>
-        The original prompt treats payments, subscriptions, charges, and refunds as <code>billing</code>. A pull request tries to make that rule more precise, but it narrows the category so far that plan-change and discount-code tickets fall out of it.
+        The ticket classifier already strips obvious PII before calling the model: phone numbers, email addresses, credit cards, and SSNs. A pull request adds a broad name-redaction rule.
       </p>
 
       <div class="diff-card">
-        <div class="card-title">services/ticket-classifier/app/prompts/classify.txt</div>
-        <pre class="code-diff"><code><span class="diff-hunk">@@ Rules</span>
-  "hardware" = physical devices, peripherals, connectivity issues
-<span class="diff-del">- "billing" = payments, subscriptions, charges, refunds</span>
-<span class="diff-add">+ "billing" = invoice documents and payment method updates only;</span>
-<span class="diff-add">+             do not use for subscription changes, refunds, cancellations,</span>
-<span class="diff-add">+             discounts, renewals, or price disputes</span>
-  "account" = login, passwords, profile, permissions
-  "software" = apps, crashes, bugs, updates
-  "general" = anything that doesn't clearly fit above
-<span class="diff-add">+</span>
-<span class="diff-add">+If a ticket mentions both money and a product issue, prefer the product issue category.</span></code></pre>
+        <div class="card-title">services/ticket-classifier/app/pipeline.py</div>
+        <pre class="code-diff"><code><span class="diff-hunk">@@ PII_PATTERNS</span>
+PII_PATTERNS = [
+    (r"\b\d{3}[-.]?\d{3}[-.]?\d{4}\b", "[PHONE]"),
+    (r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", "[EMAIL]"),
+    (r"\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b", "[CARD]"),
+    (r"\b\d{3}-\d{2}-\d{4}\b", "[SSN]"),
+<span class="diff-add">+   (r"\b[A-Za-z]{4,}\b", "[NAME]"),</span>
+]</code></pre>
       </div>
 
       <p>
-        In isolation, the change looks reasonable. It is trying to reduce ambiguous billing routes. In behavior, it breaks plan-upgrade and discount-code tickets that should still route to billing.
+        In review, this can look like a privacy hardening change. In behavior, it is catastrophic: every word of four or more letters becomes <code>[NAME]</code>. <code>printer</code>, <code>charged</code>, <code>password</code>, <code>subscription</code>, <code>crashes</code>, and <code>webcam</code> all disappear before the classifier sees the ticket.
       </p>
 
-      <h2>The eval runs the real classifier</h2>
+      <h2>The service path hides the damage</h2>
       <p>
-        The eval does not inspect the prompt in isolation. It runs the same classifier wrapper the app uses: read the prompt template, fill in the ticket, and call a model through LiteLLM. The default is <code>openai/gpt-4o-mini</code>, but the same wrapper can point at any LiteLLM-supported provider through <code>CLASSIFIER_MODEL</code>.
+        The application boundary is not just the prompt. A ticket goes through the service pipeline first: normalize text, redact PII, then call the classifier. That means a bad preprocessing rule can change model behavior without touching the prompt file.
+      </p>
+
+      <div class="diff-card">
+        <div class="card-title">services/ticket-classifier/app/pipeline.py</div>
+        <pre><code><span class="k">def</span> <span class="f">preprocess</span>(text: str) -&gt; str:
+    cleaned = text.<span class="f">strip</span>()
+    cleaned = re.<span class="f">sub</span>(<span class="s">r"\s+"</span>, <span class="s">" "</span>, cleaned)
+    <span class="k">for</span> pattern, replacement <span class="k">in</span> PII_PATTERNS:
+        cleaned = re.<span class="f">sub</span>(pattern, replacement, cleaned)
+    <span class="k">return</span> cleaned
+
+<span class="k">def</span> <span class="f">classify</span>(text: str) -&gt; dict:
+    cleaned = <span class="f">preprocess</span>(text)
+    category, confidence = <span class="f">classify_core</span>(cleaned)
+    final_category = <span class="f">postprocess</span>(category, confidence)
+    <span class="k">return</span> {<span class="s">"category"</span>: final_category, <span class="s">"preprocessed_text"</span>: cleaned}</code></pre>
+      </div>
+
+      <p>
+        The real-model path still goes through LiteLLM. The prompt template is unchanged; the input text is what changed.
       </p>
 
       <div class="diff-card">
@@ -716,56 +735,63 @@ category = <span class="f">complete</span>(prompt, model=model).<span class="f">
       </div>
 
       <p>
-        llmci does not need to know anything special about that code. It only needs a command that accepts an input file and writes an output file.
+        llmci does not need a custom integration for this service. It only needs the same command boundary the app already exposes for evals.
       </p>
 
       <div class="diff-card">
-        <div class="card-title">services/ticket-classifier/scripts/run_prompt.py</div>
+        <div class="card-title">services/ticket-classifier/scripts/eval_service.py</div>
         <pre><code>data = json.<span class="f">loads</span>(<span class="f">Path</span>(args.input).<span class="f">read_text</span>())
-category, _ = <span class="f">classify_core</span>(data[<span class="s">"input"</span>])
-<span class="f">Path</span>(args.output).<span class="f">write_text</span>(json.<span class="f">dumps</span>({<span class="s">"output"</span>: category}))</code></pre>
+category = <span class="f">classify</span>(data[<span class="s">"input"</span>])[<span class="s">"category"</span>]
+
+<span class="f">Path</span>(args.output).<span class="f">write_text</span>(json.<span class="f">dumps</span>({
+    <span class="s">"output"</span>: category,
+    <span class="s">"usage"</span>: {<span class="s">"tokens_in"</span>: tokens_in, <span class="s">"tokens_out"</span>: tokens_out},
+    <span class="s">"cost"</span>: cost,
+}))</code></pre>
       </div>
 
       <h2>The eval is small on purpose</h2>
       <p>
-        The dataset is not a giant benchmark. It is a focused set of normal support tickets that should keep working across prompt edits.
+        The dataset is not a giant benchmark. It is a focused set of normal support tickets that should keep working across service changes.
       </p>
 
       <div class="diff-card">
         <div class="card-title">evals/tickets.jsonl</div>
-        <pre><code>{<span class="k">"input"</span>: <span class="s">"Can I upgrade from the Basic to Pro plan mid-cycle..."</span>,
+        <pre><code>{<span class="k">"input"</span>: <span class="s">"My printer keeps jamming every time I try to print..."</span>,
+ <span class="k">"expected"</span>: <span class="s">"hardware"</span>}
+{<span class="k">"input"</span>: <span class="s">"I want to cancel my subscription and get a prorated refund..."</span>,
  <span class="k">"expected"</span>: <span class="s">"billing"</span>}
-{<span class="k">"input"</span>: <span class="s">"I was given a 20% discount code but it says expired..."</span>,
- <span class="k">"expected"</span>: <span class="s">"billing"</span>}
-{<span class="k">"input"</span>: <span class="s">"I received an invoice for $299 but my plan is supposed to be $199..."</span>,
- <span class="k">"expected"</span>: <span class="s">"billing"</span>}</code></pre>
+{<span class="k">"input"</span>: <span class="s">"I can't log into my account. I've tried resetting my password..."</span>,
+ <span class="k">"expected"</span>: <span class="s">"account"</span>}
+{<span class="k">"input"</span>: <span class="s">"The mobile app crashes immediately after the latest update..."</span>,
+ <span class="k">"expected"</span>: <span class="s">"software"</span>}</code></pre>
       </div>
 
       <p>
-        These are the kinds of examples the prompt diff endangers. If the model stops treating plan changes and discount problems as billing, the output still looks valid; it is just wrong.
+        The over-broad redaction rule damages every category. Hardware words disappear, billing words disappear, account words disappear, and software words disappear. The model still returns a valid label; it is just often the wrong one.
       </p>
 
       <h2>The config turns it into a CI gate</h2>
       <p>
-        The llmci config ties the wrapper and dataset together, then sets two thresholds: accuracy must stay at or above <code>0.90</code>, and macro F1 must stay at or above <code>0.85</code>.
+        The service-level llmci config ties the full pipeline wrapper and dataset together. Accuracy must stay at or above <code>0.75</code>, weighted F1 must stay at or above <code>0.70</code>, and accuracy must not regress by more than three percentage points when a baseline exists.
       </p>
 
       <div class="diff-card">
-        <div class="card-title">services/ticket-classifier/llmci-prompt.yaml</div>
+        <div class="card-title">services/ticket-classifier/llmci.yaml</div>
         <pre><code><span class="k">target</span>:
-  <span class="k">command</span>: <span class="s">"python3 scripts/run_prompt.py --input {input_file} --output {output_file}"</span>
+  <span class="k">command</span>: <span class="s">"python3 scripts/eval_service.py --input {input_file} --output {output_file}"</span>
 
 <span class="k">evals</span>:
-  - <span class="k">name</span>: <span class="s">prompt-classification</span>
-    <span class="k">level</span>: <span class="s">prompt</span>
+  - <span class="k">name</span>: <span class="s">service-classification</span>
+    <span class="k">level</span>: <span class="s">pipeline</span>
     <span class="k">dataset</span>: <span class="s">./evals/tickets.jsonl</span>
     <span class="k">judge</span>: <span class="s">exact_match</span>
     <span class="k">metrics</span>:
       - <span class="k">name</span>: <span class="s">accuracy</span>
-        <span class="k">threshold</span>: <span class="n">0.90</span>
+        <span class="k">threshold</span>: <span class="n">0.75</span>
         <span class="k">mode</span>: <span class="s">absolute</span>
-      - <span class="k">name</span>: <span class="s">f1_macro</span>
-        <span class="k">threshold</span>: <span class="n">0.85</span>
+      - <span class="k">name</span>: <span class="s">f1_weighted</span>
+        <span class="k">threshold</span>: <span class="n">0.70</span>
         <span class="k">mode</span>: <span class="s">absolute</span></code></pre>
       </div>
 
@@ -775,84 +801,84 @@ category, _ = <span class="f">classify_core</span>(data[<span class="s">"input"<
 
       <div class="diff-card">
         <div class="card-title">GitHub Actions: real-model run</div>
-        <pre><code>- <span class="k">name</span>: <span class="s">Run focused classifier prompt eval</span>
+        <pre><code>- <span class="k">name</span>: <span class="s">Run focused ticket classifier eval</span>
   <span class="k">working-directory</span>: <span class="s">services/ticket-classifier</span>
   <span class="k">env</span>:
-    <span class="k">MOCK_LLM</span>: <span class="s">"0"</span>
     <span class="k">OPENAI_API_KEY</span>: <span class="s">${{ secrets.OPENAI_API_KEY }}</span>
     <span class="k">CLASSIFIER_MODEL</span>: <span class="s">openai/gpt-4o-mini</span>
     <span class="k">GITHUB_TOKEN</span>: <span class="s">${{ secrets.GITHUB_TOKEN }}</span>
-  <span class="k">run</span>: <span class="s">llmci run --config llmci-prompt.yaml --compare-to=origin/main</span></code></pre>
+    <span class="k">LLMCI_REPORT_SLICE</span>: <span class="s">ticket-classifier/llmci.yaml</span>
+  <span class="k">run</span>: <span class="s">llmci run --config llmci.yaml --compare-to=origin/main</span></code></pre>
       </div>
 
       <h2>The report explains the failure</h2>
       <p>
-        When the prompt change runs through the gate, llmci reports both the aggregate drop and the concrete tickets that changed. The public <a href="https://github.com/llmci-cli/llmci-testbed/pull/7">focused testbed PR</a> applies this exact prompt regression and adds a dedicated workflow job for <code>ticket-classifier / llmci-prompt.yaml</code>.
+        When the preprocessing change runs through the gate, llmci reports both the aggregate drop and concrete tickets that changed. The public <a href="https://github.com/llmci-cli/llmci-testbed/pull/9">focused testbed PR</a> applies this exact preprocessing regression and adds a dedicated workflow job for <code>ticket-classifier / llmci.yaml</code>.
       </p>
 
       <div class="result-grid" aria-label="llmci report highlights">
         <div class="result-card">
           <div class="label">Accuracy</div>
-          <div class="value pass">0.917</div>
-          <p>Above the configured <code>0.90</code> quality floor.</p>
+          <div class="value fail">0.333</div>
+          <p>Below the configured <code>0.75</code> quality floor.</p>
         </div>
         <div class="result-card">
-          <div class="label">Macro F1</div>
-          <div class="value fail">0.760</div>
-          <p>Below the configured <code>0.85</code> threshold.</p>
+          <div class="label">Weighted F1</div>
+          <div class="value fail">0.449</div>
+          <p>Below the configured <code>0.70</code> threshold.</p>
         </div>
         <div class="result-card">
           <div class="label">Failures</div>
-          <div class="value fail">2</div>
+          <div class="value fail">16</div>
           <p>Failed examples attached to the review comment.</p>
         </div>
       </div>
 
       <figure class="screenshot-figure">
-        <img src="../assets/blog/prompt-regression-pr-comment.png" alt="GitHub Actions llmci report comment showing prompt-classification macro F1 failing and two billing examples routed to general" loading="lazy">
+        <img src="../assets/blog/preprocessing-regression-pr-comment.png" alt="GitHub Actions llmci report comment showing failed accuracy, failed weighted F1, and failed ticket-classifier examples" loading="lazy">
         <figcaption>
-          The focused testbed PR gets a real GitHub Actions comment: accuracy still clears the floor, but macro F1 catches the billing-category regression and shows the two changed examples.
+          The focused testbed PR gets a real GitHub Actions comment: aggregate gates fail first, then the failed examples show exactly which tickets changed behavior.
         </figcaption>
       </figure>
 
       <p>
-        The failed examples make the regression obvious. Billing tickets that should route to the billing queue are now falling through to <code>general</code>.
+        The failed examples make the regression obvious. Tickets across categories start falling through to <code>general</code>, and a few route to the wrong concrete category.
       </p>
 
       <h2>What review alone can miss</h2>
       <p>
-        A reviewer can read the prompt diff and still miss how it changes model behavior across the examples that matter. llmci turns that question into a repeatable gate.
+        A reviewer can read the preprocessing diff and agree with the intent. PII redaction is good. But the effect on model behavior only becomes obvious when the service is exercised against examples that matter.
       </p>
 
       <ul>
-        <li><strong>It runs the model-backed path.</strong> The target command calls the same classifier wrapper used by the app.</li>
-        <li><strong>It reports product-level behavior.</strong> The failure is framed as macro F1, with classifier accuracy shown alongside it.</li>
+        <li><strong>It runs the service boundary.</strong> The target command includes preprocessing, classification, and output formatting.</li>
+        <li><strong>It reports product-level behavior.</strong> The failure is framed as service accuracy and weighted F1.</li>
         <li><strong>It gives examples.</strong> Reviewers see which tickets changed and what they changed into.</li>
         <li><strong>It fits CI.</strong> The result is a normal pass/fail check and a pull request comment.</li>
       </ul>
 
       <div class="callout">
-        <p>The lesson is not that prompts are uniquely fragile. The lesson is that LLM app regressions often look like ordinary application changes until you run behavioral checks against the model-backed product boundary.</p>
+        <p>The lesson is that LLM quality is a system property. Prompts matter, but so do preprocessors, serializers, routers, retrievers, schemas, fallback paths, and every other bit of code that shapes what the model sees.</p>
       </div>
 
       <h2>Try it yourself</h2>
       <p>
-        Open the <a href="https://github.com/llmci-cli/llmci-testbed">testbed repository</a>, inspect the ticket classifier service, and apply the prompt diff above on a branch. The smallest useful version of this pattern is:
+        Open the <a href="https://github.com/llmci-cli/llmci-testbed">testbed repository</a>, inspect the ticket classifier service, and apply the preprocessing diff above on a branch. The smallest useful version of this pattern is:
       </p>
 
       <ul>
         <li>Commit representative examples in <code>evals/*.jsonl</code>.</li>
-        <li>Add a target command that runs your model-backed wrapper.</li>
+        <li>Add a target command that runs the application boundary users actually hit.</li>
         <li>Set one or two thresholds your team actually trusts.</li>
-        <li>Run <code>llmci run --config llmci-prompt.yaml --compare-to=origin/main</code> on pull requests.</li>
+        <li>Run <code>llmci run --config llmci.yaml --compare-to=origin/main</code> on pull requests.</li>
       </ul>
 
       <div class="next-posts">
         <div>
-          <h2>The prompt did not change. The app still regressed.</h2>
-          <p>See the same classifier fail from an adjacent preprocessing change instead of a prompt edit.</p>
+          <h2>Next: RAG retrieval regressions</h2>
+          <p>The same CI pattern catches retrieval changes that drop useful context before the model can answer.</p>
         </div>
-        <a class="btn" href="preprocessing-regression-ci.html">Read the next post</a>
+        <a class="btn" href="rag-retrieval-regression-ci.html">Read the RAG post</a>
       </div>
     </article>
   </main>
